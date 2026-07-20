@@ -55,7 +55,7 @@ namespace StencilPad
             services.AddSingleton<MainWindowViewModel>();
             services.AddSingleton<MainWindow>();
             services.AddSingleton<IAvaloniaDialogParent>(x => x.GetService<MainWindow>()!);
-            services.AddSingleton<IDialogService, WpfDialogService>();
+            services.AddSingleton<IDialogService, AvaloniaDialogService>();
             services.AddSingleton<IModelPropertiesService, AvaloniaModelPropertiesService>();
             services.AddSingleton<IAppConfigService, AppConfigService>();
             services.AddSingleton<IClipboardService, NullClipboardService>();

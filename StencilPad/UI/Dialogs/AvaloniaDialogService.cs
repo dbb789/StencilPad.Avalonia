@@ -4,11 +4,11 @@ using StencilPad.Spatial;
 
 namespace StencilPad.UI.Dialogs;
 
-public class WpfDialogService : IDialogService
+public class AvaloniaDialogService : IDialogService
 {
     private readonly Window _owner;
 
-    public WpfDialogService(IAvaloniaDialogParent parent)
+    public AvaloniaDialogService(IAvaloniaDialogParent parent)
     {
         _owner = parent.Window;
     }

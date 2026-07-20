@@ -1,10 +1,10 @@
-using StencilPad.ViewModels;
+using Avalonia.Controls;
 
 namespace StencilPad.UI;
 
-public partial class MainWindow : Avalonia.Controls.Window, IAvaloniaDialogParent
+public partial class MainWindow : Window, IAvaloniaDialogParent
 {
-    public Avalonia.Controls.Window Window => this;
+    public Window Window => this;
     
     public MainWindow()
     {

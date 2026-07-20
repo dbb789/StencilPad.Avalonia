@@ -3,7 +3,6 @@
              x:Class="StencilPad.App"
              xmlns:local="using:StencilPad"
              RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
     <Application.DataTemplates>
     </Application.DataTemplates>
