@@ -6,7 +6,7 @@ using StencilPad.UI.Properties;
 
 namespace StencilPad.UI;
 
-public class WpfModelPropertiesService : IModelPropertiesService
+public class AvaloniaModelPropertiesService : IModelPropertiesService
 {
     private readonly Window _owner;
     private readonly ISettings _settings;
@@ -14,10 +14,10 @@ public class WpfModelPropertiesService : IModelPropertiesService
     private readonly IOperationService _operationService;
     private Window? _openWindow;
 
-    public WpfModelPropertiesService(IWpfDialogParent parent,
-                                     ISettings settings,
-                                     IResourceService resourceService,
-                                     IOperationService operationService)
+    public AvaloniaModelPropertiesService(IAvaloniaDialogParent parent,
+                                          ISettings settings,
+                                          IResourceService resourceService,
+                                          IOperationService operationService)
     {
         _owner = parent.Window;
         _settings = settings;

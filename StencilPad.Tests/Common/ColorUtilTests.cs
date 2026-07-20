@@ -1,6 +1,6 @@
 namespace StencilPad.Tests.Common;
 
-using System.Windows.Media;
+using Avalonia.Media;
 using StencilPad.Common;
 
 public class ColorUtilTests

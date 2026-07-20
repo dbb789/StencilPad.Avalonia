@@ -2,7 +2,7 @@ using StencilPad.ViewModels;
 
 namespace StencilPad.UI;
 
-public partial class MainWindow : Avalonia.Controls.Window, IWpfDialogParent
+public partial class MainWindow : Avalonia.Controls.Window, IAvaloniaDialogParent
 {
     public Avalonia.Controls.Window Window => this;
     

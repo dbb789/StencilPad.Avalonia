@@ -17,7 +17,7 @@ public class FileService : IFileService
 
     private readonly Avalonia.Controls.Window _owner;
 
-    public FileService(IWpfDialogParent parent)
+    public FileService(IAvaloniaDialogParent parent)
     {
         _owner = parent.Window;
     }

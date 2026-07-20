@@ -8,7 +8,7 @@ public class WpfDialogService : IDialogService
 {
     private readonly Window _owner;
 
-    public WpfDialogService(IWpfDialogParent parent)
+    public WpfDialogService(IAvaloniaDialogParent parent)
     {
         _owner = parent.Window;
     }

@@ -2,7 +2,7 @@ using Avalonia.Controls;
 
 namespace StencilPad.UI;
 
-public interface IWpfDialogParent
+public interface IAvaloniaDialogParent
 {
     Window Window { get; }
 }
