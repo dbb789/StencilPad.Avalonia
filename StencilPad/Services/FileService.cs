@@ -1,25 +1,53 @@
 using System.IO;
+using Avalonia.Platform.Storage;
 using StencilPad.Models;
 using StencilPad.Schemas;
+using StencilPad.UI;
 
 namespace StencilPad.Services;
 
-// NOTE: The file-open/save-as dialogs here were WPF-only (Microsoft.Win32
-// OpenFileDialog/SaveFileDialog) and have been stubbed out rather than
-// silently ported wrong. Avalonia needs the async TopLevel.StorageProvider
-// API for file pickers, which requires a window/TopLevel reference not
-// currently threaded through this service. This needs a proper redesign,
-// not a mechanical swap. OpenAsync(string, Project) and SaveAsync(Project,
-// string), which do not involve dialogs, are unaffected and still work.
 public class FileService : IFileService
 {
     private const int FileVersion = 1;
 
-    public Task<string?> OpenAsync(Project target)
+    private static readonly FilePickerFileType ProjectFileType = new("StencilPad Project")
     {
-        // TODO: Port to Avalonia's TopLevel.StorageProvider.OpenFilePickerAsync.
-        throw new NotImplementedException(
-            "File open dialog needs porting to Avalonia's TopLevel.StorageProvider.");
+        Patterns = ["*.spad"]
+    };
+
+    private readonly Avalonia.Controls.Window _owner;
+
+    public FileService(IWpfDialogParent parent)
+    {
+        _owner = parent.Window;
+    }
+
+    public async Task<string?> OpenAsync(Project target)
+    {
+        var files = await _owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Open Project",
+            AllowMultiple = false,
+            FileTypeFilter = [ProjectFileType]
+        });
+
+        var file = files.FirstOrDefault();
+
+        if (file is null)
+        {
+            return null;
+        }
+
+        var path = file.TryGetLocalPath();
+
+        if (path is null)
+        {
+            return null;
+        }
+
+        await OpenAsync(path, target);
+
+        return path;
     }
     
     public async Task OpenAsync(string filename, Project target)
@@ -67,10 +95,43 @@ public class FileService : IFileService
         }
     }
 
-    public Task<string?> SaveAsAsync(Project project, string? filePath = null)
+    public async Task<string?> SaveAsAsync(Project project, string? filePath = null)
     {
-        // TODO: Port to Avalonia's TopLevel.StorageProvider.SaveFilePickerAsync.
-        throw new NotImplementedException(
-            "File save-as dialog needs porting to Avalonia's TopLevel.StorageProvider.");
+        var suggestedFileName = filePath is not null
+            ? Path.GetFileNameWithoutExtension(filePath)
+            : "Untitled";
+
+        IStorageFolder? suggestedStartLocation = null;
+
+        if (filePath is not null)
+        {
+            var directory = Path.GetDirectoryName(filePath);
+
+            if (directory is not null)
+            {
+                suggestedStartLocation = await _owner.StorageProvider.TryGetFolderFromPathAsync(directory);
+            }
+        }
+
+        var file = await _owner.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Save Project As",
+            SuggestedFileName = suggestedFileName,
+            SuggestedStartLocation = suggestedStartLocation,
+            DefaultExtension = "spad",
+            FileTypeChoices = [ProjectFileType]
+        });
+
+        var path = file?.TryGetLocalPath();
+
+        if (path is null)
+        {
+            return null;
+        }
+
+        await SaveAsync(project, path);
+
+        return path;
     }
 }
+
