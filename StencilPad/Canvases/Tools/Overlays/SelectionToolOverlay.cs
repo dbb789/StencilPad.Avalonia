@@ -79,12 +79,22 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
 
         BuildInputBindings(actionSet);
         
+        // NOTE: Wiring ContextMenu population via Control.ContextRequested
+        // doesn't work reliably in Avalonia: setting ContextMenu subscribes
+        // an internal handler to ContextRequested that opens the popup using
+        // whatever is currently in ContextMenu.Items, and since that internal
+        // subscription happens before ours (it's added the moment ContextMenu
+        // is assigned above), it runs first and pops up with stale/empty
+        // items - our rebuild would always run too late. ContextMenu.Opening
+        // fires synchronously just before the popup is actually shown, so
+        // rebuilding the items there (and cancelling if there's nothing to
+        // show) works correctly.
         ContextMenu = new ContextMenu();
-        ContextRequested += (_, e) =>
+        ContextMenu.Opening += (_, e) =>
         {
             if (!BuildContextMenu(actionSet))
             {
-                e.Handled = true;
+                e.Cancel = true;
             }
         };
         
@@ -452,6 +462,11 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
 
         // Clear drag fill.
         ForceRedraw();
+
+        // Control.OnPointerReleased is what raises ContextRequested on a
+        // right-click release (via Avalonia's ContextMenuProperty machinery),
+        // so we need to chain to it or right-click context menus never open.
+        base.OnPointerReleased(e);
     }
 
     private Unit2D SnapBoundsCenter(UnitBounds bounds)

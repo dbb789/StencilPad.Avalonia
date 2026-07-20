@@ -89,12 +89,17 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
 
         BuildInputBindings(actionSet);
         
+        // NOTE: See SelectionToolOverlay's constructor for why this uses
+        // ContextMenu.Opening (fires before the popup is shown) rather than
+        // Control.ContextRequested (Avalonia's built-in ContextMenu opening
+        // handler subscribes to ContextRequested first and would open the
+        // menu before our own handler got a chance to populate it).
         ContextMenu = new ContextMenu();
-        ContextRequested += (_, e) =>
+        ContextMenu.Opening += (_, e) =>
         {
             if (!BuildContextMenu(actionSet))
             {
-                e.Handled = true;
+                e.Cancel = true;
             }
         };
 
