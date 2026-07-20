@@ -1,0 +1,73 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="StencilPad.UI.ToolPanel"
+             x:Name="Root">
+    <UserControl.Styles>
+        <Style Selector="Button.toolButton">
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Padding" Value="2"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="border"
+                            CornerRadius="2"
+                            Background="#FFFFFF"
+                            BorderThickness="1.5"
+                            BorderBrush="#C0D5EA"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Name="content"
+                                          Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.toolButton:pointerover /template/ Border#border">
+            <Setter Property="Background" Value="#D0E9FF"/>
+        </Style>
+        <Style Selector="ListBoxItem:selected Button.toolButton /template/ Border#border">
+            <Setter Property="Background" Value="#CCE4F7"/>
+            <Setter Property="BorderBrush" Value="#0078D4"/>
+        </Style>
+        <Style Selector="Button.toolButton:disabled">
+            <Setter Property="Opacity" Value="0.15"/>
+        </Style>
+        <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="MinWidth" Value="0"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ContentPresenter Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"/>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+    </UserControl.Styles>
+
+    <ListBox ItemsSource="{Binding Tools}"
+             SelectedItem="{Binding SelectedTool}"
+             BorderThickness="0"
+             Background="Transparent"
+             Focusable="False">
+        <ListBox.ItemTemplate>
+            <DataTemplate>
+                <Button Classes="toolButton"
+                        Margin="2"
+                        IsEnabled="{Binding IsEnabled}"
+                        Command="{Binding #Root.DataContext.SelectToolCommand}"
+                        CommandParameter="{Binding}"
+                        ToolTip.Tip="{Binding Tooltip}">
+                    <Image Source="{Binding Icon}"/>
+                </Button>
+            </DataTemplate>
+        </ListBox.ItemTemplate>
+    </ListBox>
+</UserControl>

@@ -1,0 +1,38 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="StencilPad.UI.Widgets.BaseUnitField"
+             x:Name="Root">
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="*" />
+      <ColumnDefinition Width="Auto" />
+    </Grid.ColumnDefinitions>
+
+    <TextBox x:Name="ValueField"
+             Grid.Column="0"
+             KeyDown="ValueField_KeyDown"
+             VerticalContentAlignment="Center"
+             Padding="2" />
+
+    <Grid Grid.Column="1" Margin="2,0">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="12" />
+        <RowDefinition Height="12" />
+      </Grid.RowDefinitions>
+      <RepeatButton x:Name="UpButton"
+                    Grid.Row="0"
+                    Width="16"
+                    FontSize="6"
+                    Content="▲"
+                    Click="Up_Click"
+                    Focusable="False" />
+      <RepeatButton x:Name="DownButton"
+                    Grid.Row="1"
+                    Width="16"
+                    FontSize="6"
+                    Content="▼"
+                    Click="Down_Click"
+                    Focusable="False" />
+    </Grid>
+  </Grid>
+</UserControl>

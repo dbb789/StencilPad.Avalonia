@@ -1,0 +1,32 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="StencilPad.UI.Properties.ImagePropertiesWindow"
+        xmlns:vm="clr-namespace:StencilPad.ViewModels.Properties"
+        xmlns:widgets="using:StencilPad.UI.Widgets"
+        x:DataType="vm:ImagePropertiesViewModel"
+        Title="{Binding Title}"
+        SizeToContent="WidthAndHeight"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        MinWidth="300">
+    <Grid Margin="12" IsEnabled="{Binding HasElements}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="8"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Opacity:"/>
+        <widgets:AlphaField x:Name="OpacityField"
+                            Grid.Row="2"
+                            Value="{Binding Opacity}"/>
+
+        <Button Grid.Row="4"
+                Content="Close"
+                MinWidth="75"
+                HorizontalAlignment="Right"
+                Click="Close_Click"/>
+    </Grid>
+</Window>

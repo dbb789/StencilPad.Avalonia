@@ -1,0 +1,12 @@
+<ColorFieldSliderBase xmlns="https://github.com/avaloniaui"
+                      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                      xmlns:widgets="using:StencilPad.UI.Widgets"
+                      x:Class="StencilPad.UI.Widgets.ColorFieldAlphaSlider">
+  <Grid ClipToBounds="True">
+    <Border Background="#FFDADADA" />
+    <Rectangle x:Name="GradientRect" />
+    <Canvas x:Name="DragCanvas" Background="Transparent">
+      <Rectangle x:Name="Marker" Width="4" Height="20" Stroke="Black" StrokeThickness="1" Fill="White" Opacity="0.8" IsHitTestVisible="False" />
+    </Canvas>
+  </Grid>
+</ColorFieldSliderBase>

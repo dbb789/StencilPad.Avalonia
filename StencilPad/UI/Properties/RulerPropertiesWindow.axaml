@@ -1,0 +1,70 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="StencilPad.UI.Properties.RulerPropertiesWindow"
+        xmlns:vm="clr-namespace:StencilPad.ViewModels.Properties"
+        xmlns:widgets="using:StencilPad.UI.Widgets"
+        x:DataType="vm:RulerPropertiesViewModel"
+        Title="{Binding Title}"
+        SizeToContent="WidthAndHeight"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        MinWidth="300">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TabControl Grid.Row="0" Height="400" IsEnabled="{Binding HasElements}">
+            <TabItem Header="Properties">
+                <StackPanel Margin="8">
+                    <TextBlock Text="Start Position:" VerticalAlignment="Center" Margin="2"/>
+                    <widgets:Unit2DField MinWidth="160"
+                                         ValueX="{Binding MinX}"
+                                         ValueY="{Binding MinY}"
+                                         UnitSettings="{Binding UnitSettings}"
+                                         Scaled="True"/>
+                    <TextBlock Text="End Position:" VerticalAlignment="Center" Margin="2"/>
+                    <widgets:Unit2DField MinWidth="160"
+                                         ValueX="{Binding MaxX}"
+                                         ValueY="{Binding MaxY}"
+                                         UnitSettings="{Binding UnitSettings}"
+                                         Scaled="True"/>
+                    <TextBlock Text="Length:" VerticalAlignment="Center" Margin="2"/>
+                    <widgets:UnitField MinWidth="160"
+                                       Value="{Binding Length}"
+                                       UnitSettings="{Binding UnitSettings}"
+                                       Scaled="True"/>
+                </StackPanel>
+            </TabItem>
+
+            <TabItem Header="Style">
+                <Grid Margin="12" IsEnabled="{Binding HasElements}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="8"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="8"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <widgets:TextProperties Grid.Row="0"
+                                            TextFontName="{Binding FontName}"
+                                            TextFontSize="{Binding FontSize}"/>
+
+                    <TextBlock Grid.Row="2" Text="Colour:"/>
+                    <widgets:ColorField x:Name="ColorField"
+                                        Grid.Row="4"
+                                        Value="{Binding Color}"/>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <Button Grid.Row="2"
+                Content="Close"
+                MinWidth="75"
+                HorizontalAlignment="Right"
+                Click="Close_Click"/>
+    </Grid>
+</Window>

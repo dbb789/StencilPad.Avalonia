@@ -1,0 +1,278 @@
+using Avalonia;
+using Avalonia.Input;
+using Avalonia.Media;
+using StencilPad.Canvases.Common;
+using StencilPad.Canvases.Tools.Common;
+using StencilPad.Common;
+using StencilPad.Models;
+using StencilPad.Models.Resolvers;
+using StencilPad.Rendering;
+using StencilPad.Spatial;
+using StencilPad.Services;
+
+namespace StencilPad.Canvases.Tools.Overlays;
+
+public class LineToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetElement>
+    where TSheetElement : IPolygonSheetElement, new()
+{
+    public override TSheetElement Element => _element;
+    public bool IsCurved { get; set; } = false;
+
+    private readonly ISettings _settings;
+    private readonly IViewport _viewport;
+    private readonly IUnitSnap _unitSnap;
+    private readonly IUnitSnapContext _unitSnapContext;
+    private readonly TSheetElement _element;
+    private readonly Polygon _polygon;
+    private readonly ISheetElementResolver? _resolver;
+    private readonly ModelRenderer _renderer;
+    private readonly LockAxisState _lockAxisState;
+
+    private Unit2D _currentSnappedMousePosition;
+    private double _handleSize;
+    private Brush _moveBrush = null!;
+    private Pen _axisLockPen = null!;
+
+    public LineToolOverlay(ISettings settings,
+                           IViewport viewport,
+                           IUnitSnap unitSnap,
+                           IResourceService resourceService)
+    {
+        _settings = settings;
+        _viewport = viewport;
+        _unitSnap = unitSnap;
+        _unitSnapContext = new DefaultUnitSnapContext(viewport);
+        _element = new();
+
+        _polygon = _element.PolygonSet.First();
+        
+        AddVertexAtMousePosition();
+
+        _resolver = ResolverFactory.Create(_element, _settings, resourceService);
+        _renderer = new ModelRenderer(resourceService);
+
+        _resolver?.Attach(_renderer);
+        _renderer.RendererDirty += InvalidateVisual;
+        
+        _lockAxisState = new();
+        _viewport.ViewportChanged += InvalidateVisual;
+
+        BuildPens();
+        
+        _settings.Changed += SettingsChanged;
+    }
+
+    public override void Dispose()
+    {
+        _settings.Changed -= SettingsChanged;
+        _renderer.RendererDirty -= InvalidateVisual;
+        _renderer.Dispose();
+        _resolver?.Detach();
+
+        _viewport.ViewportChanged -= InvalidateVisual;
+    }
+    
+    private void BuildPens()
+    {
+        var moveHandleColor = _settings.MoveHandleColor;
+        var adjustHandleColor = _settings.AdjustHandleColor;
+        var selectionColor = _settings.SelectionColor;
+        var gridLineColor = _settings.GridLineColor;
+        
+        _moveBrush = new SolidColorBrush(ColorUtil.WithAlpha(moveHandleColor, 128));
+        
+        _axisLockPen = new Pen(new SolidColorBrush(ColorUtil.WithAlpha(gridLineColor, 128)), 2);
+
+        _handleSize = _settings.HandleSizePx;
+    }
+    
+    private void SettingsChanged()
+    {
+        BuildPens();
+        InvalidateVisual();
+    }
+
+    protected override void OnPointerPressed(PointerPressedEventArgs e)
+    {
+        if (e.GetCurrentPoint(this).Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonPressed)
+        {
+            return;
+        }
+
+        if (_polygon.Closed)
+        {
+            return;
+        }
+
+        if (e.ClickCount == 1)
+        {
+            if (!MouseOverExistingVertex())
+            {
+                AddVertexAtMousePosition();
+            }
+        }
+        else if (e.ClickCount == 2 && _polygon.Vertices.Count > 2)
+        {
+            _polygon.DeleteVertex(_polygon.Vertices.Count - 1);
+            
+            if (MouseOverFirstVertex())
+            {
+                _polygon.Close();
+                
+                if (IsCurved)
+                {
+                    var edge = _polygon.Edges[^1];
+                    
+                    _polygon.Edges[^1] = edge with { Type = EdgeType.Bezier };
+                    _polygon.CalculateControlPoints(_polygon.Edges.Count - 1, false);
+                }
+            }
+
+            InvokePolygonCompleted(_polygon);
+            _polygon.Clear();
+            AddVertexAtMousePosition();
+        }
+
+        e.Handled = true;
+    }
+
+    private void AddVertexAtMousePosition()
+    {
+        _polygon.AddVertex(new Vertex { Position = _currentSnappedMousePosition });
+
+        if (IsCurved &&_polygon.Vertices.Count > 1)
+        {
+            var edge = _polygon.Edges[^1];
+            
+            _polygon.Edges[^1] = edge with { Type = EdgeType.Bezier };
+        }
+    }
+
+    protected override void OnPointerMoved(PointerEventArgs e)
+    {
+        _currentSnappedMousePosition = CurrentSnappedMouseOverPosition(e.GetPosition(this));
+        
+        if (_polygon.Vertices.Count == 0)
+        {
+            return;
+        }
+        
+        var vertex = _polygon.Vertices[^1];
+        
+        _polygon.Vertices[^1] = vertex with { Position = _currentSnappedMousePosition };
+
+        if (IsCurved && _polygon.Edges.Count > 0)
+        {
+            _polygon.CalculateControlPoints(_polygon.Edges.Count - 1, false);
+        }
+    }
+
+    public override void Render(DrawingContext dc)
+    {
+        
+        dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, Bounds.Width, Bounds.Height));
+
+        if (_polygon.Vertices.Count == 0)
+        {
+            return;
+        }
+
+        using (dc.PushTransform(_viewport.MillimetersToPixelsTransform.Value))
+        {
+            _renderer.Render(dc);
+        }
+
+        for (int i = 0; i < _polygon.Vertices.Count; ++i)
+        {
+            var point = _viewport.ToPoint(_polygon.Vertices[i].Position);
+
+            dc.DrawRectangle(_moveBrush,
+                             null,
+                             new Rect(point.X - (_handleSize / 2),
+                                      point.Y - (_handleSize / 2),
+                                      _handleSize,
+                                      _handleSize));
+        }
+
+        if (_lockAxisState.LockedAxis is not null && _lockAxisState.LockPosition is not null)
+        {
+            if (_lockAxisState.LockedAxis == UnitAxis.X)
+            {
+                var lockPoint = _viewport.ToPoint(new Unit2D(Unit.Zero, _lockAxisState.LockPosition.Value));
+                
+                dc.DrawLine(_axisLockPen,
+                            new Point(0, lockPoint.Y),
+                            new Point(Bounds.Width, lockPoint.Y));
+            }
+            else
+            {
+                var lockPoint = _viewport.ToPoint(new Unit2D(_lockAxisState.LockPosition.Value, Unit.Zero));
+
+                dc.DrawLine(_axisLockPen,
+                            new Point(lockPoint.X, 0),
+                            new Point(lockPoint.X, Bounds.Height));
+            }
+        }
+    }
+
+    private Unit2D CurrentSnappedMouseOverPosition(Point mousePosition)
+    {
+        var unitPosition = _viewport.FromPoint(mousePosition);
+        var snapPosition = _unitSnap.UnitSnap(unitPosition, _unitSnapContext);
+        
+        if (snapPosition.HasValue)
+        {
+            unitPosition = snapPosition.Value;
+        }
+        
+        if (_polygon.Vertices.Count > 1)
+        {
+            unitPosition = _lockAxisState.OnDragMove(ModifierUtil.IsLockToAxis(),
+                                                     _viewport.FromPixels(12),
+                                                     _polygon.Vertices[^2].Position,
+                                                     unitPosition);
+        }
+
+        return unitPosition;
+    }
+
+    private bool MouseOverExistingVertex()
+    {
+        // NOTE: Ignore the last vertex since it's always the one already under
+        // the mouse cursor.
+        for (int i = 0; i < _polygon.Vertices.Count - 1; ++i)
+        {
+            var vertex = _polygon.Vertices[i];
+
+            if (MouseOverVertex(vertex))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    
+    private bool MouseOverFirstVertex()
+    {
+        if (_polygon.Vertices.Count == 0)
+        {
+            return false;
+        }
+
+        return MouseOverVertex(_polygon.Vertices[0]);
+    }
+
+    private bool MouseOverVertex(Vertex vertex)
+    {
+        double hitRadius = _handleSize * 1.25;
+        var hitRadiusSquared = hitRadius * hitRadius;
+        var mousePixelPosition = _viewport.ToPoint(_currentSnappedMousePosition);
+        
+        var vertexScreenPosition = _viewport.ToPoint(vertex.Position);
+        var delta = vertexScreenPosition - mousePixelPosition;
+        var distanceSquared = delta.X * delta.X + delta.Y * delta.Y;
+
+        return (distanceSquared <= hitRadiusSquared);
+    }
+}

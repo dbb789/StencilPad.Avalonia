@@ -1,0 +1,18 @@
+using Avalonia.Media;
+using StencilPad.Spatial;
+
+namespace StencilPad.Services;
+
+public class AppConfig
+{
+    public Color GridLineColor { get; set; } = Color.FromRgb(0, 127, 255);
+    public Color SelectionColor { get; set; } = Color.FromRgb(0, 0, 255);
+    public Color GroupSelectionColor { get; set; } = Color.FromRgb(255, 0, 255);
+    public Color MoveHandleColor { get; set; } = Color.FromRgb(255, 127, 0);
+    public Color AdjustHandleColor { get; set; } = Color.FromRgb(0, 127, 0);
+    
+    public double HandleSizePx { get; set; } = 12.0;
+    public double PointSnapPx { get; set; } = 32.0;
+    public double AngleSnapDegrees { get; set; } = 5.0;
+    public double GridMinSpacingPx { get; } = 5.0;
+}

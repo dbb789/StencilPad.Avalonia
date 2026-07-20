@@ -1,0 +1,24 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="StencilPad.UI.Widgets.CornerSizeField"
+             x:Name="Root">
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="*" />
+      <ColumnDefinition Width="Auto" />
+    </Grid.ColumnDefinitions>
+
+    <TextBox x:Name="ValueField"
+             Grid.Column="0"
+             KeyDown="ValueField_KeyDown"
+             LostFocus="ValueField_LostFocus"
+             VerticalContentAlignment="Center"
+             Padding="4,2" />
+
+    <ComboBox x:Name="SizeModeComboBox"
+              Grid.Column="1"
+              Margin="4,0,0,0"
+              MinWidth="60"
+              SelectionChanged="SizeModeComboBox_SelectionChanged" />
+  </Grid>
+</UserControl>

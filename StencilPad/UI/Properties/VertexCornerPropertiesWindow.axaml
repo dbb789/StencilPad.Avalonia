@@ -1,0 +1,52 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="StencilPad.UI.Properties.VertexCornerPropertiesWindow"
+        xmlns:vm="clr-namespace:StencilPad.ViewModels.Properties"
+        xmlns:widgets="using:StencilPad.UI.Widgets"
+        x:DataType="vm:VertexCornerPropertiesViewModel"
+        Title="{Binding Title}"
+        SizeToContent="WidthAndHeight"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        MinWidth="260">
+    <Grid Margin="12">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="12"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Corner Type:" VerticalAlignment="Center"/>
+        <ComboBox x:Name="CornerTypeComboBox"
+                  Grid.Row="0"
+                  Grid.Column="2"
+                  MinWidth="180"
+                  SelectionChanged="CornerTypeComboBox_SelectionChanged">
+            <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:CornerTypeItem">
+                    <TextBlock Text="{Binding Description}"/>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="Corner Radius:" VerticalAlignment="Center"/>
+        <widgets:CornerSizeField Grid.Row="2"
+                                 Grid.Column="2"
+                                 MinWidth="180"
+                                 Value="{Binding CornerSize}"/>
+
+        <Button Grid.Row="4"
+                Grid.Column="2"
+                Content="Close"
+                MinWidth="75"
+                HorizontalAlignment="Right"
+                Click="Close_Click"/>
+    </Grid>
+</Window>

@@ -1,0 +1,64 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="StencilPad.UI.GridButtons"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800"
+             x:Name="Root">
+
+    <UserControl.Styles>
+        <Style Selector="ToggleButton.toolButton">
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Padding" Value="2"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="border"
+                            CornerRadius="2"
+                            Background="#FFFFFF"
+                            BorderThickness="1.5"
+                            BorderBrush="#C0D5EA"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Name="content"
+                                          Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="ToggleButton.toolButton:pointerover /template/ Border#border">
+            <Setter Property="Background" Value="#D0E9FF"/>
+        </Style>
+        <Style Selector="ToggleButton.toolButton:checked /template/ Border#border">
+            <Setter Property="Background" Value="#CCE4F7"/>
+            <Setter Property="BorderBrush" Value="#0078D4"/>
+        </Style>
+        <Style Selector="ToggleButton.toolButton:disabled">
+            <Setter Property="Opacity" Value="0.15"/>
+        </Style>
+    </UserControl.Styles>
+
+    <StackPanel Orientation="Vertical" Background="Transparent">
+        <ToggleButton Classes="toolButton" Margin="2"
+                      IsChecked="{Binding ShowGrid, ElementName=Root}"
+                      ToolTip.Tip="Show Grid (F1)">
+            <Image Source="avares://StencilPad/Resources/Icons/ShowGrid.png"/>
+        </ToggleButton>
+
+        <ToggleButton Classes="toolButton" Margin="2"
+                      IsChecked="{Binding SnapToGrid, ElementName=Root}"
+                      ToolTip.Tip="Lock to Grid (F2)">
+            <Image Source="avares://StencilPad/Resources/Icons/SnapToGrid.png"/>
+        </ToggleButton>
+
+        <ToggleButton Classes="toolButton" Margin="2"
+                      IsChecked="{Binding SnapToPoint, ElementName=Root}"
+                      ToolTip.Tip="Lock to Point (F3)">
+            <Image Source="avares://StencilPad/Resources/Icons/SnapToPoint.png"/>
+        </ToggleButton>
+    </StackPanel>
+</UserControl>

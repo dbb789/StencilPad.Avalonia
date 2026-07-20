@@ -1,0 +1,19 @@
+{
+    "Caps":
+    [
+        { "Id": 1, "Filename": "Arrow0.spad", "Size": ["2", "1.5"] },
+        { "Id": 2, "Filename": "Arrow1.spad", "Size": ["2", "0"] },
+        { "Id": 3, "Filename": "Arrow2.spad" },
+        { "Id": 4, "Filename": "Arrow3.spad" },
+        { "Id": 5, "Filename": "Arrow4.spad" },
+        { "Id": 6, "Filename": "Arrow5.spad" }
+    ],
+    "Markers":
+    [
+        { "Id": 1001, "Filename": "Marker0.spad" },
+        { "Id": 1002, "Filename": "Marker1.spad" },
+        { "Id": 1003, "Filename": "Marker2.spad" },
+        { "Id": 1004, "Filename": "Marker3.spad" },
+        { "Id": 1005, "Filename": "Marker4.spad" }
+    ]
+}

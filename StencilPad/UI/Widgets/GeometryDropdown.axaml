@@ -1,0 +1,22 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="StencilPad.UI.Widgets.GeometryDropdown"
+             x:Name="Root">
+  <ComboBox x:Name="Dropdown"
+            SelectionChanged="Dropdown_SelectionChanged">
+    <ComboBox.ItemTemplate>
+      <DataTemplate>
+        <Viewbox Height="16" StretchDirection="DownOnly" Stretch="Uniform">
+          <Grid Width="80" Height="16">
+            <Path Data="{Binding Geometry}"
+                  Stroke="Black"
+                  StrokeThickness="1"
+                  Fill="Transparent"
+                  StrokeDashArray="{Binding DashStyle.Dashes}"
+                  StrokeDashOffset="{Binding DashStyle.Offset}" />
+          </Grid>
+        </Viewbox>
+      </DataTemplate>
+    </ComboBox.ItemTemplate>
+  </ComboBox>
+</UserControl>

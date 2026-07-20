@@ -1,0 +1,154 @@
+﻿using System.Runtime.CompilerServices;
+using Avalonia;
+
+namespace StencilPad.Spatial;
+
+public readonly record struct Unit2D(Unit X, Unit Y)
+{
+    public static readonly Unit2D Zero = new(Unit.Zero, Unit.Zero);
+
+    public static Unit2D FromMillimeters(double x, double y)
+    {
+        return new(Unit.FromMillimeters(x), Unit.FromMillimeters(y));
+    }
+
+    public static Unit2D FromInches(double x, double y)
+    {
+        return new(Unit.FromInches(x), Unit.FromInches(y));
+    }
+
+    public static Unit2D FromSquare(Unit side)
+    {
+        return new(side, side);
+    }
+
+    public Point Millimeters
+    {
+        get
+        {
+            return new(X.Millimeters, Y.Millimeters);
+        }
+    }
+
+    public Unit Magnitude
+    {
+        get
+        {
+            return Unit.FromMillimeters(Math.Sqrt(SqrMagnitude));
+        }
+    }
+    
+    public double SqrMagnitude
+    {
+        get
+        {
+            return (X.Millimeters * X.Millimeters) + (Y.Millimeters * Y.Millimeters);
+        }
+    }
+
+    public Unit2D NormalizedTo(Unit offset)
+    {
+        var magnitude = Magnitude;
+        
+        if (magnitude == Unit.Zero)
+        {
+            return Zero;
+        }
+        
+        return new Unit2D(offset * (X / magnitude),
+                          offset * (Y / magnitude));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit2D Abs(Unit2D u)
+    {
+        return new(Unit.Abs(u.X), Unit.Abs(u.Y));
+    }
+    
+    public static double Determinant(Unit2D a, Unit2D b)
+    {
+        return (a.X.Millimeters * b.Y.Millimeters) - (a.Y.Millimeters * b.X.Millimeters);
+    }
+    
+    public static double Dot(Unit2D a, Unit2D b)
+    {
+        return (a.X.Millimeters * b.X.Millimeters) + (a.Y.Millimeters * b.Y.Millimeters);
+    }
+
+    // Signed angle between two vectors in radians.
+    public static double SignedAngle(Unit2D a, Unit2D b)
+    {
+        return Math.Atan2(Determinant(a, b), Dot(a, b));
+    }
+
+    // Convenience method to get signed angle between three points in radians.
+    public static double SignedAngle(Unit2D start, Unit2D mid, Unit2D end)
+    {
+        var a = mid - start;
+        var b = end - mid;
+
+        return SignedAngle(a, b);
+    }
+
+    public static Unit2D Snap(Unit2D value, Unit snap)
+    {
+        return new(Unit.Snap(value.X, snap), Unit.Snap(value.Y, snap));
+    }
+
+    public static Unit2D Lerp(Unit2D a, Unit2D b, double t)
+    {
+        return a + ((b - a) * t);
+    }
+    
+    public static Unit2D Slerp(Unit2D a, Unit2D b, double t)
+    {
+        var magnitude = Unit.Lerp(a.Magnitude, b.Magnitude, t);
+        var angle = MathUtil.LerpAngle(Math.Atan2(a.Y.Millimeters, a.X.Millimeters),
+                                       Math.Atan2(b.Y.Millimeters, b.X.Millimeters),
+                                       t);
+        
+        return new(Math.Cos(angle) * magnitude, Math.Sin(angle) * magnitude);
+    }
+
+    public bool ApproximatelyEquals(Unit2D other)
+    {
+        return (this - other).SqrMagnitude <= Unit.SqrEpsilon;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit2D operator +(Unit2D a, Unit2D b) => new(a.X + b.X, a.Y + b.Y);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit2D operator -(Unit2D a, Unit2D b) => new(a.X - b.X, a.Y - b.Y);
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit2D operator -(Unit2D u)  => new(-u.X, -u.Y);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit2D operator *(Unit2D u, decimal scalar) => new(u.X * scalar, u.Y * scalar);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit2D operator *(decimal scalar, Unit2D u) => u * scalar;
+
+    public static Unit2D operator *(Unit2D u, int scalar) => new(u.X * scalar, u.Y * scalar);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit2D operator *(int scalar, Unit2D u) => u * scalar;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit2D operator *(Unit2D u, double scalar) => new(u.X * scalar, u.Y * scalar);
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit2D operator *(double scalar, Unit2D u) => u * scalar;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit2D operator /(Unit2D u, decimal scalar) => new(u.X / scalar, u.Y / scalar);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit2D operator /(Unit2D u, int scalar) => new(u.X / scalar, u.Y / scalar);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit2D operator /(Unit2D u, double scalar) => new(u.X / scalar, u.Y / scalar);
+
+    public override string ToString() => $"[{X}, {Y}]";
+}

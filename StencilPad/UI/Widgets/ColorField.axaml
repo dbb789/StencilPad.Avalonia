@@ -1,0 +1,88 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:widgets="using:StencilPad.UI.Widgets"
+             x:Class="StencilPad.UI.Widgets.ColorField"
+             x:Name="Root"
+             MinWidth="200">
+  <UserControl.Styles>
+    <Style Selector="UserControl:disabled">
+      <Setter Property="Opacity" Value="0.4" />
+    </Style>
+  </UserControl.Styles>
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="160" />
+      <RowDefinition Height="8" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="8" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="6" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="10" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+
+    <widgets:ColorFieldSVPicker Grid.Row="0" x:Name="SvPicker" Width="180" />
+
+    <Grid Grid.Row="2" Margin="4">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="*" />
+      </Grid.ColumnDefinitions>
+      <RadioButton x:Name="HsvRadio" Grid.Column="0" GroupName="ColorMode" Content="HSV" IsChecked="True" IsCheckedChanged="HsvRadio_Checked" />
+      <RadioButton x:Name="RgbRadio" Grid.Column="1" GroupName="ColorMode" Content="RGB" IsCheckedChanged="RgbRadio_Checked" />
+    </Grid>
+
+    <Grid Grid.Row="4">
+      <StackPanel x:Name="HsvPanel">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Left" Text="H" Width="16" VerticalAlignment="Center" />
+          <widgets:ColorFieldHueSlider x:Name="HueSlider" />
+        </DockPanel>
+        <Border Height="6" />
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Left" Text="S" Width="16" VerticalAlignment="Center" />
+          <widgets:ColorFieldSaturationSlider x:Name="SaturationSlider" />
+        </DockPanel>
+        <Border Height="6" />
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Left" Text="V" Width="16" VerticalAlignment="Center" />
+          <widgets:ColorFieldBrightnessSlider x:Name="BrightnessSlider" />
+        </DockPanel>
+      </StackPanel>
+      <StackPanel x:Name="RgbPanel" IsVisible="False">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Left" Text="R" Width="16" VerticalAlignment="Center" />
+          <widgets:ColorFieldRGBSlider x:Name="RedSlider" ChannelColor="Red" />
+        </DockPanel>
+        <Border Height="6" />
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Left" Text="G" Width="16" VerticalAlignment="Center" />
+          <widgets:ColorFieldRGBSlider x:Name="GreenSlider" ChannelColor="Lime" />
+        </DockPanel>
+        <Border Height="6" />
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Left" Text="B" Width="16" VerticalAlignment="Center" />
+          <widgets:ColorFieldRGBSlider x:Name="BlueSlider" ChannelColor="Blue" />
+        </DockPanel>
+      </StackPanel>
+    </Grid>
+
+    <DockPanel Grid.Row="6">
+      <TextBlock DockPanel.Dock="Left" Text="A" Width="16" VerticalAlignment="Center" />
+      <widgets:ColorFieldAlphaSlider x:Name="AlphaSlider" />
+    </DockPanel>
+
+    <Grid Grid.Row="8" Margin="4">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="4" />
+        <ColumnDefinition Width="*" />
+      </Grid.ColumnDefinitions>
+      <Border Grid.Column="0" Width="26" Height="26" BorderThickness="1" BorderBrush="Gray" Background="#FFDADADA">
+        <Rectangle x:Name="PreviewRect" />
+      </Border>
+      <TextBox Grid.Column="2" x:Name="HexTextBox" VerticalContentAlignment="Center" Padding="4,2" TextChanged="HexTextBox_TextChanged" />
+    </Grid>
+  </Grid>
+</UserControl>

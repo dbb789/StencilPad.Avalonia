@@ -1,0 +1,74 @@
+using StencilPad.Spatial;
+using System.ComponentModel;
+
+namespace StencilPad.Models.Resolvers;
+
+public class ImageElementResolver : SheetElementResolver
+{
+    private readonly ImageElement _imageElement;
+
+    private IModelWalker? _walker;
+    private IImageWalker? _imageWalker;
+
+    public ImageElementResolver(ImageElement imageElement)
+        : base(imageElement)
+    {
+        _imageElement = imageElement;
+        _imageElement.GeometryChanged += OnGeometryChanged;
+        _imageElement.TransformChanged += OnTransformChanged;
+        _imageElement.PropertyChanged += OnPropertyChanged;
+    }
+
+    public override void Dispose()
+    {
+        Detach();
+        
+        _imageElement.GeometryChanged -= OnGeometryChanged;
+        _imageElement.TransformChanged -= OnTransformChanged;
+        _imageElement.PropertyChanged -= OnPropertyChanged;
+    }
+
+    public override void Attach(IModelWalker walker)
+    {
+        _walker = walker;
+        _walker.SetTransform(_imageElement.Transform);
+        
+        _imageWalker = walker.CreateImageWalker();
+        _imageWalker.SetBounds(UnitBounds.FromMinMax(_imageElement.Min, _imageElement.Max));
+        _imageWalker.SetImageData(_imageElement.ImageData);
+        _imageWalker.SetOpacity(_imageElement.Opacity);
+    }
+
+    public override void Detach()
+    {
+        _imageWalker = null;
+        _walker = null;
+    }
+    
+    private void OnGeometryChanged(ISheetElement element)
+    {
+        _imageWalker?.SetBounds(UnitBounds.FromMinMax(_imageElement.Min, _imageElement.Max));
+
+        InvokeOutlineChanged();
+    }
+
+    private void OnTransformChanged(ISheetElement element)
+    {
+        _walker?.SetTransform(_imageElement.Transform);
+
+        InvokeOutlineChanged();
+    }
+
+    private void OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ImageElement.ImageData))
+        {
+            _imageWalker?.SetImageData(_imageElement.ImageData);
+            InvokeOutlineChanged();
+        }
+        else if (e.PropertyName == nameof(ImageElement.Opacity))
+        {
+            _imageWalker?.SetOpacity(_imageElement.Opacity);
+        }
+    }
+}

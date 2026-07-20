@@ -1,0 +1,21 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:widgets="using:StencilPad.UI.Widgets"
+             x:Class="StencilPad.UI.Widgets.TextProperties"
+             x:Name="Root">
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="Auto" />
+      <ColumnDefinition Width="8" />
+      <ColumnDefinition Width="*" />
+      <ColumnDefinition Width="8" />
+      <ColumnDefinition Width="60" />
+    </Grid.ColumnDefinitions>
+
+    <TextBlock Grid.Column="0" Text="Font:" VerticalAlignment="Center" />
+    <widgets:FontNameComboBox Grid.Column="2"
+                              Value="{Binding TextFontName, ElementName=Root, Mode=TwoWay}" />
+    <widgets:FontSizeComboBox Grid.Column="4"
+                              Value="{Binding TextFontSize, ElementName=Root, Mode=TwoWay}" />
+  </Grid>
+</UserControl>

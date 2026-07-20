@@ -1,0 +1,102 @@
+using Avalonia;
+using Avalonia.Media;
+using StencilPad.Spatial;
+
+namespace StencilPad.Rendering;
+
+public class StreamGeometryWalker() : IGeometryWalker
+{
+    public StreamGeometryContext Context = null!;
+
+    public Unit2D StartPosition => _startPosition;
+    public Unit2D EndPosition => _endPosition;
+    
+    private bool _closed;
+    private bool _figureStarted;
+    private Unit2D _startPosition;
+    private Unit2D _endPosition;
+    
+    public bool Begin(int segmentCount, bool closed)
+    {
+        _closed = closed;
+        _figureStarted = false;
+
+        return true;
+    }
+
+    public bool Segment(int segmentIndex, PolygonSegment segment)
+    {
+        if (segment.IsLine)
+        {
+            var line = segment.Line;
+
+            EnsureFigure(line.Start, line.End);
+
+            Context.LineTo(line.End.Millimeters,
+                           isStroked: true);
+
+            return true;
+        }
+
+        if (segment.IsArc)
+        {
+            var arc = segment.Arc;
+            var start = arc.Start;
+            var end = arc.End;
+
+            EnsureFigure(start, end);
+
+            var angle = MathUtil.SignedAngleDifference(arc.EndAngle, arc.StartAngle);
+            var radius = arc.Radius.Millimeters;
+            var sweepDirection = angle < 0 ? SweepDirection.Clockwise : SweepDirection.CounterClockwise;
+
+            Context.ArcTo(point: end.Millimeters,
+                          size: new Size(radius, radius),
+                          rotationAngle: 0,
+                          isLargeArc: false,
+                          sweepDirection: sweepDirection,
+                          isStroked: true);
+
+            return true;
+        }
+
+        if (segment.IsBezier)
+        {
+            var bezier = segment.Bezier;
+
+            EnsureFigure(bezier.P0, bezier.P3);
+
+            Context.CubicBezierTo(bezier.P1.Millimeters,
+                                  bezier.P2.Millimeters,
+                                  bezier.P3.Millimeters,
+                                  isStroked: true);
+
+            return true;
+        }
+
+        throw new InvalidOperationException("Unknown polygon segment type.");
+    }
+
+    private void EnsureFigure(Unit2D from, Unit2D to)
+    {
+        _endPosition = to;
+        
+        if (_figureStarted)
+        {
+            return;
+        }
+
+        _startPosition = from;
+        Context.BeginFigure(from.Millimeters, isFilled: _closed);
+        _figureStarted = true;
+    }
+
+    public void End()
+    {
+        if (_figureStarted)
+        {
+            Context.EndFigure(isClosed: _closed);
+            _figureStarted = false;
+        }
+    }
+}

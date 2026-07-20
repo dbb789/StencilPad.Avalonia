@@ -1,0 +1,29 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="StencilPad.UI.Dialogs.UnitScaleDialog"
+        Title="Unit Scale" SizeToContent="WidthAndHeight"
+        CanResize="False" WindowStartupLocation="CenterOwner"
+        MinWidth="300">
+    <Grid Margin="12"
+          RowDefinitions="Auto,12,Auto"
+          ColumnDefinitions="Auto,12,*,12,Auto,12,*">
+
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Scale:"
+                   VerticalAlignment="Center"/>
+        <TextBox x:Name="NumeratorField"
+                 Grid.Row="0" Grid.Column="2"
+                 MinHeight="20" MinWidth="60"
+                 Text="{Binding Numerator}"/>
+        <TextBlock Grid.Row="0" Grid.Column="4" Text=":"
+                   VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        <TextBox Grid.Row="0" Grid.Column="6"
+                 MinHeight="20" MinWidth="60"
+                 Text="{Binding Denominator}"/>
+
+        <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="7" Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <Button Content="OK"     IsDefault="True" MinWidth="75" Margin="0,0,8,0" Click="OK_Click"/>
+            <Button Content="Cancel" IsCancel="True"  MinWidth="75" Click="Cancel_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

@@ -1,0 +1,88 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="StencilPad.UI.Properties.MarkerPathPropertiesWindow"
+        xmlns:vm="clr-namespace:StencilPad.ViewModels.Properties"
+        xmlns:widgets="using:StencilPad.UI.Widgets"
+        x:DataType="vm:MarkerPathPropertiesViewModel"
+        Title="{Binding Title}"
+        SizeToContent="WidthAndHeight"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        MinWidth="300">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TabControl Grid.Row="0" Height="400">
+            <TabItem Header="Marker Settings">
+                <Grid Margin="8" MinWidth="200" MinHeight="200">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="8"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="8"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="8"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="8"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Spacing:" VerticalAlignment="Center"/>
+                    <widgets:UnitField Grid.Row="0"
+                                       Grid.Column="2"
+                                       MinWidth="180"
+                                       Value="{Binding Spacing}"
+                                       UnitSettings="{Binding UnitSettings}"/>
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Offset:" VerticalAlignment="Center"/>
+                    <widgets:UnitField Grid.Row="2"
+                                       Grid.Column="2"
+                                       MinWidth="180"
+                                       Value="{Binding Offset}"
+                                       UnitSettings="{Binding UnitSettings}"/>
+
+                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Line Width:" VerticalAlignment="Center" Margin="2"/>
+                    <widgets:UnitField Grid.Row="4"
+                                       Grid.Column="2"
+                                       MinWidth="160"
+                                       UnitSettings="{Binding UnitSettings}"
+                                       Value="{Binding LineWidth}"/>
+
+                    <TextBlock Grid.Row="6" Grid.Column="0" Text="Marker Type:" VerticalAlignment="Center"/>
+                    <widgets:GeometryDropdown x:Name="MarkerTypeDropdown"
+                                              Grid.Row="6"
+                                              Grid.Column="2"
+                                              SelectedIndex="{Binding MarkerTypeIndex}"/>
+
+                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Balance Markers:" VerticalAlignment="Center"/>
+                    <CheckBox Grid.Row="8" Grid.Column="2" IsChecked="{Binding Balanced}"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Marker Colour">
+                <widgets:ColorField x:Name="MarkerColorField"
+                                    Margin="8"
+                                    Value="{Binding MarkerColor}"/>
+            </TabItem>
+            <TabItem Header="Line Colour">
+                <widgets:ColorField x:Name="LineColorField"
+                                    Margin="8"
+                                    Value="{Binding LineColor}"/>
+            </TabItem>
+        </TabControl>
+
+        <Button Grid.Row="2"
+                Content="Close"
+                MinWidth="75"
+                HorizontalAlignment="Right"
+                Click="Close_Click"/>
+    </Grid>
+</Window>

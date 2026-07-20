@@ -1,0 +1,18 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="StencilPad.UI.Dialogs.SheetRenameDialog"
+        Title="Rename Sheet" SizeToContent="WidthAndHeight"
+        CanResize="False" WindowStartupLocation="CenterOwner"
+        MinWidth="280">
+    <Grid Margin="12" RowDefinitions="Auto,8,Auto">
+
+        <TextBox x:Name="NameBox" Grid.Row="0" MinWidth="220"
+                 Text="{Binding Name}"/>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <Button Content="OK"     IsDefault="True" MinWidth="75" Margin="0,0,8,0" Click="OK_Click"/>
+            <Button Content="Cancel" IsCancel="True"  MinWidth="75" Click="Cancel_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

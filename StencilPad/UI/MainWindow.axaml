@@ -1,0 +1,158 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="StencilPad.UI.MainWindow"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:StencilPad.UI"
+        xmlns:models="clr-namespace:StencilPad.Models"
+        xmlns:spatial="clr-namespace:StencilPad.Spatial"
+        xmlns:vm="clr-namespace:StencilPad.ViewModels"
+        mc:Ignorable="d"
+        x:DataType="vm:MainWindowViewModel"
+        Title="{Binding Title}" Height="700" Width="1200"
+        WindowStartupLocation="CenterScreen">
+
+    <Window.KeyBindings>
+        <KeyBinding Command="{Binding DeleteCommand}" Gesture="Delete"/>
+        <KeyBinding Command="{Binding CutCommand}"    Gesture="Ctrl+X"/>
+        <KeyBinding Command="{Binding CopyCommand}"  Gesture="Ctrl+C"/>
+        <KeyBinding Command="{Binding PasteCommand}" Gesture="Ctrl+V"/>
+        <KeyBinding Command="{Binding AddSheetCommand}" Gesture="Ctrl+T"/>
+        <KeyBinding Command="{Binding NewProjectCommand}" Gesture="Ctrl+N"/>
+        <KeyBinding Command="{Binding OpenProjectCommand}" Gesture="Ctrl+O"/>
+        <KeyBinding Command="{Binding SaveProjectCommand}" Gesture="Ctrl+S"/>
+        <KeyBinding Command="{Binding SaveProjectAsCommand}" Gesture="Ctrl+Shift+S"/>
+        <KeyBinding Command="{Binding PrintCommand}" Gesture="Ctrl+P"/>
+        <KeyBinding Command="{Binding UndoCommand}" Gesture="Ctrl+Z"/>
+        <KeyBinding Command="{Binding RedoCommand}" Gesture="Ctrl+Y"/>
+    </Window.KeyBindings>
+
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_New Project (Ctrl+N)" Command="{Binding NewProjectCommand}"/>
+                <MenuItem Header="_Open Project… (Ctrl+O)" Command="{Binding OpenProjectCommand}"/>
+                <Separator/>
+                <MenuItem Header="_Save (Ctrl+S)" Command="{Binding SaveProjectCommand}"/>
+                <MenuItem Header="Save _As… (Ctrl+Shift+S)" Command="{Binding SaveProjectAsCommand}"/>
+                <Separator/>
+                <MenuItem Header="_Import Image…" Command="{Binding ImportImageCommand}"/>
+                <MenuItem Header="Export">
+                    <MenuItem Header="Export _SVG…" Command="{Binding ExportSvgCommand}"/>
+                    <MenuItem Header="Export _PNG…" Command="{Binding ExportPngCommand}"/>
+                </MenuItem>
+                <MenuItem Header="_Print… (Ctrl+P)" Command="{Binding PrintCommand}"/>
+                <Separator/>
+                <MenuItem Header="E_xit" Command="{Binding ExitCommand}"/>
+            </MenuItem>
+
+            <MenuItem Header="_Edit">
+                <MenuItem Header="_Undo (Ctrl+Z)" Command="{Binding UndoCommand}"/>
+                <MenuItem Header="_Redo (Ctrl+Y)" Command="{Binding RedoCommand}"/>
+                <Separator/>
+                <MenuItem Header="Cu_t (Ctrl+X)" Command="{Binding CutCommand}"/>
+                <MenuItem Header="_Copy (Ctrl+C)" Command="{Binding CopyCommand}"/>
+                <MenuItem Header="_Paste (Ctrl+V)" Command="{Binding PasteCommand}"/>
+                <MenuItem Header="_Delete (Del)" Command="{Binding DeleteCommand}"/>
+                <!-- NOTE: Select All / Clear Selection relied on WPF's
+                     RoutedUICommand-based GlobalCommands infrastructure, which
+                     has no Avalonia equivalent (no CommandBindings concept) and
+                     was already removed as non-mechanical earlier in this port.
+                     Omitted here pending a real command-routing replacement. -->
+            </MenuItem>
+            
+            <MenuItem Header="_Settings">
+                <MenuItem Header="Unit System">
+                    <MenuItem Header="Metric" ToggleType="CheckBox"
+                              IsChecked="{local:EnumBinding Project.UnitSystem,
+                                         TargetValue={x:Static spatial:UnitSystem.Metric}}"/>
+                    <MenuItem Header="Imperial" ToggleType="CheckBox"
+                              IsChecked="{local:EnumBinding Project.UnitSystem,
+                                         TargetValue={x:Static spatial:UnitSystem.Imperial}}"/>
+                </MenuItem>
+                <MenuItem Header="_Grid…" Command="{Binding GridSettingsCommand}"/>
+                <MenuItem Header="_Unit Scale…" Command="{Binding UnitScaleCommand}"/>
+            </MenuItem>
+
+            <MenuItem Header="_Sheet">
+                <MenuItem Header="_Add Sheet (Ctrl+T)" Command="{Binding AddSheetCommand}"/>
+                <MenuItem Header="_Rename Sheet…" Command="{Binding RenameSheetCommand}"/>
+                <MenuItem Header="_Delete Sheet" Command="{Binding DeleteSheetCommand}"/>
+            </MenuItem>
+            
+            <MenuItem Header="_Layout">
+                <MenuItem Header="Page Size">
+                    <MenuItem Header="A5" ToggleType="CheckBox"
+                              IsChecked="{local:EnumBinding SelectedTab.SizeType,
+                                         TargetValue={x:Static models:SheetSizeType.A5}}"/>
+                    <MenuItem Header="A4" ToggleType="CheckBox"
+                              IsChecked="{local:EnumBinding SelectedTab.SizeType,
+                                         TargetValue={x:Static models:SheetSizeType.A4}}"/>
+                    <MenuItem Header="A3" ToggleType="CheckBox"
+                              IsChecked="{local:EnumBinding SelectedTab.SizeType,
+                                         TargetValue={x:Static models:SheetSizeType.A3}}"/>
+                    <MenuItem Header="A2" ToggleType="CheckBox"
+                              IsChecked="{local:EnumBinding SelectedTab.SizeType,
+                                         TargetValue={x:Static models:SheetSizeType.A2}}"/>
+                    <MenuItem Header="A1" ToggleType="CheckBox"
+                              IsChecked="{local:EnumBinding SelectedTab.SizeType,
+                                         TargetValue={x:Static models:SheetSizeType.A1}}"/>
+                    <MenuItem Header="A0" ToggleType="CheckBox"
+                              IsChecked="{local:EnumBinding SelectedTab.SizeType,
+                                         TargetValue={x:Static models:SheetSizeType.A0}}"/>
+                    <MenuItem Header="Legal" ToggleType="CheckBox"
+                              IsChecked="{local:EnumBinding SelectedTab.SizeType,
+                                         TargetValue={x:Static models:SheetSizeType.Legal}}"/>
+                    <MenuItem Header="Letter" ToggleType="CheckBox"
+                              IsChecked="{local:EnumBinding SelectedTab.SizeType,
+                                         TargetValue={x:Static models:SheetSizeType.Letter}}"/>
+                </MenuItem>
+                <MenuItem Header="Orientation">
+                    <MenuItem Header="Portrait" ToggleType="CheckBox"
+                              IsChecked="{local:EnumBinding SelectedTab.Orientation,
+                                         TargetValue={x:Static models:SheetOrientation.Portrait}}"/>
+                    <MenuItem Header="Landscape" ToggleType="CheckBox"
+                              IsChecked="{local:EnumBinding SelectedTab.Orientation,
+                                         TargetValue={x:Static models:SheetOrientation.Landscape}}"/>
+                </MenuItem>
+            </MenuItem>
+
+        </Menu>
+
+        <!-- NOTE: Avalonia has no StatusBar/StatusBarItem controls; replaced
+             with a plain DockPanel row of TextBlock/Slider, styled minimally. -->
+        <DockPanel DockPanel.Dock="Bottom" Margin="4" LastChildFill="False">
+            <TextBlock DockPanel.Dock="Left" Text="{Binding SelectedTab.HintText}"/>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Slider Name="RectangleHeight"
+                        Width="160" Orientation="Horizontal" HorizontalAlignment="Left"
+                        Value="{Binding SelectedTab.Zoom}" Minimum="0.1" Maximum="5"
+                        SmallChange="0.1" LargeChange="1"
+                        IsSnapToTickEnabled="True"
+                        TickPlacement="BottomRight"
+                        TickFrequency="0.1"/>
+                <Separator Margin="5,0"/>
+                <TextBlock Text="{Binding SelectedTab.Zoom, StringFormat={}{0:P0}}"/>
+            </StackPanel>
+        </DockPanel>
+
+        <!-- NOTE: WPF's drag-to-reorder tab gesture (TabItemDrag/TabItemDrop
+             EventSetters, and the DataTrigger hiding the tab strip when only
+             one sheet exists) is not ported - see MainWindow.axaml.cs. -->
+        <TabControl x:Name="SheetTabs"
+                    ItemsSource="{Binding Tabs}"
+                    SelectedItem="{Binding SelectedTab}"
+                    TabStripPlacement="Bottom">
+            <TabControl.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Header}"/>
+                </DataTemplate>
+            </TabControl.ItemTemplate>
+            <TabControl.ContentTemplate>
+                <DataTemplate DataType="vm:SheetTabViewModel">
+                    <local:SheetTab/>
+                </DataTemplate>
+            </TabControl.ContentTemplate>
+        </TabControl>
+    </DockPanel>
+</Window>

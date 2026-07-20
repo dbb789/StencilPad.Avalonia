@@ -1,0 +1,229 @@
+﻿using System.Globalization;
+using System.Runtime.CompilerServices;
+
+namespace StencilPad.Spatial;
+
+public readonly record struct Unit
+{
+    private const decimal InchesToMillimeters = 25.4m;
+    
+    public static readonly Unit Zero = new(0);
+    public static readonly Unit Epsilon = new(0.0000001m);
+    public static readonly double SqrEpsilon = Epsilon.Millimeters * Epsilon.Millimeters;
+
+    // 1000 kilometers - notably different to regular MaxValue in that we can
+    // still work with it without getting overflow issues, but at the same time
+    // we can safely consider anything above this value to be insane.
+    public static readonly Unit MaxValue = new(1e9m);
+
+    public static Unit FromMillimeters(double millimeters)
+    {
+        return new Unit((decimal)millimeters);
+    }
+    
+    public static Unit FromMillimeters(int millimeters)
+    {
+        return new Unit((decimal)millimeters);
+    }
+
+    public static Unit FromMillimeters(decimal millimeters)
+    {
+        return new Unit(millimeters);
+    }
+    
+    public static Unit FromInches(double inches)
+    {
+        return new Unit((decimal)inches * InchesToMillimeters);
+    }
+    
+    public static Unit FromInches(int inches)
+    {
+        return new Unit((decimal)inches * InchesToMillimeters);
+    }
+
+    public static Unit FromInches(decimal inches)
+    {
+        return new Unit(inches * InchesToMillimeters);
+    }
+    
+    public static Unit FromFontSizePoints(double points)
+    {
+        return new Unit((decimal)points * (InchesToMillimeters / 72m));
+    }
+
+    public static Unit FromType(decimal value, UnitType type)
+    {
+        return type switch
+        {
+            UnitType.Millimeters => FromMillimeters(value),
+            UnitType.Inches => FromInches(value),
+            _ => throw new ArgumentOutOfRangeException(nameof(type), $"Unsupported unit type: {type}")
+        };
+    }
+    
+    public static bool TryParse(string s, out Unit result)
+    {
+        return TryParse(s, UnitType.Millimeters, out result);
+    }
+
+    public static bool TryParse(string s, Fraction scale, out Unit result)
+    {
+        return TryParse(s, UnitType.Millimeters, scale, out result);
+    }
+    
+    public static bool TryParse(string s, UnitType type, out Unit result)
+    {
+        return TryParse(s, type, Fraction.One, out result);
+    }
+
+    public static bool TryParse(string s, UnitType type, Fraction scale, out Unit result)
+    {
+        if (decimal.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsedValue))
+        {
+            result = FromType(parsedValue, type) * scale;
+            return true;
+        }
+
+        result = Zero;
+        return false;
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private Unit(decimal value)
+    {
+        _value = value;
+    }
+
+    private readonly decimal _value;
+    
+    public double Millimeters => (double)_value;
+    public double Inches => (double)(_value / InchesToMillimeters);
+
+    public double ToType(UnitType type)
+    {
+        return type switch
+        {
+            UnitType.Millimeters => Millimeters,
+            UnitType.Inches => Inches,
+            _ => throw new ArgumentOutOfRangeException(nameof(type), $"Unsupported unit type: {type}")
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit Abs(Unit u) => new(Math.Abs(u._value));
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit Max(Unit a, Unit b) => new(Math.Max(a._value, b._value));
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit Min(Unit a, Unit b) => new(Math.Min(a._value, b._value));
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit Clamp(Unit value, Unit min, Unit max)
+        => new(Math.Clamp(value._value, min._value, max._value));
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit Snap(Unit value, Unit snap)
+        => new(Math.Round(value._value / snap._value) * snap._value);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit Lerp(Unit a, Unit b, double t)
+    {
+        return a + ((b - a) * t);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static double InverseLerp(Unit a, Unit b, Unit value)
+    {
+        if (a._value == b._value)
+        {
+             // Avoid division by zero.
+            return 0.0;
+        }
+        
+        return (double)((value._value - a._value) / (b._value - a._value));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool ApproximatelyEquals(Unit other)
+    {
+        return Abs(this - other) <= Unit.Epsilon;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool operator <(Unit a, Unit b) => a._value < b._value;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool operator >(Unit a, Unit b) => a._value > b._value;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool operator <=(Unit a, Unit b) => a._value <= b._value;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool operator >=(Unit a, Unit b) => a._value >= b._value;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit operator +(Unit a, Unit b) => new(a._value + b._value);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit operator -(Unit a, Unit b) => new(a._value - b._value);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit operator -(Unit u) => new(-u._value);
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit operator *(Unit u, decimal scalar) => new(u._value * scalar);
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit operator *(decimal scalar, Unit u) => u * scalar;
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit operator *(Unit u, int scalar) => u * (decimal)scalar;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit operator *(int scalar, Unit u) => u * scalar;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit operator *(Unit u, double scalar) => u * (decimal)scalar;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit operator *(double scalar, Unit u) => u * scalar;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit operator *(Unit u, Fraction scalar) => new((u._value * scalar.Numerator) / scalar.Denominator);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit operator *(Fraction scalar, Unit u) => u * scalar;
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit operator /(Unit u, Fraction scalar) => new((u._value * scalar.Denominator) / scalar.Numerator);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit operator /(Fraction scalar, Unit u) => u / scalar;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit operator /(Unit u, decimal scalar) => new(u._value / scalar);
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit operator /(Unit u, int scalar) => u / (decimal)scalar;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Unit operator /(Unit u, double scalar) => u / (decimal)scalar;
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static double operator /(Unit a, Unit b) => (double)(a._value / b._value);
+
+    private const string StrFormat = "0.############################";
+
+    public override string ToString()
+    {
+        return ToString(6);
+    }
+
+    public string ToString(int maxDp)
+    {
+        var rounded = Math.Round(_value, maxDp, MidpointRounding.AwayFromZero);
+        
+        return rounded.ToString(StrFormat, CultureInfo.InvariantCulture);
+    }
+}

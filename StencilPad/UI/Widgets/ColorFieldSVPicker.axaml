@@ -1,0 +1,13 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="StencilPad.UI.Widgets.ColorFieldSVPicker"
+             Height="160">
+  <Grid ClipToBounds="True">
+    <Rectangle x:Name="SaturationRect" />
+    <Rectangle x:Name="BrightnessRect" />
+    <Canvas x:Name="DragCanvas" Background="Transparent">
+      <Ellipse x:Name="MarkerOuter" Width="12" Height="12" Stroke="Black" StrokeThickness="2" Fill="Transparent" Opacity="0.5" IsHitTestVisible="False" />
+      <Ellipse x:Name="Marker" Width="10" Height="10" Stroke="White" StrokeThickness="2" Fill="Transparent" IsHitTestVisible="False" />
+    </Canvas>
+  </Grid>
+</UserControl>

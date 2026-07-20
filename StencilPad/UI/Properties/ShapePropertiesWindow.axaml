@@ -1,0 +1,69 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="StencilPad.UI.Properties.ShapePropertiesWindow"
+        xmlns:vm="clr-namespace:StencilPad.ViewModels.Properties"
+        xmlns:widgets="using:StencilPad.UI.Widgets"
+        x:DataType="vm:ShapePropertiesViewModel"
+        Title="{Binding Title}"
+        SizeToContent="WidthAndHeight"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        MinWidth="300">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TabControl Grid.Row="0" Height="400" IsEnabled="{Binding HasElements}">
+            <TabItem Header="Fill Colour">
+                <widgets:ColorField x:Name="FillColorField"
+                                    Margin="8"
+                                    Value="{Binding FillColor}"/>
+            </TabItem>
+            <TabItem Header="Line Colour">
+                <widgets:ColorField x:Name="LineColorField"
+                                    Margin="8"
+                                    Value="{Binding LineColor}"/>
+            </TabItem>
+            <TabItem Header="Line Style">
+                <StackPanel Margin="8">
+                    <TextBlock Text="Line Width:" VerticalAlignment="Center" Margin="2"/>
+                    <widgets:UnitField MinWidth="160"
+                                       UnitSettings="{Binding UnitSettings}"
+                                       Value="{Binding LineWidth}"/>
+                    <Separator/>
+                    <TextBlock Text="Line Style:" Margin="2"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="4"/>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="4"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <widgets:GeometryDropdown x:Name="StartCapDropdown"
+                                                  Grid.Column="0"
+                                                  SelectedIndex="{Binding StartCapIndex}"/>
+
+                        <widgets:GeometryDropdown x:Name="LineStyleDropdown"
+                                                  Grid.Column="2"
+                                                  SelectedIndex="{Binding LineStyleIndex}"/>
+
+                        <widgets:GeometryDropdown x:Name="EndCapDropdown"
+                                                  Grid.Column="4"
+                                                  SelectedIndex="{Binding EndCapIndex}"/>
+                    </Grid>
+                </StackPanel>
+            </TabItem>
+        </TabControl>
+
+        <Button Grid.Row="2"
+                Content="Close"
+                MinWidth="75"
+                HorizontalAlignment="Right"
+                Click="Close_Click"/>
+    </Grid>
+</Window>

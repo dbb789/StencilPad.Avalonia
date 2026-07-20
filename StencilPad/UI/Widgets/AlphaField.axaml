@@ -1,0 +1,17 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:widgets="using:StencilPad.UI.Widgets"
+             x:Class="StencilPad.UI.Widgets.AlphaField"
+             x:Name="Root"
+             MinWidth="200">
+  <UserControl.Styles>
+    <Style Selector="UserControl:disabled">
+      <Setter Property="Opacity" Value="0.4" />
+    </Style>
+  </UserControl.Styles>
+  <Grid>
+    <widgets:ColorFieldAlphaSlider x:Name="AlphaSlider"
+                                   Value="{Binding Value, ElementName=Root, Mode=TwoWay}"
+                                   BaseColor="White" />
+  </Grid>
+</UserControl>
