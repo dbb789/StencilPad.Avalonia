@@ -63,7 +63,7 @@ public class ClipboardService : IClipboardService
     {
         var elements = await UnpackFromClipboard();
 
-        if (!elements.Any())
+        if (elements is null || !elements.Any())
         {
             return;
         }
