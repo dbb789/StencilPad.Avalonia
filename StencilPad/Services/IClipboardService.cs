@@ -4,7 +4,7 @@ namespace StencilPad.Services;
 
 public interface IClipboardService
 {
-    void Copy(Sheet sheet);
-    void Cut(Sheet sheet);
-    void Paste(Sheet sheet);
+    Task Copy(Sheet sheet);
+    Task Cut(Sheet sheet);
+    Task Paste(Sheet sheet);
 }

@@ -58,7 +58,7 @@ namespace StencilPad
             services.AddSingleton<IDialogService, AvaloniaDialogService>();
             services.AddSingleton<IModelPropertiesService, AvaloniaModelPropertiesService>();
             services.AddSingleton<IAppConfigService, AppConfigService>();
-            services.AddSingleton<IClipboardService, NullClipboardService>();
+            services.AddSingleton<IClipboardService, ClipboardService>();
             services.AddSingleton<IFileService, FileService>();
             services.AddSingleton<PngExporter>();
             services.AddSingleton<SvgExporter>();

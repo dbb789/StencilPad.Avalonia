@@ -10,6 +10,8 @@
     <AssemblyTitle>StencilPad</AssemblyTitle>
     <ImplicitUsings>enable</ImplicitUsings>
     <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+    <ApplicationIcon>Resources\StencilPad.ico</ApplicationIcon>
+    <PackageIcon>StencilPad.png</PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +19,7 @@
     <Content Include="Resources\Geometry\Index.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Resources\StencilPad.ico" />
     <Content Include="Resources\Geometry\*.spad">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -36,5 +39,12 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.9" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Resources\StencilPad.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 </Project>
