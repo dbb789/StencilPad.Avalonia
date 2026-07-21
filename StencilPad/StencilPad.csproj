@@ -9,6 +9,7 @@
     <AssemblyName>StencilPad</AssemblyName>
     <AssemblyTitle>StencilPad</AssemblyTitle>
     <ImplicitUsings>enable</ImplicitUsings>
+    <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
   </PropertyGroup>
 
   <ItemGroup>

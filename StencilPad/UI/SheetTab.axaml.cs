@@ -2,6 +2,7 @@ using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Threading;
 using StencilPad.Canvases.UI;
 using StencilPad.ViewModels;
@@ -48,7 +49,7 @@ public partial class SheetTab : UserControl
 
         SheetCanvas.CanvasReady += SheetCanvasReady;
         
-        Scroll.PointerWheelChanged += OnPointerWheelChanged;
+        Scroll.AddHandler(PointerWheelChangedEvent, OnPointerWheelChanged, RoutingStrategies.Tunnel);
         Scroll.PointerPressed += OnPointerPressed;
         Scroll.PointerMoved += OnPointerMoved;
         Scroll.PointerReleased += OnPointerReleased;

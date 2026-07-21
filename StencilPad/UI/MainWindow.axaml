@@ -121,18 +121,17 @@
 
         <!-- NOTE: Avalonia has no StatusBar/StatusBarItem controls; replaced
              with a plain DockPanel row of TextBlock/Slider, styled minimally. -->
-        <DockPanel DockPanel.Dock="Bottom" Margin="4" LastChildFill="False">
+        <DockPanel DockPanel.Dock="Bottom" LastChildFill="False">
             <TextBlock DockPanel.Dock="Left" Text="{Binding SelectedTab.HintText}"/>
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                 <Slider Name="RectangleHeight"
                         Width="160" Orientation="Horizontal" HorizontalAlignment="Left"
                         Value="{Binding SelectedTab.Zoom}" Minimum="0.1" Maximum="5"
                         SmallChange="0.1" LargeChange="1"
+                        TickPlacement="None"
                         IsSnapToTickEnabled="True"
-                        TickPlacement="BottomRight"
                         TickFrequency="0.1"/>
-                <Separator Margin="5,0"/>
-                <TextBlock Text="{Binding SelectedTab.Zoom, StringFormat={}{0:P0}}"/>
+                <TextBlock Text="{Binding SelectedTab.Zoom, StringFormat={}{0:P0}}" Margin="4"/>
             </StackPanel>
         </DockPanel>
 
