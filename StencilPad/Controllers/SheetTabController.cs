@@ -15,6 +15,7 @@ public class SheetTabController : IDisposable
 {
     public class Factory(ISettings Settings,
                          IResourceService ResourceService,
+                         IClipboardService ClipboardService,
                          IModelPropertiesService ModelPropertiesService,
                          IOperationService OperationService)
     {
@@ -23,6 +24,7 @@ public class SheetTabController : IDisposable
             return new(tabViewModel,
                        Settings,
                        ResourceService,
+                       ClipboardService,
                        OperationService,
                        ModelPropertiesService);
         }
@@ -33,8 +35,9 @@ public class SheetTabController : IDisposable
     private readonly IResourceService _resourceService;
     private readonly IOperationService _operationService;
     private readonly IModelPropertiesService _modelPropertiesService;
+    private readonly IClipboardService _clipboardService;
     private readonly HintService _hintService;
-    
+
     private SheetCanvas? _currentCanvas;
     private ToolController? _toolController;
     private ServiceProvider? _scopedServiceProvider;
@@ -42,6 +45,7 @@ public class SheetTabController : IDisposable
     private SheetTabController(SheetTabViewModel tabViewModel,
                                ISettings settings,
                                IResourceService resourceService,
+                               IClipboardService clipboardService,
                                IOperationService operationService,
                                IModelPropertiesService modelPropertiesService)
     {
@@ -50,12 +54,14 @@ public class SheetTabController : IDisposable
         _resourceService = resourceService;
         _operationService = operationService;
         _modelPropertiesService = modelPropertiesService;
+        _clipboardService = clipboardService;
         _hintService = new HintService();
         
         _hintService.HintChanged += OnHintTextChanged;
         _tabViewModel.CanvasAttached += OnCanvasAttached;
         _tabViewModel.CanvasDetached += OnCanvasDetached;
-        
+
+
         tabViewModel.CancelCommand = new RelayCommand(() =>
         {
             _toolController?.CancelCurrent();
@@ -116,6 +122,7 @@ public class SheetTabController : IDisposable
     {
         if (_currentCanvas != sheetCanvas)
         {
+            _toolController?.SelectedToolChanged -= OnSelectedToolChanged;
             _toolController?.Dispose();
             _toolController = null;
 
@@ -129,6 +136,7 @@ public class SheetTabController : IDisposable
             
             _toolController = _scopedServiceProvider.GetRequiredService<Factory<ToolController>>()
                 .Create();
+            _toolController.SelectedToolChanged += OnSelectedToolChanged;
         }
 
         _tabViewModel.Viewport = sheetCanvas.Viewport;
@@ -158,6 +166,7 @@ public class SheetTabController : IDisposable
         services.AddSingleton<IOperationService>(_operationService);
         services.AddSingleton<IModelPropertiesService>(_modelPropertiesService);
         services.AddSingleton<IHintService>(_hintService);
+        services.AddSingleton<IClipboardService>(_clipboardService);
 
         services.AddLogging(builder =>
         {
@@ -167,5 +176,17 @@ public class SheetTabController : IDisposable
         FactoryUtil.AddFactory<ToolController>(services);
 
         return services.BuildServiceProvider();
+    }
+
+    private void OnSelectedToolChanged()
+    {
+        var selectedTool = _toolController?.SelectedTool;
+        
+        _tabViewModel.SelectAllCommand.Command = selectedTool?.SelectAllCommand;
+        _tabViewModel.ClearSelectionCommand.Command = selectedTool?.ClearSelectionCommand;
+        _tabViewModel.CutCommand.Command = selectedTool?.CutCommand;
+        _tabViewModel.CopyCommand.Command = selectedTool?.CopyCommand;
+        _tabViewModel.PasteCommand.Command = selectedTool?.PasteCommand;
+        _tabViewModel.DeleteCommand.Command = selectedTool?.DeleteCommand;
     }
 }

@@ -176,6 +176,11 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
     
     private bool BuildContextMenu(SheetElementEditActionSet actionSet)
     {
+        if (ContextMenu is null)
+        {
+            return false;
+        }
+
         if (_handleMap.SelectedHandles.Count == 0)
         {
             return false;

@@ -98,13 +98,6 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
             }
         };
         
-        // NOTE: WPF's CommandBindings/CommandBinding/GlobalCommands (RoutedUICommand)
-        // model has no Avalonia equivalent, and GlobalCommands was already removed
-        // as a flagged non-mechanical item earlier in this port. Global Select
-        // All/Clear Selection keyboard shortcuts are stubbed out (not wired to any
-        // key) until a real command-routing redesign happens; SelectAll()/
-        // ClearSelection() below remain available to call directly.
-
         _sheetResolver.SelectionChanged += OnSelectionChanged;
 
         foreach (var resolver in _sheetResolver.Selection)
@@ -170,6 +163,11 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
 
     private bool BuildContextMenu(SheetElementActionSet actionSet)
     {
+        if (ContextMenu is null)
+        {
+            return false;
+        }
+
         if (_sheet.Selection.Count == 0)
         {
             return false;
@@ -543,28 +541,6 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         resolver.OutlineChanged -= ForceRedraw;
 
         ForceRedraw();
-    }
-
-    public void SelectAll()
-    {
-        // Toggle selection if everything is already selected.
-        if (_sheet.Selection.Count == _sheet.Elements.Count)
-        {
-            _sheet.Selection.Clear();
-            return;
-        }
-        
-        _sheet.Selection.Clear();
-
-        foreach (var element in _sheet.Elements)
-        {
-            _sheet.Selection.Add(element);
-        }
-    }
-
-    public void ClearSelection()
-    {
-        _sheet.Selection.Clear();
     }
 
     public bool CanUnitSnapTo(ISheetElement element)

@@ -7,7 +7,7 @@ using StencilPad.Spatial;
 
 namespace StencilPad.Canvases.Tools.Controllers;
 
-public class TextTool : ITool
+public class TextTool : ToolBase
 {
     public class Factory(Sheet Sheet,
                          OverlayContainer OverlayContainer,
@@ -53,10 +53,7 @@ public class TextTool : ITool
         _overlayFactory = overlayFactory;
     }
 
-    public void Dispose()
-    { }
-
-    public void ToolBegin()
+    public override void ToolBegin()
     {
         _overlay = _overlayFactory.Create();
         _overlayContainer.ActiveOverlay = _overlay;
@@ -66,7 +63,7 @@ public class TextTool : ITool
         _overlay.OnTextUpdated += TextUpdated;
     }
 
-    public void ToolEnd()
+    public override void ToolEnd()
     {
         _overlayContainer.ActiveOverlay = null;
         _unitSnapOverlay.End();

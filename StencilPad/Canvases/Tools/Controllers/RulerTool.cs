@@ -8,7 +8,7 @@ using StencilPad.Spatial;
 
 namespace StencilPad.Canvases.Tools.Controllers;
 
-public class RulerTool : ITool
+public class RulerTool : ToolBase
 {
     public class Factory(Sheet Sheet,
                          OverlayContainer OverlayContainer,
@@ -45,10 +45,7 @@ public class RulerTool : ITool
         _overlayFactory = overlayFactory;
     }
 
-    public void Dispose()
-    { }
-
-    public void ToolBegin()
+    public override void ToolBegin()
     {
         _overlay = _overlayFactory.Create();
         _overlayContainer.ActiveOverlay = _overlay;
@@ -57,7 +54,7 @@ public class RulerTool : ITool
         _overlay.OnRulerPlaced += RulerPlaced;
     }
 
-    public void ToolEnd()
+    public override void ToolEnd()
     {
         _overlayContainer.ActiveOverlay = null;
         _unitSnapOverlay.End();

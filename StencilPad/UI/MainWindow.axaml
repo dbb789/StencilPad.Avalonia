@@ -13,10 +13,12 @@
         WindowStartupLocation="CenterScreen">
 
     <Window.KeyBindings>
-        <KeyBinding Command="{Binding DeleteCommand}" Gesture="Delete"/>
-        <KeyBinding Command="{Binding CutCommand}"    Gesture="Ctrl+X"/>
-        <KeyBinding Command="{Binding CopyCommand}"  Gesture="Ctrl+C"/>
-        <KeyBinding Command="{Binding PasteCommand}" Gesture="Ctrl+V"/>
+        <KeyBinding Command="{Binding SelectedTab.SelectAllCommand}" Gesture="Ctrl+A"/>
+        <KeyBinding Command="{Binding SelectedTab.ClearSelectionCommand}" Gesture="Ctrl+A"/>
+        <KeyBinding Command="{Binding SelectedTab.CutCommand}"    Gesture="Ctrl+X"/>
+        <KeyBinding Command="{Binding SelectedTab.CopyCommand}"  Gesture="Ctrl+C"/>
+        <KeyBinding Command="{Binding SelectedTab.PasteCommand}" Gesture="Ctrl+V"/>
+        <KeyBinding Command="{Binding SelectedTab.DeleteCommand}" Gesture="Delete"/>
         <KeyBinding Command="{Binding AddSheetCommand}" Gesture="Ctrl+T"/>
         <KeyBinding Command="{Binding NewProjectCommand}" Gesture="Ctrl+N"/>
         <KeyBinding Command="{Binding OpenProjectCommand}" Gesture="Ctrl+O"/>
@@ -50,15 +52,13 @@
                 <MenuItem Header="_Undo (Ctrl+Z)" Command="{Binding UndoCommand}"/>
                 <MenuItem Header="_Redo (Ctrl+Y)" Command="{Binding RedoCommand}"/>
                 <Separator/>
-                <MenuItem Header="Cu_t (Ctrl+X)" Command="{Binding CutCommand}"/>
-                <MenuItem Header="_Copy (Ctrl+C)" Command="{Binding CopyCommand}"/>
-                <MenuItem Header="_Paste (Ctrl+V)" Command="{Binding PasteCommand}"/>
-                <MenuItem Header="_Delete (Del)" Command="{Binding DeleteCommand}"/>
-                <!-- NOTE: Select All / Clear Selection relied on WPF's
-                     RoutedUICommand-based GlobalCommands infrastructure, which
-                     has no Avalonia equivalent (no CommandBindings concept) and
-                     was already removed as non-mechanical earlier in this port.
-                     Omitted here pending a real command-routing replacement. -->
+                <MenuItem Header="Cu_t (Ctrl+X)" Command="{Binding SelectedTab.CutCommand}"/>
+                <MenuItem Header="_Copy (Ctrl+C)" Command="{Binding SelectedTab.CopyCommand}"/>
+                <MenuItem Header="_Paste (Ctrl+V)" Command="{Binding SelectedTab.PasteCommand}"/>
+                <MenuItem Header="_Delete (Del)" Command="{Binding SelectedTab.DeleteCommand}"/>
+                <Separator/>
+                <MenuItem Header="Select _All (Ctrl+A)" Command="{Binding SelectedTab.SelectAllCommand}"/>
+                <MenuItem Header="Clear Selection" Command="{Binding SelectedTab.ClearSelectionCommand}"/>
             </MenuItem>
             
             <MenuItem Header="_Settings">

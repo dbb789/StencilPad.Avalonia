@@ -40,10 +40,6 @@ public class MainWindowViewModel : ViewModelBase
     public ICommand OpenProjectCommand { get; set; } = null!;
     public ICommand SaveProjectCommand { get; set; } = null!;
     public ICommand SaveProjectAsCommand { get; set; } = null!;
-    public ICommand CopyCommand { get; set; } = null!;
-    public ICommand CutCommand { get; set; } = null!;
-    public ICommand PasteCommand { get; set; } = null!;
-    public ICommand DeleteCommand { get; set; } = null!;
     public ICommand UndoCommand { get; set; } = null!;
     public ICommand RedoCommand { get; set; } = null!;
     public ICommand ImportImageCommand { get; set; } = null!;

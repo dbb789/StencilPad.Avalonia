@@ -8,7 +8,7 @@ using StencilPad.Spatial;
 
 namespace StencilPad.Canvases.Tools.Controllers;
 
-public class MarkerPathTool : ITool
+public class MarkerPathTool : ToolBase
 {
     public class Factory(Sheet Sheet,
                          OverlayContainer OverlayContainer,
@@ -54,10 +54,7 @@ public class MarkerPathTool : ITool
         _overlayFactory = overlayFactory;
     }
 
-    public void Dispose()
-    { }
-
-    public void ToolBegin()
+    public override void ToolBegin()
     {
         _overlay = _overlayFactory.Create();
         _overlay.Element.LineColor = Color.FromArgb(128, 0, 0, 0);
@@ -69,7 +66,7 @@ public class MarkerPathTool : ITool
         _overlay.OnPolygonCompleted += PolygonCompleted;
     }
 
-    public void ToolEnd()
+    public override void ToolEnd()
     {
         _overlayContainer.ActiveOverlay = null;
         _unitSnapOverlay.End();

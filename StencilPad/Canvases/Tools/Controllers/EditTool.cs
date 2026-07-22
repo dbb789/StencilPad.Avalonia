@@ -10,7 +10,7 @@ using StencilPad.Spatial;
 
 namespace StencilPad.Canvases.Tools.Controllers;
 
-public class EditTool : ITool
+public class EditTool : ToolBase
 {
     public class Factory(Sheet Sheet,
                          IHandleMap HandleMap,
@@ -71,12 +71,14 @@ public class EditTool : ITool
         _sheet.Selection.ListChanged += OnSelectionChanged;
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
         _sheet.Selection.ListChanged -= OnSelectionChanged;
+
+        base.Dispose();
     }
 
-    public void ToolBegin()
+    public override void ToolBegin()
     {
         if (_selection.Count == 0)
         {
@@ -98,7 +100,7 @@ public class EditTool : ITool
         _rubberBand.PointSelected += OnPointSelected;
     }
 
-    public void ToolEnd()
+    public override void ToolEnd()
     {
         _operationService.FlushEditContext();
         

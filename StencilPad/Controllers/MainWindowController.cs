@@ -19,7 +19,6 @@ public class MainWindowController
     private readonly IOperationService _operationService;
     private readonly IDialogService _dialogService;
     private readonly IPrintService _printService;
-    private readonly IClipboardService _clipboardService;
     private readonly IFileService _fileService;
     private readonly IImportExportService _importExportService;
     private readonly MainWindowViewModel _viewModel;
@@ -34,7 +33,6 @@ public class MainWindowController
                                 IOperationService operationService,
                                 IDialogService dialogService,
                                 IPrintService printService,
-                                IClipboardService clipboardService,
                                 IFileService fileService,
                                 IImportExportService importExportService,
                                 SheetTabController.Factory tabControllerFactory)
@@ -45,18 +43,17 @@ public class MainWindowController
         _operationService = operationService;
         _dialogService = dialogService;
         _printService = printService;
-        _clipboardService = clipboardService;
         _fileService = fileService;
         _importExportService = importExportService;
         _tabControllerFactory = tabControllerFactory;
         _undoStack = new();
         
-        _viewModel.NewProjectCommand = new RelayCommand(async () => await NewProject());
-        _viewModel.GridSettingsCommand = new RelayCommand(async () => await GridSettings());
-        _viewModel.UnitScaleCommand = new RelayCommand(async () => await UnitScale());
+        _viewModel.NewProjectCommand = new AsyncRelayCommand(NewProject);
+        _viewModel.GridSettingsCommand = new AsyncRelayCommand(GridSettings);
+        _viewModel.UnitScaleCommand = new AsyncRelayCommand(UnitScale);
         _viewModel.AddSheetCommand = new RelayCommand(AddNewSheet);
-        _viewModel.RenameSheetCommand = new RelayCommand(async () => await RenameActiveSheet());
-        _viewModel.DeleteSheetCommand = new RelayCommand(async () => await DeleteActiveSheet());
+        _viewModel.RenameSheetCommand = new AsyncRelayCommand(RenameActiveSheet);
+        _viewModel.DeleteSheetCommand = new AsyncRelayCommand(DeleteActiveSheet);
         _viewModel.PrintCommand = new RelayCommand(PrintSelectedTabAsync);
         _viewModel.ExitCommand = new RelayCommand(() =>
         {
@@ -67,18 +64,14 @@ public class MainWindowController
             }
         });
         
-        _viewModel.OpenProjectCommand = new RelayCommand(async () => await OpenProject());
-        _viewModel.SaveProjectCommand = new RelayCommand(async () => await SaveProject());
-        _viewModel.SaveProjectAsCommand = new RelayCommand(async () => await SaveProjectAs());
-        _viewModel.CopyCommand = new RelayCommand(CopyToClipboard);
-        _viewModel.CutCommand = new RelayCommand(CutToClipboard);
-        _viewModel.PasteCommand = new RelayCommand(PasteFromClipboard);
-        _viewModel.DeleteCommand = new RelayCommand(DeleteSelection);
+        _viewModel.OpenProjectCommand = new AsyncRelayCommand(OpenProject);
+        _viewModel.SaveProjectCommand = new AsyncRelayCommand(SaveProject);
+        _viewModel.SaveProjectAsCommand = new AsyncRelayCommand(SaveProjectAs);
         _viewModel.UndoCommand = new RelayCommand(Undo);
         _viewModel.RedoCommand = new RelayCommand(Redo);
         _viewModel.ImportImageCommand = new RelayCommand(ImportImageAsync);
-        _viewModel.ExportSvgCommand = new RelayCommand(async () => await ExportSvg());
-        _viewModel.ExportPngCommand = new RelayCommand(async () => await ExportPng());
+        _viewModel.ExportSvgCommand = new AsyncRelayCommand(ExportSvg);
+        _viewModel.ExportPngCommand = new AsyncRelayCommand(ExportPng);
         _viewModel.SheetTabReordered = ReorderSheet;
         
         _undoStack.SaveStateChanged += UpdateTitle;
@@ -419,57 +412,6 @@ public class MainWindowController
         {
             _viewModel.SelectedTab = tab.ViewModel;
         }
-    }
-    
-    private void DeleteSelection()
-    {
-        var sheet = SelectedSheet();
-
-        if (sheet is null || sheet.Selection.Count == 0)
-        {
-            return;
-        }
-
-        var operations = sheet.Selection
-            .Select(e => new RemoveSheetElementOperation(sheet, e));
-
-        _operationService.Push(new BulkCommandOperation(operations));
-    }
-
-    private void CopyToClipboard()
-    {
-        var sheet = SelectedSheet();
-
-        if (sheet is null)
-        {
-            return;
-        }
-
-        _clipboardService.Copy(sheet);
-    }
-
-    private void CutToClipboard()
-    {
-        var sheet = SelectedSheet();
-
-        if (sheet is null)
-        {
-            return;
-        }
-
-        _clipboardService.Cut(sheet);
-    }
-
-    private void PasteFromClipboard()
-    {
-        var sheet = SelectedSheet();
-
-        if (sheet is null)
-        {
-            return;
-        }
-
-        _clipboardService.Paste(sheet);
     }
     
     private async void ImportImageAsync()

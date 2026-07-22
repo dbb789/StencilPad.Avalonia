@@ -1,5 +1,5 @@
 using System.ComponentModel;
-using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
 using StencilPad.Canvases.UI;
 using StencilPad.Models;
 using StencilPad.Spatial;
@@ -73,11 +73,18 @@ public class SheetTabViewModel : ViewModelBase, IDisposable
         }
     }
 
-    public ICommand CancelCommand { get; set; } = null!;
-    public ICommand ToggleSelectCommand { get; set; } = null!;
-    public ICommand ToggleGridCommand { get; set; } = null!;
-    public ICommand ToggleGridLockCommand { get; set; } = null!;
-    public ICommand TogglePointLockCommand { get; set; } = null!;
+    public BoundRelayCommand SelectAllCommand { get; } = new();
+    public BoundRelayCommand ClearSelectionCommand { get; } = new();
+    public BoundRelayCommand CopyCommand { get; } = new();
+    public BoundRelayCommand CutCommand { get; } = new();
+    public BoundRelayCommand PasteCommand { get; } = new();
+    public BoundRelayCommand DeleteCommand { get; } = new();
+
+    public IRelayCommand CancelCommand { get; set; } = null!;
+    public IRelayCommand ToggleSelectCommand { get; set; } = null!;
+    public IRelayCommand ToggleGridCommand { get; set; } = null!;
+    public IRelayCommand ToggleGridLockCommand { get; set; } = null!;
+    public IRelayCommand TogglePointLockCommand { get; set; } = null!;
 
     public ToolPanelViewModel ToolPanelViewModel { get; }
 

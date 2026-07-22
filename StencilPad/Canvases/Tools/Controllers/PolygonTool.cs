@@ -7,7 +7,7 @@ using StencilPad.Spatial;
 
 namespace StencilPad.Canvases.Tools.Controllers;
 
-public abstract class PolygonTool<TOverlay, TSheetElement> : ITool
+public abstract class PolygonTool<TOverlay, TSheetElement> : ToolBase
     where TOverlay : PolygonToolOverlayBase<TSheetElement>
     where TSheetElement : IPolygonSheetElement, new()
 {
@@ -36,10 +36,7 @@ public abstract class PolygonTool<TOverlay, TSheetElement> : ITool
         _overlayFactory = overlayFactory;
     }
 
-    public void Dispose()
-    { }
-
-    public virtual void ToolBegin()
+    public override void ToolBegin()
     {
         _overlay = _overlayFactory.Create();
         _overlayContainer.ActiveOverlay = _overlay;
@@ -48,7 +45,7 @@ public abstract class PolygonTool<TOverlay, TSheetElement> : ITool
         _overlay.OnPolygonCompleted += PolygonCompleted;
     }
 
-    public virtual void ToolEnd()
+    public override void ToolEnd()
     {
         _overlayContainer.ActiveOverlay = null;
         _unitSnapOverlay.End();

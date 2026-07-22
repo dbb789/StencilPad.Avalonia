@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
-using StencilPad.Common;
 
 namespace StencilPad.ViewModels;
 
@@ -25,7 +24,7 @@ public class ToolPanelViewModel : ViewModelBase
         SelectToolCommand = new RelayCommand<ToolViewModel>(SelectTool);
     }
 
-    private void SelectTool(ToolViewModel tool)
+    private void SelectTool(ToolViewModel? tool)
     {
         SelectedTool = tool;
     }

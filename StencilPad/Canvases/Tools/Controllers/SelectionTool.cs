@@ -1,16 +1,18 @@
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using StencilPad.Canvases.Tools.Actions;
 using StencilPad.Canvases.Tools.Common;
 using StencilPad.Canvases.Tools.Overlays;
 using StencilPad.Common;
 using StencilPad.Models;
+using StencilPad.Models.Operations;
 using StencilPad.Models.Resolvers;
 using StencilPad.Services;
 using StencilPad.Spatial;
 
 namespace StencilPad.Canvases.Tools.Controllers;
 
-public class SelectionTool : ITool
+public class SelectionTool : ToolBase
 {
     public class Factory(ILogger<SelectionTool> Logger,
                          Sheet Sheet,
@@ -19,6 +21,7 @@ public class SelectionTool : ITool
                          IRubberBand RubberBand,
                          SheetResolver SheetResolver,
                          IHintService HintService,
+                         IClipboardService ClipboardService,
                          IModelPropertiesService ModelPropertiesService,
                          IOperationService OperationService,
                          Factory<SelectionToolOverlay> OverlayFactory) : IToolFactory
@@ -35,18 +38,27 @@ public class SelectionTool : ITool
                                      RubberBand,
                                      SheetResolver,
                                      HintService,
+                                     ClipboardService,
                                      ModelPropertiesService,
                                      OperationService,
                                      OverlayFactory);
         }
     }
 
+    public override IRelayCommand SelectAllCommand => new RelayCommand(SelectAll);
+    public override IRelayCommand ClearSelectionCommand => new RelayCommand(ClearSelection);
+    public override IRelayCommand CutCommand => new AsyncRelayCommand(CutToClipboard);
+    public override IRelayCommand CopyCommand => new AsyncRelayCommand(CopyToClipboard);
+    public override IRelayCommand PasteCommand => new AsyncRelayCommand(PasteFromClipboard);
+    public override IRelayCommand DeleteCommand => new RelayCommand(DeleteSelection);
+    
     private readonly ILogger<SelectionTool> _logger;
     private readonly Sheet _sheet;
     private readonly OverlayContainer _overlayContainer;
     private readonly ISettings _settings;
     private readonly IRubberBand _rubberBand;
     private readonly SheetResolver _sheetResolver;
+    private readonly IClipboardService _clipboardService;
     private readonly IHintService _hintService;
     private readonly IModelPropertiesService _modelPropertiesService;
     private readonly IOperationService _operationService;
@@ -66,6 +78,7 @@ public class SelectionTool : ITool
                           IRubberBand rubberBand,
                           SheetResolver sheetResolver,
                           IHintService hintService,
+                          IClipboardService clipboardService,
                           IModelPropertiesService modelPropertiesService,
                           IOperationService operationService,
                           Factory<SelectionToolOverlay> overlayFactory)
@@ -77,15 +90,13 @@ public class SelectionTool : ITool
         _rubberBand = rubberBand;
         _sheetResolver = sheetResolver;
         _hintService = hintService;
+        _clipboardService = clipboardService;
         _modelPropertiesService = modelPropertiesService;
         _operationService = operationService;
         _overlayFactory = overlayFactory;
     }
 
-    public void Dispose()
-    { }
-
-    public void ToolBegin()
+    public override void ToolBegin()
     {
         _overlay = _overlayFactory.Create();
         _overlayContainer.ActiveOverlay = _overlay;
@@ -109,7 +120,7 @@ public class SelectionTool : ITool
         _overlay.SelectionRotateEnded += SelectionRotateEnded;
     }
 
-    public void ToolEnd()
+    public override void ToolEnd()
     {
         _operationService.FlushEditContext();
         _hintService.ClearHint();
@@ -217,6 +228,51 @@ public class SelectionTool : ITool
                 _sheet.Selection.Add(resolver.Element);
             }
         }
+    }
+    
+    private void SelectAll()
+    {
+        // Toggle selection if everything is already selected.
+        if (_sheet.Selection.Count == _sheet.Elements.Count)
+        {
+            _sheet.Selection.Clear();
+            return;
+        }
+        
+        _sheet.Selection.Clear();
+
+        foreach (var element in _sheet.Elements)
+        {
+            _sheet.Selection.Add(element);
+        }
+    }
+
+    private void ClearSelection()
+    {
+        _sheet.Selection.Clear();
+    }
+    
+    private Task CopyToClipboard()
+    {
+        return _clipboardService.Copy(_sheet);
+    }
+
+    private Task CutToClipboard()
+    {
+        return _clipboardService.Cut(_sheet);
+    }
+
+    private Task PasteFromClipboard()
+    {
+        return _clipboardService.Paste(_sheet);
+    }
+    
+    private void DeleteSelection()
+    {
+        var operations = _sheet.Selection
+            .Select(e => new RemoveSheetElementOperation(_sheet, e));
+
+        _operationService.Push(new BulkCommandOperation(operations));
     }
 
     ////////////////////////////////////////

@@ -9,12 +9,16 @@ namespace StencilPad.Canvases.Tools.Controllers;
 
 public class ToolController : IDisposable
 {
+    public ITool? SelectedTool => _selectedTool;
+    
     private readonly ToolSet _toolSet;
     private readonly ToolPanelViewModel _toolPanelViewModel;
     private readonly IModelPropertiesService _modelPropertiesService;
     private readonly Dictionary<IToolButton, ITool> _toolButtons;
 
     private ITool? _selectedTool;
+
+    public event Action? SelectedToolChanged;
 
     public ToolController(ToolSet toolSet,
                           ToolPanelViewModel toolPanelViewModel,
@@ -151,5 +155,7 @@ public class ToolController : IDisposable
 
         _selectedTool = tool;
         _selectedTool?.ToolBegin();
+
+        SelectedToolChanged?.Invoke();
     }
 }
