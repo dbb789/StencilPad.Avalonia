@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 
 namespace StencilPad.ViewModels;
@@ -8,7 +7,7 @@ public class ToolPanelViewModel : ViewModelBase
 {
     public ObservableCollection<ToolViewModel> Tools { get; }
 
-    public ICommand SelectToolCommand { get; set; } = null!;
+    public IRelayCommand SelectToolCommand { get; set; } = null!;
 
     private ToolViewModel? _selectedTool;
     public ToolViewModel? SelectedTool

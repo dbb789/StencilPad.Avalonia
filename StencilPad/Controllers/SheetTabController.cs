@@ -61,7 +61,6 @@ public class SheetTabController : IDisposable
         _tabViewModel.CanvasAttached += OnCanvasAttached;
         _tabViewModel.CanvasDetached += OnCanvasDetached;
 
-
         tabViewModel.CancelCommand = new RelayCommand(() =>
         {
             _toolController?.CancelCurrent();

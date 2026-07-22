@@ -1,4 +1,3 @@
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 
@@ -27,7 +26,6 @@ public class OverlayContainer : Decorator
         if (_child is not null)
         {
             _child.Focusable = true;
-            _child.Focus();
             _child.Loaded += ChildLoaded;
         }
     }

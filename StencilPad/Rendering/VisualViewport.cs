@@ -127,8 +127,8 @@ public class VisualViewport : IViewport
 
     public Rect ToRect(UnitBounds bounds)
     {
-        var topLeft = ToPoint(bounds.Min);
-        var bottomRight = ToPoint(bounds.Max);
+        var topLeft = ToPoint(bounds.NW);
+        var bottomRight = ToPoint(bounds.SE);
 
         return new Rect(topLeft, bottomRight);
     }
