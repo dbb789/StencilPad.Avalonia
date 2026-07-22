@@ -106,7 +106,7 @@ public class InlineTextField : UserControl
         Committed?.Invoke();
     }
 
-    public new void Focus()
+    public void Focus()
     {
         _textBox.Focus();
     }

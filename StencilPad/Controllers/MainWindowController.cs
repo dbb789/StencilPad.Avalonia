@@ -139,9 +139,9 @@ public class MainWindowController
                 SetCurrentFilePath(path);
             }
         }
-        catch (FileServiceException ex)
+        catch (FileServiceException e)
         {
-            await _dialogService.ShowErrorAsync(ex.Message, "Cannot Open File");
+            await _dialogService.ShowErrorAsync(e.Message, "Cannot Open File");
         }
     }
 
@@ -157,9 +157,9 @@ public class MainWindowController
             _operationService.DiscardEditContext();
             SetCurrentFilePath(filename);
         }
-        catch (FileServiceException ex)
+        catch (FileServiceException e)
         {
-            await _dialogService.ShowErrorAsync(ex.Message, "Cannot Open File");
+            await _dialogService.ShowErrorAsync(e.Message, "Cannot Open File");
         }
     }
 
@@ -176,9 +176,9 @@ public class MainWindowController
             await _fileService.SaveAsync(_project, _currentFilePath);
             _undoStack.MarkSavePoint();
         }
-        catch (FileServiceException ex)
+        catch (FileServiceException e)
         {
-            await _dialogService.ShowErrorAsync(ex.Message, "Cannot Save File");
+            await _dialogService.ShowErrorAsync(e.Message, "Cannot Save File");
         }
     }
 
@@ -194,9 +194,9 @@ public class MainWindowController
                 _undoStack.MarkSavePoint();
             }
         }
-        catch (FileServiceException ex)
+        catch (FileServiceException e)
         {
-            await _dialogService.ShowErrorAsync(ex.Message, "Cannot Save File");
+            await _dialogService.ShowErrorAsync(e.Message, "Cannot Save File");
         }
     }
 

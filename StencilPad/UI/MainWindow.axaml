@@ -131,7 +131,7 @@
                         TickPlacement="None"
                         IsSnapToTickEnabled="True"
                         TickFrequency="0.1"/>
-                <TextBlock Text="{Binding SelectedTab.Zoom, StringFormat={}{0:P0}}" Margin="4"/>
+                <TextBlock Text="{Binding SelectedTab.Zoom, StringFormat={}{0:P0}}" VerticalAlignment="Center" Margin="4"/>
             </StackPanel>
         </DockPanel>
 
