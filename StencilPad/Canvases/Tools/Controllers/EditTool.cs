@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.Input;
 using StencilPad.Canvases.Common;
 using StencilPad.Canvases.Tools.Actions;
 using StencilPad.Canvases.Tools.Common;
@@ -33,6 +34,10 @@ public class EditTool : ToolBase
                                 EditToolOverlayFactory);
         }
     }
+    
+    public override IRelayCommand SelectAllCommand => new RelayCommand(SelectAll);
+    public override IRelayCommand ClearSelectionCommand => new RelayCommand(ClearSelection);
+    public override IRelayCommand DeleteCommand => new RelayCommand(DeleteSelection);
 
     private readonly IToolButton _button;
     private readonly Sheet _sheet;
@@ -254,6 +259,27 @@ public class EditTool : ToolBase
                 entry.SetSelected(true);
             }
         }
+    }
+    
+    private void SelectAll()
+    {
+        if (_handleMap.SelectedHandles.Count == _handleMap.HandleCount)
+        {
+            _handleMap.ClearSelection();
+            return;
+        }
+        
+        _handleMap.SelectAll();
+    }
+    
+    private void ClearSelection()
+    {
+        _handleMap.ClearSelection();
+    }
+
+    private void DeleteSelection()
+    {
+        _overlay?.DeleteSelection();
     }
     
     private void OnSelectionChanged(ObservableListChangedArgs<ISheetElement> e)

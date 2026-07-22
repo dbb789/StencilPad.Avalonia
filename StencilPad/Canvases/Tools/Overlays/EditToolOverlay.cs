@@ -34,6 +34,7 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
     private readonly IHandleMap _handleMap;
     private readonly IUnitSnap _unitSnap;
     private readonly IUnitSnapOverlay _unitSnapOverlay;
+    private readonly SheetElementEditActionSet _actionSet;
     
     private List<IHandleMapEntry> _queryResults;
     private DragState<IHandleMapEntry> _dragState;
@@ -62,6 +63,7 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
         _handleMap = handleMap;
         _unitSnap = unitSnap;
         _unitSnapOverlay = unitSnapOverlay;
+        _actionSet = actionSet;
         
         _queryResults = new(128);
         _dragState = new();
@@ -76,18 +78,11 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
 
         BuildPens();
         
-        // NOTE: WPF's CommandBindings/CommandBinding/GlobalCommands (RoutedUICommand)
-        // model has no Avalonia equivalent, and GlobalCommands was already removed
-        // as a flagged non-mechanical item earlier in this port. Global Select
-        // All/Clear Selection keyboard shortcuts are stubbed out (not wired to any
-        // key) until a real command-routing redesign happens; SelectAll()/
-        // ClearSelection() below remain available to call directly.
-
         RegisterOverlay(PolygonToolOverlayRenderer.Factory);
         RegisterOverlay(TextElementToolOverlayRenderer.Factory);
         RegisterOverlay(ImageElementToolOverlayRenderer.Factory);
 
-        BuildInputBindings(actionSet);
+        BuildInputBindings(_actionSet);
         
         // NOTE: See SelectionToolOverlay's constructor for why this uses
         // ContextMenu.Opening (fires before the popup is shown) rather than
@@ -97,7 +92,7 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
         ContextMenu = new ContextMenu();
         ContextMenu.Opening += (_, e) =>
         {
-            if (!BuildContextMenu(actionSet))
+            if (!BuildContextMenu(_actionSet))
             {
                 e.Cancel = true;
             }
@@ -119,6 +114,19 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
         _handleMap.HandleSelectionChanged -= ForceRedraw;
 
         base.Dispose();
+    }
+
+    public void DeleteSelection()
+    {
+        var action = _actionSet.DeletePoints;
+        
+        if (!action.IsEnabled(_sheet, _sheet.Selection) ||
+            !action.IsVisible(_sheet, _sheet.Selection))
+        {
+            return;
+        }
+        
+        action?.Invoke(_sheet, _sheet.Selection);
     }
 
     private void BuildPens()
@@ -145,29 +153,12 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
         InvalidateVisual();
     }
 
-    public void SelectAll()
-    {
-        if (_handleMap.SelectedHandles.Count == _handleMap.HandleCount)
-        {
-            _handleMap.ClearSelection();
-            return;
-        }
-        
-        _handleMap.SelectAll();
-    }
-    
-    public void ClearSelection()
-    {
-        _handleMap.ClearSelection();
-    }
-
     private void BuildInputBindings(SheetElementEditActionSet actionSet)
     {
         var builder = new InputBindingsBuilder(_sheet, ActionInvoked, KeyBindings);
 
         builder.Add(Key.P, KeyModifiers.Control, actionSet.CornerProperties);
         builder.Add(Key.I, KeyModifiers.Control, actionSet.InsertPoint);
-        builder.Add(Key.Delete, KeyModifiers.None, actionSet.DeletePoints);
         builder.Add(Key.O, KeyModifiers.Control | KeyModifiers.Shift, actionSet.OpenPath);
         builder.Add(Key.C, KeyModifiers.Control | KeyModifiers.Shift, actionSet.ClosePath);
         builder.Add(Key.S, KeyModifiers.Control | KeyModifiers.Shift, actionSet.SetAsStraight);
