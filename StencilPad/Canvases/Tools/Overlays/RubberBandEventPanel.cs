@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
 using StencilPad.Spatial;
+using StencilPad.Canvases.Tools.Common;
 
 namespace StencilPad.Canvases.Tools.Overlays;
 
@@ -34,8 +35,8 @@ public class RubberBandEventPanel : ContentControl, IRubberBand
     private bool _isActive;
     private IPointer? _capturedPointer;
     
-    public event Action<UnitBounds>? BoundsSelected;
-    public event Action<Unit2D>? PointSelected;
+    public event Action<UnitBounds, bool>? BoundsSelected;
+    public event Action<Unit2D, bool>? PointSelected;
 
     public RubberBandEventPanel(IViewport viewport)
     {
@@ -94,11 +95,13 @@ public class RubberBandEventPanel : ContentControl, IRubberBand
 
             BoundsSelected?.Invoke(
                 UnitBounds.FromMinMax(_viewport.FromPoint(rect.TopLeft),
-                                      _viewport.FromPoint(rect.BottomRight)));
+                                      _viewport.FromPoint(rect.BottomRight)),
+                ModifierUtil.IsModifyingSelection(e));
         }
         else
-        {
-            PointSelected?.Invoke(_viewport.FromPoint(e.GetPosition(this)));
+        {           
+            PointSelected?.Invoke(_viewport.FromPoint(e.GetPosition(this)),
+                                  ModifierUtil.IsModifyingSelection(e));
         }
         
         _rubberBandHandle.DragEnd();

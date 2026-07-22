@@ -141,7 +141,7 @@ public class CircleToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEle
 
         var size = Unit2D.Abs(_currentSnappedMousePosition - _initialPoint.Value);
 
-        if (ModifierUtil.IsLockAspect())
+        if (ModifierUtil.IsLockAspect(e))
         {
             var maxSize = Unit.Max(size.X, size.Y);
             

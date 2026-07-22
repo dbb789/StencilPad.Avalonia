@@ -25,7 +25,7 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
     public event Action<ISheetElement, Handle>? HandleDragBegin;
     public event Action<ISheetElement, Handle, Unit2D>? HandleDragged;
     public event Action? HandleDragEnd;
-    public event Action<ISheetElement, Handle>? HandleSelected;
+    public event Action<ISheetElement, Handle, bool>? HandleSelected;
     public event Action<ISheetElementAction>? ActionInvoked;
 
     private readonly Sheet _sheet;
@@ -246,7 +246,8 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
         else if (_dragState.DraggedElement is not null)
         {
             HandleSelected?.Invoke(_dragState.DraggedElement.Element,
-                                   _dragState.DraggedElement.Handle);
+                                   _dragState.DraggedElement.Handle,
+                                   ModifierUtil.IsModifyingSelection(e));
         }
 
         _dragState.OnDragEnd();
@@ -296,7 +297,7 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
         var snappedTarget = _unitSnap.UnitSnap(dragResult.Value.TargetElementPosition, this);
         var targetPosition = snappedTarget ?? dragResult.Value.TargetElementPosition;
         
-        targetPosition = _lockAxisState.OnDragMove(ModifierUtil.IsLockToAxis(),
+        targetPosition = _lockAxisState.OnDragMove(ModifierUtil.IsLockToAxis(e),
                                                    _viewport.FromPixels(_handleSize),
                                                    _dragState.InitialElementPosition,
                                                    targetPosition);

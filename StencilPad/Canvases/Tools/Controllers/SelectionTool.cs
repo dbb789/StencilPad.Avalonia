@@ -153,7 +153,8 @@ public class SelectionTool : ToolBase
         _rubberBand.BoundsSelected -= BoundsSelected;
     }
 
-    private void PointSelected(Unit2D point)
+    private void PointSelected(Unit2D point,
+                               bool modifyingSelection)
     {
         // This needs to both cycle through everything under the mouse and also
         // modify the selection based on modifier keys so the logic is a bit
@@ -187,7 +188,7 @@ public class SelectionTool : ToolBase
                 // And if we're modifying the selection, we want to remove
                 // everything else so that we can re-add the next item as
                 // necessary.
-                if (ModifierUtil.IsModifyingSelection())
+                if (modifyingSelection)
                 {
                     _sheet.Selection.Remove(hit);
                 }
@@ -195,7 +196,7 @@ public class SelectionTool : ToolBase
         }
 
         // But if we're not modifying the selection, just clear out the lot.
-        if (!ModifierUtil.IsModifyingSelection())
+        if (!modifyingSelection)
         {
             _sheet.Selection.Clear();
         }
@@ -212,9 +213,10 @@ public class SelectionTool : ToolBase
         }
     }
 
-    private void BoundsSelected(UnitBounds bounds)
+    private void BoundsSelected(UnitBounds bounds,
+                                bool modifyingSelection)
     {
-        if (!ModifierUtil.IsModifyingSelection())
+        if (!modifyingSelection)
         {
             _sheet.Selection.Clear();
         }

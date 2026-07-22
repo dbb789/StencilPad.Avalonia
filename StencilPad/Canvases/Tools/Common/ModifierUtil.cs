@@ -1,3 +1,5 @@
+using Avalonia.Input;
+
 namespace StencilPad.Canvases.Tools.Common;
 
 // NOTE: Avalonia has no equivalent of WPF's Keyboard.IsKeyDown global
@@ -9,23 +11,23 @@ namespace StencilPad.Canvases.Tools.Common;
 // lock, angle snap) are effectively disabled until this is revisited.
 public static class ModifierUtil
 {
-    public static bool IsModifyingSelection()
+    public static bool IsModifyingSelection(IKeyModifiersEventArgs args)
     {
-        return false;
+        return args.KeyModifiers.HasFlag(KeyModifiers.Control);
     }
 
-    public static bool IsLockToAxis()
+    public static bool IsLockToAxis(IKeyModifiersEventArgs args)
     {
-        return false;
+        return args.KeyModifiers.HasFlag(KeyModifiers.Shift);
     }
 
-    public static bool IsLockAspect()
+    public static bool IsLockAspect(IKeyModifiersEventArgs args)
     {
-        return false;
+        return args.KeyModifiers.HasFlag(KeyModifiers.Shift);
     }
 
-    public static bool IsAngleSnap()
+    public static bool IsAngleSnap(IKeyModifiersEventArgs args)
     {
-        return false;
+        return args.KeyModifiers.HasFlag(KeyModifiers.Shift);
     }
 }

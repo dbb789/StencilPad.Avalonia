@@ -150,7 +150,7 @@ public class LineToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEleme
 
     protected override void OnPointerMoved(PointerEventArgs e)
     {
-        _currentSnappedMousePosition = CurrentSnappedMouseOverPosition(e.GetPosition(this));
+        _currentSnappedMousePosition = CurrentSnappedMouseOverPosition(e.GetPosition(this), e);
         
         if (_polygon.Vertices.Count == 0)
         {
@@ -215,7 +215,8 @@ public class LineToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEleme
         }
     }
 
-    private Unit2D CurrentSnappedMouseOverPosition(Point mousePosition)
+    private Unit2D CurrentSnappedMouseOverPosition(Point mousePosition,
+                                                   PointerEventArgs args)
     {
         var unitPosition = _viewport.FromPoint(mousePosition);
         var snapPosition = _unitSnap.UnitSnap(unitPosition, _unitSnapContext);
@@ -227,7 +228,7 @@ public class LineToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEleme
         
         if (_polygon.Vertices.Count > 1)
         {
-            unitPosition = _lockAxisState.OnDragMove(ModifierUtil.IsLockToAxis(),
+            unitPosition = _lockAxisState.OnDragMove(ModifierUtil.IsLockToAxis(args),
                                                      _viewport.FromPixels(12),
                                                      _polygon.Vertices[^2].Position,
                                                      unitPosition);

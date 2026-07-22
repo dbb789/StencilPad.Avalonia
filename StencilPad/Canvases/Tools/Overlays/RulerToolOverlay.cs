@@ -82,7 +82,7 @@ public class RulerToolOverlay : Control, IDisposable
     {
         var mousePosition = e.GetPosition(this);
 
-        _currentSnappedMousePosition = CurrentSnappedMouseOverPosition(mousePosition);
+        _currentSnappedMousePosition = CurrentSnappedMouseOverPosition(mousePosition, e);
 
         if (_start is not null)
         {
@@ -121,7 +121,8 @@ public class RulerToolOverlay : Control, IDisposable
         _previewRenderer.Render(dc);
     }
 
-    private Unit2D CurrentSnappedMouseOverPosition(Point mousePosition)
+    private Unit2D CurrentSnappedMouseOverPosition(Point mousePosition,
+                                                   PointerEventArgs args)
     {
         var unitPosition = _viewport.FromPoint(mousePosition);
         var snapPosition = _unitSnap.UnitSnap(unitPosition, _unitSnapContext);
@@ -133,7 +134,7 @@ public class RulerToolOverlay : Control, IDisposable
         
         if (_start is not null)
         {
-            unitPosition = _lockAxisState.OnDragMove(ModifierUtil.IsLockToAxis(),
+            unitPosition = _lockAxisState.OnDragMove(ModifierUtil.IsLockToAxis(args),
                                                      _viewport.FromPixels(12),
                                                      _start.Value,
                                                      unitPosition);

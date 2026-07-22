@@ -335,7 +335,7 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
                 var targetSE = _unitSnap.UnitSnap(result.Value.TargetElementPosition, this)
                                ?? result.Value.TargetElementPosition;
 
-                if (ModifierUtil.IsLockAspect())
+                if (ModifierUtil.IsLockAspect(e))
                 {
                     targetSE = LockAspect(targetSE);
                 }
@@ -373,7 +373,7 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
                 var currentVec = result.Value.TargetElementPosition - _rotateDragCenter;
                 var totalAngle = Unit2D.SignedAngle(initialVec, currentVec);
 
-                if (ModifierUtil.IsAngleSnap())
+                if (ModifierUtil.IsAngleSnap(e))
                 {
                     var snapAngle = _settings.AngleSnapDegrees * MathUtil.Deg2Rad;
                     
@@ -407,7 +407,7 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
                 var targetBounds = UnitBounds.FromCenterSize(targetPosition, elementBounds.Size);
                 var snappedCenter = SnapBoundsCenter(targetBounds);
 
-                snappedCenter = _lockAxisState.OnDragMove(ModifierUtil.IsLockToAxis(),
+                snappedCenter = _lockAxisState.OnDragMove(ModifierUtil.IsLockToAxis(e),
                                                           _viewport.FromPixels(_resizeHandleSize),
                                                           _dragState.InitialElementPosition,
                                                           snappedCenter);

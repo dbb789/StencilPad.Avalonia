@@ -201,14 +201,13 @@ public class EditTool : ToolBase
         _editContext = null;
     }
     
-    private void OnBoundsSelected(UnitBounds bounds)
+    private void OnBoundsSelected(UnitBounds bounds,
+                                  bool modifyingSelection)
     {
         if (_selection.Count == 0)
         {
             return;
         }
-
-        var modifyingSelection = ModifierUtil.IsModifyingSelection();
 
         var selected = new List<IHandleMapEntry>();
         
@@ -228,7 +227,8 @@ public class EditTool : ToolBase
         }
     }
 
-    private void OnPointSelected(Unit2D point)
+    private void OnPointSelected(Unit2D point,
+                                 bool modifyingSelection)
     {
         if (_selection.Count == 0)
         {
@@ -239,10 +239,9 @@ public class EditTool : ToolBase
     }
 
     private void OnHandleSelected(ISheetElement element,
-                                  Handle handle)
+                                  Handle handle,
+                                  bool modifyingSelection)
     {
-        var modifyingSelection = ModifierUtil.IsModifyingSelection();
-
         if (modifyingSelection)
         {
             if (_handleMap.TryGetHandleEntry(handle, out var entry))
