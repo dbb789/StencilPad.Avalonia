@@ -40,15 +40,13 @@ public readonly record struct UnitTransform
 
     public SKMatrix CreateMatrix()
     {
-        var matrix = SKMatrix.Identity;
+        var matrix = SKMatrix.CreateTranslation((float)Position.X.Millimeters,
+                                                (float)Position.Y.Millimeters);
 
         if (Angle != 0m)
         {
-            matrix = SKMatrix.CreateRotationDegrees((float)Angle);
+            matrix = SKMatrix.Concat(matrix, SKMatrix.CreateRotationDegrees((float)Angle));
         }
-
-        matrix = SKMatrix.Concat(matrix, SKMatrix.CreateTranslation((float)Position.X.Millimeters,
-                                                                    (float)Position.Y.Millimeters));
 
         return matrix;
     }

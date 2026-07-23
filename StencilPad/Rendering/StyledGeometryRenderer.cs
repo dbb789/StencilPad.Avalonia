@@ -14,7 +14,7 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
         ////////////////////
         
         public SKPath? Path;
-        public List<(Geometry, Transform)> Overlays { get; } = [];
+        public List<(SKPath, SKMatrix)> Overlays { get; } = [];
         
         public bool GeometryDirty;
     }
@@ -55,6 +55,27 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
         if (_strokePaint is not null)
         {
             canvas.DrawPath(path, _strokePaint);
+        }
+
+        foreach (var (_, entry) in _entryMap)
+        {
+            foreach (var (overlayPath, overlayTransform) in entry.Overlays)
+            {
+                canvas.Save();
+                canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, overlayTransform));
+
+                if (_fillPaint is not null)
+                {
+                    canvas.DrawPath(overlayPath, _fillPaint);
+                }
+                
+                if (_strokePaint is not null)
+                {
+                    canvas.DrawPath(overlayPath, _strokePaint);
+                }
+               
+                canvas.Restore();
+            }
         }
     }
     
@@ -152,7 +173,7 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
         
         foreach (var (resource, overlayTransform) in entry.GeometrySet.Overlays)
         {
-            entry.Overlays.Add((resource.Geometry, overlayTransform.CreateGroupTransform()));
+            entry.Overlays.Add((resource.Path, overlayTransform.CreateMatrix()));
         }
 
         return path;
@@ -160,6 +181,11 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
 
     private SKPaint? CreateStrokePaint(GeometryStyle style)
     {
+        if (style.LineColor.A == 0 || style.LineWidth.Millimeters <= 0)
+        {
+            return null;
+        }
+        
         var paint = new SKPaint
         {
             Style = SKPaintStyle.Stroke,
@@ -176,6 +202,11 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
 
     private SKPaint? CreateFillPaint(GeometryStyle style)
     {
+        if (style.FillColor.A == 0)
+        {
+            return null;
+        }
+
         var paint = new SKPaint
         {
             Style = SKPaintStyle.Fill,
