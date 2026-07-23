@@ -73,12 +73,12 @@ public class SheetTabViewModel : ViewModelBase, IDisposable
         }
     }
 
-    public BoundRelayCommand SelectAllCommand { get; } = new();
-    public BoundRelayCommand ClearSelectionCommand { get; } = new();
-    public BoundRelayCommand CopyCommand { get; } = new();
-    public BoundRelayCommand CutCommand { get; } = new();
-    public BoundRelayCommand PasteCommand { get; } = new();
-    public BoundRelayCommand DeleteCommand { get; } = new();
+    public IBoundRelayCommand SelectAllCommand { get; } = new BoundRelayCommand();
+    public IBoundRelayCommand ClearSelectionCommand { get; } = new BoundRelayCommand();
+    public IBoundRelayCommand CopyCommand { get; } = new BoundRelayCommand();
+    public IBoundRelayCommand CutCommand { get; } = new BoundRelayCommand();
+    public IBoundRelayCommand PasteCommand { get; } = new BoundRelayCommand();
+    public IBoundRelayCommand DeleteCommand { get; } = new BoundRelayCommand();
 
     public IRelayCommand CancelCommand { get; set; } = null!;
     public IRelayCommand ToggleSelectCommand { get; set; } = null!;

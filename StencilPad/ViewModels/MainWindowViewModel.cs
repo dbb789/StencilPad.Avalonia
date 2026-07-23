@@ -1,5 +1,5 @@
+using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
-using System.Windows.Input;
 using StencilPad.Models;
 
 namespace StencilPad.ViewModels;
@@ -29,22 +29,22 @@ public class MainWindowViewModel : ViewModelBase
         set => SetProperty(ref _title, value);
     }
 
-    public ICommand NewProjectCommand { get; set; } = null!;
-    public ICommand GridSettingsCommand { get; set; } = null!;
-    public ICommand UnitScaleCommand { get; set; } = null!;
-    public ICommand AddSheetCommand { get; set; } = null!;
-    public ICommand RenameSheetCommand { get; set; } = null!;
-    public ICommand DeleteSheetCommand { get; set; } = null!;
-    public ICommand PrintCommand { get; set; } = null!;
-    public ICommand ExitCommand { get; set; } = null!;
-    public ICommand OpenProjectCommand { get; set; } = null!;
-    public ICommand SaveProjectCommand { get; set; } = null!;
-    public ICommand SaveProjectAsCommand { get; set; } = null!;
-    public ICommand UndoCommand { get; set; } = null!;
-    public ICommand RedoCommand { get; set; } = null!;
-    public ICommand ImportImageCommand { get; set; } = null!;
-    public ICommand ExportSvgCommand { get; set; } = null!;
-    public ICommand ExportPngCommand { get; set; } = null!;
+    public IRelayCommand NewProjectCommand { get; set; } = null!;
+    public IRelayCommand GridSettingsCommand { get; set; } = null!;
+    public IRelayCommand UnitScaleCommand { get; set; } = null!;
+    public IRelayCommand AddSheetCommand { get; set; } = null!;
+    public IRelayCommand RenameSheetCommand { get; set; } = null!;
+    public IRelayCommand DeleteSheetCommand { get; set; } = null!;
+    public IRelayCommand PrintCommand { get; set; } = null!;
+    public IRelayCommand ExitCommand { get; set; } = null!;
+    public IRelayCommand OpenProjectCommand { get; set; } = null!;
+    public IRelayCommand SaveProjectCommand { get; set; } = null!;
+    public IRelayCommand SaveProjectAsCommand { get; set; } = null!;
+    public IRelayCommand UndoCommand { get; set; } = null!;
+    public IRelayCommand RedoCommand { get; set; } = null!;
+    public IRelayCommand ImportImageCommand { get; set; } = null!;
+    public IRelayCommand ExportSvgCommand { get; set; } = null!;
+    public IRelayCommand ExportPngCommand { get; set; } = null!;
     public Action<int, int>? SheetTabReordered = null;
 
     public MainWindowViewModel()

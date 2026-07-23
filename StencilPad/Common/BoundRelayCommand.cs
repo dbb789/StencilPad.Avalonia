@@ -1,6 +1,6 @@
 namespace CommunityToolkit.Mvvm.Input;
 
-public class BoundRelayCommand : IRelayCommand
+public class BoundRelayCommand : IBoundRelayCommand
 {
     public IRelayCommand? Command
     {

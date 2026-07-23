@@ -119,8 +119,6 @@
 
         </Menu>
 
-        <!-- NOTE: Avalonia has no StatusBar/StatusBarItem controls; replaced
-             with a plain DockPanel row of TextBlock/Slider, styled minimally. -->
         <DockPanel DockPanel.Dock="Bottom" LastChildFill="False">
             <TextBlock DockPanel.Dock="Left" Text="{Binding SelectedTab.HintText}"/>
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
