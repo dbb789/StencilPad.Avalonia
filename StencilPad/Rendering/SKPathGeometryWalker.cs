@@ -40,18 +40,18 @@ public class SKPathGeometryWalker() : IGeometryWalker
         if (segment.IsArc)
         {
             var arc = segment.Arc;
-            var start = arc.Start;
-            var end = arc.End;
 
-            EnsureFigure(start, end);
+            EnsureFigure(arc.Start, arc.End);
 
-            var angle = MathUtil.SignedAngleDifference(arc.EndAngle, arc.StartAngle);
             var radius = arc.Radius.Millimeters;
-            var sweepDirection = angle < 0 ? SweepDirection.Clockwise : SweepDirection.CounterClockwise;
+            var angle = MathUtil.SignedAngleDifference(arc.EndAngle, arc.StartAngle);
+            var sweep = angle > 0 ? SKPathDirection.CounterClockwise : SKPathDirection.Clockwise;
 
-            Path.ArcTo(Point(start),
-                       Point(end),
-                       (float)arc.Radius.Millimeters);
+            Path.ArcTo(new SKPoint((float)radius, (float)radius),
+                       (float)angle,
+                       SKPathArcSize.Small,
+                       sweep,
+                       Point(arc.End));
 
             return true;
         }
