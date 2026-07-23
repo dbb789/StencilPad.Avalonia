@@ -1,4 +1,4 @@
-using Avalonia.Media;
+using SkiaSharp;
 
 namespace StencilPad.Rendering;
 
@@ -6,5 +6,5 @@ public interface IWalkerRenderer : IDisposable
 {
     event Action? RendererDirty;
     
-    void Render(DrawingContext dc);
+    void Render(SKCanvas canvas);
 }

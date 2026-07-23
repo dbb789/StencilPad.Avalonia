@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Media;
+using SkiaSharp;
 
 namespace StencilPad.Spatial;
 
@@ -9,7 +10,8 @@ public interface IViewport
     Unit2D Size { get; }
     double Zoom { get; }
     Transform MillimetersToPixelsTransform { get; }
-    
+    SKMatrix MillimetersToPixelsMatrix { get; }
+
     event Action? ViewportChanged;
     
     double ToPixels(Unit unit);

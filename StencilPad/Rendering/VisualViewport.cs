@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using SkiaSharp;
 using StencilPad.Spatial;
 
 namespace StencilPad.Rendering;
@@ -93,6 +94,21 @@ public class VisualViewport : IViewport
         get => _millimetersToPixelsTransform;
     }
 
+    public SKMatrix MillimetersToPixelsMatrix
+    {
+        get
+        {
+            var scale = ToPixels(Unit.FromMillimeters(1.0));
+            var translateX = _size.X.Millimeters / 2.0;
+            var translateY = -_size.Y.Millimeters / 2.0;
+
+            return SKMatrix.CreateScaleTranslation((float)scale,
+                                                   (float)-scale,
+                                                   (float)translateX,
+                                                   (float)translateY);
+        }
+    }
+    
     private Visual? _visual = null;
     private Unit2D _sheetSize;
     private Unit2D _size;

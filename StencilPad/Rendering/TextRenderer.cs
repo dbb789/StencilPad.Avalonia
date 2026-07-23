@@ -1,6 +1,7 @@
 using System.Globalization;
 using Avalonia;
 using Avalonia.Media;
+using SkiaSharp;
 using StencilPad.Models;
 using StencilPad.Models.Resolvers;
 using StencilPad.Spatial;
@@ -63,51 +64,56 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
         RebuildFormattedText();
         InvokeRendererDirty();
     }
-    
-    public void Render(DrawingContext dc)
+
+    public void Render(SKCanvas canvas)
     {
-        if (_formattedText is null || string.IsNullOrEmpty(_text))
-        {
-            return;
-        }
-
-        using var transformState = _transform is not null ? dc.PushTransform(_transform.Value) : default;
-
-        // Account for WPF's inverted Y-axis by flipping the Y-axis for text rendering.
-        using var flipState = dc.PushTransform(FlipY.Value);
-
-        if (_bounds is not null)
-        {
-            var flippedBounds = UnitBounds.FromCenterSize(new Unit2D(_bounds.Value.Center.X, -_bounds.Value.Center.Y),
-                                                          _bounds.Value.Size);
-            var clipRect = flippedBounds.Millimeters;
-            var height = _formattedText.Height;
-
-            Point textPos;
-
-            switch (_style.Justification)
-            {
-            case Justification.Center:
-                textPos = new Point((clipRect.Left + clipRect.Right) / 2, clipRect.Top);
-                break;
-            case Justification.Right:
-                textPos = new Point(clipRect.Right, clipRect.Top);
-                break;
-            case Justification.Left:
-            default:
-                textPos = new Point(clipRect.Left, clipRect.Top);
-                break;
-            }
-
-            using var clipState = dc.PushClip(clipRect);
-            dc.DrawText(_formattedText, textPos);
-        }
-        else
-        {
-            dc.DrawText(_formattedText, new Point(0, 0));
-        }
+        
     }
-    
+
+    // public void Render(DrawingContext dc)
+    // {
+    //     if (_formattedText is null || string.IsNullOrEmpty(_text))
+    //     {
+    //         return;
+    //     }
+
+    //     using var transformState = _transform is not null ? dc.PushTransform(_transform.Value) : default;
+
+    //     // Account for WPF's inverted Y-axis by flipping the Y-axis for text rendering.
+    //     using var flipState = dc.PushTransform(FlipY.Value);
+
+    //     if (_bounds is not null)
+    //     {
+    //         var flippedBounds = UnitBounds.FromCenterSize(new Unit2D(_bounds.Value.Center.X, -_bounds.Value.Center.Y),
+    //                                                       _bounds.Value.Size);
+    //         var clipRect = flippedBounds.Millimeters;
+    //         var height = _formattedText.Height;
+
+    //         Point textPos;
+
+    //         switch (_style.Justification)
+    //         {
+    //         case Justification.Center:
+    //             textPos = new Point((clipRect.Left + clipRect.Right) / 2, clipRect.Top);
+    //             break;
+    //         case Justification.Right:
+    //             textPos = new Point(clipRect.Right, clipRect.Top);
+    //             break;
+    //         case Justification.Left:
+    //         default:
+    //             textPos = new Point(clipRect.Left, clipRect.Top);
+    //             break;
+    //         }
+
+    //         using var clipState = dc.PushClip(clipRect);
+    //         dc.DrawText(_formattedText, textPos);
+    //     }
+    //     else
+    //     {
+    //         dc.DrawText(_formattedText, new Point(0, 0));
+    //     }
+    // }
+
     private void RebuildFormattedText()
     {
         if (string.IsNullOrEmpty(_text))

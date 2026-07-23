@@ -34,13 +34,13 @@ public class SheetRenderPanel : ContentControl
     
     private void ForceRedraw()
     {
-        InvalidateVisual();
+        Dispatcher.Invoke(() => { InvalidateVisual(); });
     }
     
     public override void Render(DrawingContext dc)
     {
         using var state = dc.PushTransform(_viewport.MillimetersToPixelsTransform.Value);
 
-        _sheetRenderer.Render(dc);
+        dc.Custom(_sheetRenderer.CreateDrawOperation());
     }
 }

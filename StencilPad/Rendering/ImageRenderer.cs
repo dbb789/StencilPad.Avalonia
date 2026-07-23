@@ -1,6 +1,6 @@
-using System.IO;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using SkiaSharp;
 using StencilPad.Models.Resolvers;
 using StencilPad.Spatial;
 
@@ -58,30 +58,35 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
         
         InvokeRendererDirty();
     }
-    
-    public void Render(DrawingContext dc)
+
+    public void Render(SKCanvas canvas)
     {
-        if (_bitmap is null || _bounds is null)
-        {
-            return;
-        }
-
-        var flippedBounds = UnitBounds.FromCenterSize(new Unit2D(_bounds.Value.Center.X, -_bounds.Value.Center.Y),
-                                                      _bounds.Value.Size);
-
-        var rect = flippedBounds.Millimeters;
-
-        if (rect.Width <= 0 || rect.Height <= 0)
-        {
-            return;
-        }
         
-        // Account for WPF's inverted Y-axis by flipping the Y-axis for image rendering.
-        using var flipState = dc.PushTransform(FlipY.Value);
-        using var opacityState = dc.PushOpacity(_opacity);
-
-        dc.DrawImage(_bitmap, rect);
     }
+
+    // public void Render(DrawingContext dc)
+    // {
+    //     if (_bitmap is null || _bounds is null)
+    //     {
+    //         return;
+    //     }
+
+    //     var flippedBounds = UnitBounds.FromCenterSize(new Unit2D(_bounds.Value.Center.X, -_bounds.Value.Center.Y),
+    //                                                   _bounds.Value.Size);
+
+    //     var rect = flippedBounds.Millimeters;
+
+    //     if (rect.Width <= 0 || rect.Height <= 0)
+    //     {
+    //         return;
+    //     }
+        
+    //     // Account for WPF's inverted Y-axis by flipping the Y-axis for image rendering.
+    //     using var flipState = dc.PushTransform(FlipY.Value);
+    //     using var opacityState = dc.PushOpacity(_opacity);
+
+    //     dc.DrawImage(_bitmap, rect);
+    // }
     
     private void InvokeRendererDirty()
     {

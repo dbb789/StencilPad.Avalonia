@@ -1,4 +1,7 @@
+using Avalonia;
 using Avalonia.Media;
+using Avalonia.Rendering.SceneGraph;
+using Avalonia.Skia;
 using Microsoft.Extensions.Logging;
 using StencilPad.Collections;
 using StencilPad.Common;
@@ -17,12 +20,37 @@ public class SheetRenderer : IDisposable
             return new(Logger, resolver, Settings, ResourceSet);
         }
     }
+
+    private class DrawOperation : ICustomDrawOperation
+    {
+        private readonly SheetRenderer _sheetRenderer;
+
+        public DrawOperation(SheetRenderer sheetRenderer)
+        {
+            _sheetRenderer = sheetRenderer;
+        }
+
+        public void Dispose()
+        {
+            // Nothing to dispose
+        }
+
+        public void Render(ImmediateDrawingContext context)
+        {
+            _sheetRenderer.Render(context);
+        }
+
+        public bool HitTest(Point p) => _sheetRenderer.HitTest(p);
+        public bool Equals(ICustomDrawOperation? other) => _sheetRenderer.Equals(other);
+        public Rect Bounds => _sheetRenderer.Bounds;
+    }
     
     private readonly ILogger<SheetRenderer> _logger;
     private readonly SheetResolver _resolver;
     private readonly ISettings _settings;
     private readonly IResourceSet _resourceSet;
     private readonly OrderedDictionary<ISheetElementResolver, ModelRenderer> _renderers;
+    private readonly object _renderersLock = new();
     
     public event Action? RendererDirty;
 
@@ -57,13 +85,36 @@ public class SheetRenderer : IDisposable
         _resolver.ElementsChanged -= OnElementsChanged;
     }
 
-    public void Render(DrawingContext dc)
+    public ICustomDrawOperation CreateDrawOperation()
     {
-        foreach (var (_, renderer) in _renderers)
+        return new DrawOperation(this);
+    }
+    
+    public void Render(ImmediateDrawingContext context)
+    {
+        var feature = context.TryGetFeature<ISkiaSharpApiLeaseFeature>();
+
+        if (feature is null)
         {
-            renderer.Render(dc);
+            return;
+        }
+        
+        using var lease = feature.Lease();
+        
+        var canvas = lease.SkCanvas;
+
+        lock (_renderersLock)
+        {
+            foreach (var (_, renderer) in _renderers)
+            {
+                renderer.Render(canvas);
+            }
         }
     }
+
+    public bool HitTest(Point p) => false;
+    public bool Equals(ICustomDrawOperation? other) => false;
+    public Rect Bounds => new Rect(0, 0, 1000, 1000);
 
     private void OnElementsChanged(ObservableListChangedArgs<ISheetElementResolver> e)
     {
@@ -89,7 +140,11 @@ public class SheetRenderer : IDisposable
 
         renderer.RendererDirty += InvokeRendererDirty;
         resolver.Attach(renderer);
-        _renderers.Insert(index, resolver, renderer);
+
+        lock (_renderersLock)
+        {
+            _renderers.Insert(index, resolver, renderer);
+        }
         
         InvokeRendererDirty();
     }
@@ -104,18 +159,25 @@ public class SheetRenderer : IDisposable
 
         renderer.RendererDirty -= InvokeRendererDirty;
         renderer.Dispose();
-        _renderers.Remove(resolver);
+
+        lock (_renderersLock)
+        {
+            _renderers.Remove(resolver);
+        }
         
         InvokeRendererDirty();
     }
 
     private void OnElementMoved(int oldIndex, int newIndex)
     {
-        var kvp = _renderers.GetAt(oldIndex);
-        
-        _renderers.RemoveAt(oldIndex);
-        _renderers.Insert(newIndex, kvp.Key, kvp.Value);
+        lock (_renderersLock)
+        {
+            var kvp = _renderers.GetAt(oldIndex);
 
+            _renderers.RemoveAt(oldIndex);
+            _renderers.Insert(newIndex, kvp.Key, kvp.Value);
+        }
+        
         InvokeRendererDirty();
     }
     

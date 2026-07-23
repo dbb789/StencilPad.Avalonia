@@ -1,4 +1,4 @@
-using Avalonia.Media;
+using SkiaSharp;
 using StencilPad.Models.Resolvers;
 using StencilPad.Spatial;
 
@@ -8,7 +8,9 @@ public class ModelRenderer : IModelWalker, IWalkerRenderer
 {
     private readonly IResourceSet _resourceSet;
     private readonly List<IWalkerRenderer> _renderers;
-    private Transform? _transform;
+    private readonly object _renderersLock = new();
+    
+    private SKMatrix? _matrix;
 
     public event Action? RendererDirty;
 
@@ -20,13 +22,19 @@ public class ModelRenderer : IModelWalker, IWalkerRenderer
 
     public void Dispose()
     {
-        foreach (var renderer in _renderers)
+        List<IWalkerRenderer> renderersList;
+        
+        lock (_renderersLock)
+        {
+            renderersList = _renderers.ToList();
+            _renderers.Clear();
+        }
+        
+        foreach (var renderer in renderersList)
         {
             renderer.RendererDirty -= InvokeRendererDirty;
             renderer.Dispose();
         }
-
-        _renderers.Clear();
     }
 
     public IModelWalker CreateModelWalker()
@@ -35,7 +43,10 @@ public class ModelRenderer : IModelWalker, IWalkerRenderer
         
         renderer.RendererDirty += InvokeRendererDirty;
 
-        _renderers.Add(renderer);
+        lock (_renderersLock)
+        {
+            _renderers.Add(renderer);
+        }
         
         return renderer;
     }
@@ -46,7 +57,10 @@ public class ModelRenderer : IModelWalker, IWalkerRenderer
         
         renderer.RendererDirty += InvokeRendererDirty;
 
-        _renderers.Add(renderer);
+        lock (_renderersLock)
+        {
+            _renderers.Add(renderer);
+        }
         
         return renderer;
     }
@@ -57,7 +71,10 @@ public class ModelRenderer : IModelWalker, IWalkerRenderer
         
         renderer.RendererDirty += InvokeRendererDirty;
 
-        _renderers.Add(renderer);
+        lock (_renderersLock)
+        {
+            _renderers.Add(renderer);
+        }
         
         return renderer;
     }
@@ -68,24 +85,39 @@ public class ModelRenderer : IModelWalker, IWalkerRenderer
         
         renderer.RendererDirty += InvokeRendererDirty;
 
-        _renderers.Add(renderer);
+        lock (_renderersLock)
+        {
+            _renderers.Add(renderer);
+        }
         
         return renderer;
     }
 
     public void SetTransform(UnitTransform transform)
     {
-        _transform = transform.CreateGroupTransform();
+        _matrix = transform.CreateMatrix();
         InvokeRendererDirty();
     }
     
-    public void Render(DrawingContext dc)
+    public void Render(SKCanvas canvas)
     {
-        using var state = _transform is not null ? dc.PushTransform(_transform.Value) : default;
-
-        foreach (var renderer in _renderers)
+        if (_matrix is not null)
         {
-            renderer.Render(dc);
+            canvas.Save();
+            canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, _matrix.Value));
+        }
+
+        lock (_renderersLock)
+        {
+            foreach (var renderer in _renderers)
+            {
+                renderer.Render(canvas);
+            }
+        }
+
+        if (_matrix is not null)
+        {
+            canvas.Restore();
         }
     }
 

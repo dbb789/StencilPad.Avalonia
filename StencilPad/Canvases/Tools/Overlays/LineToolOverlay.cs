@@ -177,10 +177,10 @@ public class LineToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEleme
             return;
         }
 
-        using (dc.PushTransform(_viewport.MillimetersToPixelsTransform.Value))
-        {
-            _renderer.Render(dc);
-        }
+        //using (dc.PushTransform(_viewport.MillimetersToPixelsTransform.Value))
+        //{
+            //_renderer.Render(dc);
+        //}
 
         for (int i = 0; i < _polygon.Vertices.Count; ++i)
         {

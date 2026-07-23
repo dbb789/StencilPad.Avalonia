@@ -1,6 +1,7 @@
 using Avalonia.Media;
 using StencilPad.Models.Resolvers;
 using StencilPad.Spatial;
+using SkiaSharp;
 
 namespace StencilPad.Rendering;
 
@@ -12,7 +13,7 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
 
         ////////////////////
         
-        public Geometry? Geometry;
+        public SKPath? Path;
         public List<(Geometry, Transform)> Overlays { get; } = [];
         
         public bool GeometryDirty;
@@ -21,12 +22,12 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
     private readonly IResourceSet _resourceSet;
     private readonly Dictionary<int, Entry> _entryMap;
     private ClampedGeometryWalker? _clampedGeometryWalker;
-    private StreamGeometryWalker? _streamGeometryWalker;
+    private SKPathGeometryWalker? _pathGeometryWalker;
     
     private GeometryGroup? _baseGeometry;
     private bool _geometryDirty;
-    private Pen? _pen;
-    private Brush? _brush;
+    private SKPaint? _fillPaint;
+    private SKPaint? _strokePaint;
 
     public event Action? RendererDirty;
     
@@ -41,32 +42,26 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
     {
         // ...
     }
-
-    public void Render(DrawingContext dc)
+    
+    public void Render(SKCanvas canvas)
     {
-        if (_pen is null || _brush is null)
+        var path = GetCombinedPath();
+
+        if (_fillPaint is not null)
         {
-            return;
+            canvas.DrawPath(path, _fillPaint);
         }
 
-        var geometry = GetGeometryGroup();
-        
-        dc.DrawGeometry(_brush, _pen, geometry);
-        
-        foreach (var (_, entry) in _entryMap)
+        if (_strokePaint is not null)
         {
-            foreach (var (overlayGeometry, transform) in entry.Overlays)
-            {
-                using var state = dc.PushTransform(transform.Value);
-                dc.DrawGeometry(_brush, _pen, overlayGeometry);
-            }
+            canvas.DrawPath(path, _strokePaint);
         }
     }
     
     public void SetStyle(GeometryStyle style)
     {
-        _pen = CreatePen(style);
-        _brush = CreateBrush(style);
+        _strokePaint = CreateStrokePaint(style);
+        _fillPaint = CreateFillPaint(style);
 
         InvokeRendererDirty();
     }
@@ -76,7 +71,7 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
         _entryMap[id] = new Entry
         {
             GeometrySet = geometry,
-            Geometry = null,
+            Path = null,
             GeometryDirty = true,
         };
 
@@ -108,62 +103,51 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
         InvokeRendererDirty();
     }
 
-    private Geometry GetGeometryGroup()
+    private SKPath GetCombinedPath()
     {
-        if (!_geometryDirty && _baseGeometry is not null)
-        {
-            return _baseGeometry;
-        }
-        
-        _geometryDirty = false;
-            
-        _baseGeometry = new GeometryGroup
-        {
-            FillRule = FillRule.EvenOdd
-        };
+        var builder = new SKPath.OpBuilder();
 
         foreach (var (_, entry) in _entryMap)
         {
-            _baseGeometry.Children.Add(GetGeometry(entry));
+            builder.Add(GetPath(entry), SKPathOp.Xor);
         }
+        
+        var path = new SKPath();
 
-        return _baseGeometry;
+        builder.Resolve(path);
+
+        return path;
     }
 
-    private Geometry GetGeometry(Entry entry)
+    private SKPath GetPath(Entry entry)
     {
-        if (!entry.GeometryDirty && entry.Geometry is not null)
+        if (!entry.GeometryDirty && entry.Path is not null)
         {
-            return entry.Geometry;
+            return entry.Path;
         }
 
         entry.GeometryDirty = false;
         
-        var geometry = new StreamGeometry();
+        var path = new SKPath();
 
-        using (var ctx = geometry.Open())
+        _pathGeometryWalker ??= new();
+        _pathGeometryWalker.Path = path;
+        
+        if (entry.GeometrySet.StartPoint is not null ||
+            entry.GeometrySet.EndPoint is not null)
         {
-            ctx.SetFillRule(FillRule.EvenOdd);
-
-            _streamGeometryWalker ??= new StreamGeometryWalker();
-            _streamGeometryWalker.Context = ctx;
+            _clampedGeometryWalker ??= new ClampedGeometryWalker(_pathGeometryWalker);
+            _clampedGeometryWalker.SetStartEnd(entry.GeometrySet.StartPoint,
+                                               entry.GeometrySet.EndPoint);
             
-            if (entry.GeometrySet.StartPoint is not null ||
-                entry.GeometrySet.EndPoint is not null)
-            {
-                _clampedGeometryWalker ??= new ClampedGeometryWalker(_streamGeometryWalker);
-                _clampedGeometryWalker.SetStartEnd(entry.GeometrySet.StartPoint,
-                                                   entry.GeometrySet.EndPoint);
-
-                entry.GeometrySet.Resolver.Walk(_clampedGeometryWalker);
-            }
-            else
-            {
-                entry.GeometrySet.Resolver.Walk(_streamGeometryWalker);
-            }
+            entry.GeometrySet.Resolver.Walk(_clampedGeometryWalker);
+        }
+        else
+        {
+            entry.GeometrySet.Resolver.Walk(_pathGeometryWalker);
         }
 
-        entry.Geometry = geometry;
+        entry.Path = path;
         entry.Overlays.Clear();
         
         foreach (var (resource, overlayTransform) in entry.GeometrySet.Overlays)
@@ -171,26 +155,40 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
             entry.Overlays.Add((resource.Geometry, overlayTransform.CreateGroupTransform()));
         }
 
-        return geometry;
+        return path;
     }
 
-    private Pen CreatePen(GeometryStyle style)
+    private SKPaint? CreateStrokePaint(GeometryStyle style)
     {
-        var pen = new Pen(new SolidColorBrush(style.LineColor),
-                          style.LineWidth.Millimeters);
+        var paint = new SKPaint
+        {
+            Style = SKPaintStyle.Stroke,
+            Color = new SKColor(style.LineColor.R,
+                                style.LineColor.G,
+                                style.LineColor.B,
+                                style.LineColor.A),
+            StrokeWidth = (float)style.LineWidth.Millimeters,
+            IsAntialias = true
+        };
 
-        pen.LineCap = PenLineCap.Flat;
-        pen.LineJoin = PenLineJoin.Miter;
-        pen.DashStyle = _resourceSet.Get(style.LineStyle);
-        
-        return pen;
+        return paint;
     }
 
-    private Brush CreateBrush(GeometryStyle style)
+    private SKPaint? CreateFillPaint(GeometryStyle style)
     {
-        return new SolidColorBrush(style.FillColor);
-    }
+        var paint = new SKPaint
+        {
+            Style = SKPaintStyle.Fill,
+            Color = new SKColor(style.FillColor.R,
+                                style.FillColor.G,
+                                style.FillColor.B,
+                                style.FillColor.A),
+            IsAntialias = true
+        };
 
+        return paint;
+    }
+    
     private void InvokeRendererDirty()
     {
         RendererDirty?.Invoke();

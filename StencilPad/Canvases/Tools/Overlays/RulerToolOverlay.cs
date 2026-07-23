@@ -117,8 +117,9 @@ public class RulerToolOverlay : Control, IDisposable
         _previewRuler.Min = min;
         _previewRuler.Max = max;
 
-        using var state = dc.PushTransform(_viewport.MillimetersToPixelsTransform.Value);
-        _previewRenderer.Render(dc);
+        //using var state = dc.PushTransform(_viewport.MillimetersToPixelsTransform.Value);
+        
+        //_previewRenderer.Render(dc);
     }
 
     private Unit2D CurrentSnappedMouseOverPosition(Point mousePosition,
