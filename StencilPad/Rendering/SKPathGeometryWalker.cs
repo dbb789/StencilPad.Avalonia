@@ -1,4 +1,3 @@
-using Avalonia.Media;
 using SkiaSharp;
 using StencilPad.Spatial;
 
@@ -7,7 +6,8 @@ namespace StencilPad.Rendering;
 public class SKPathGeometryWalker() : IGeometryWalker
 {
     public SKPath Path = null!;
-
+    public bool Closed => _closed;
+    
     public Unit2D StartPosition => _startPosition;
     public Unit2D EndPosition => _endPosition;
     
@@ -94,7 +94,7 @@ public class SKPathGeometryWalker() : IGeometryWalker
             {
                 Path.Close();
             }
-            
+
             _figureStarted = false;
         }
     }
