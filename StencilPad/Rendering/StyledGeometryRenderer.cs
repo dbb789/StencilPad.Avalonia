@@ -93,37 +93,46 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
     private void RebuildGeometry()
     {
         _fillPath?.Dispose();
+        _fillPath = null;
+        
         _outlinePath?.Dispose();
+        _outlinePath = null;
+        
         _overlayPath?.Dispose();
-        
-        using var fillBuilder = new SKPath.OpBuilder();
+        _overlayPath = null;
 
-        _outlinePath = new SKPath();
-        _overlayPath = new SKPath();
-        
+        SKPath.OpBuilder? fillBuilder = null;
+
         foreach (var (_, entry) in _entryMap)
         {
             var (path, closed) = CreatePath(entry.GeometrySet);
 
             if (closed)
             {
+                fillBuilder ??= new();
                 fillBuilder.Add(path, SKPathOp.Xor);
             }
             else
             {
+                _outlinePath ??= new();
                 _outlinePath.AddPath(path);
             }
 
             foreach (var (resource, transform) in entry.GeometrySet.Overlays)
             {
+                _overlayPath ??= new();
                 _overlayPath.AddPath(resource.Path, transform.CreateMatrix());
             }
             
             path.Dispose();
         }
 
-        _fillPath = new SKPath();
-        fillBuilder.Resolve(_fillPath);
+        if (fillBuilder is not null)
+        {
+            _fillPath = new SKPath();
+            fillBuilder.Resolve(_fillPath);
+            fillBuilder.Dispose();
+        }
     }
 
     private (SKPath, bool) CreatePath(GeometrySet geometrySet)
