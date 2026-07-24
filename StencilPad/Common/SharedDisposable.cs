@@ -9,17 +9,23 @@ public class SharedDisposable<T> where T : class, IDisposable
     
     private class Handle : IHandle
     {
-        public T Value => _parent.GetValue();
+        public T Value => _parent?.GetValue() ??
+            throw new ObjectDisposedException(nameof(SharedDisposable<T>.Handle));
         
-        private readonly SharedDisposable<T> _parent;
+        private SharedDisposable<T>? _parent;
         
-        public Handle(SharedDisposable<T> parent)
+        public void SetParent(SharedDisposable<T>? parent)
         {
             _parent = parent;
         }
         
         public void Dispose()
         {
+            if (_parent is null)
+            {
+                throw new ObjectDisposedException(nameof(SharedDisposable<T>.Handle));
+            }
+            
             _parent.Release(this);
         }
     }
@@ -72,12 +78,20 @@ public class SharedDisposable<T> where T : class, IDisposable
         {
             ++_handleCount;
 
+            Handle handle;
+            
             if (_handles.Count > 0)
             {
-                return _handles.Pop();
+                handle = _handles.Pop();
             }
-            
-            return new Handle(this);
+            else
+            {
+                handle = new Handle();
+            }
+
+            handle.SetParent(this);
+
+            return handle;
         }
     }
 
@@ -85,6 +99,8 @@ public class SharedDisposable<T> where T : class, IDisposable
     {
         lock (_lock)
         {
+            handle.SetParent(null);
+            
             --_handleCount;
             _handles.Push(handle);
             
