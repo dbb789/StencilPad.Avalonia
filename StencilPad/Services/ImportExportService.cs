@@ -69,7 +69,7 @@ public class ImportExportService : IImportExportService
             Title = "Export PNG",
             SuggestedFileName = sheet.Name,
             DefaultExtension = "png",
-            FileTypeChoices = [SvgFileType]
+            FileTypeChoices = [PngFileType]
         });
 
         var path = file?.TryGetLocalPath();
