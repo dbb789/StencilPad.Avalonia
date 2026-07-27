@@ -1,29 +1,36 @@
-using System.IO;
-using StencilPad.Models;
-using StencilPad.Models.Operations;
-using StencilPad.Spatial;
+using Avalonia.Platform.Storage;
 using StencilPad.Export;
+using StencilPad.Models;
+using StencilPad.Spatial;
+using StencilPad.UI;
 
 namespace StencilPad.Services;
 
-// NOTE: File-open/save dialogs and image loading here were WPF-only
-// (Microsoft.Win32 dialogs, BitmapImage) and have been stubbed out rather than
-// silently ported wrong. Avalonia needs the async TopLevel.StorageProvider API
-// for file pickers (which requires a window/TopLevel reference not currently
-// threaded through this service) and Avalonia.Media.Imaging.Bitmap for image
-// metrics. This needs a proper redesign, not a mechanical swap.
 public class ImportExportService : IImportExportService
 {
+    private static readonly FilePickerFileType SvgFileType = new("SVG")
+    {
+        Patterns = ["*.svg"]
+    };
+    
+    private static readonly FilePickerFileType PngFileType = new("PNG")
+    {
+        Patterns = ["*.png"]
+    };
+
+    private readonly Avalonia.Controls.Window _owner;
     private readonly IDialogService _dialogService;
     private readonly IOperationService _operationService;
     private readonly PngExporter _pngExporter;
     private readonly SvgExporter _svgExporter;
 
-    public ImportExportService(IDialogService dialogService,
+    public ImportExportService(IAvaloniaDialogParent parent,
+                               IDialogService dialogService,
                                IOperationService operationService,
                                PngExporter pngExporter,
                                SvgExporter svgExporter)
     {
+        _owner = parent.Window;
         _dialogService = dialogService;
         _operationService = operationService;
         _pngExporter = pngExporter;
@@ -37,16 +44,40 @@ public class ImportExportService : IImportExportService
         return _dialogService.ShowErrorAsync("Image import is not yet implemented on this platform.", "Not Implemented");
     }
     
-    public Task ExportSvgAsync(Sheet sheet)
+    public async Task ExportSvgAsync(Sheet sheet)
     {
-        // TODO: Port to Avalonia's TopLevel.StorageProvider.SaveFilePickerAsync.
-        return _dialogService.ShowErrorAsync("SVG export is not yet implemented on this platform.", "Not Implemented");
+        var file = await _owner.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Export SVG",
+            SuggestedFileName = sheet.Name,
+            DefaultExtension = "svg",
+            FileTypeChoices = [SvgFileType]
+        });
+
+        var path = file?.TryGetLocalPath();
+
+        if (path is not null)
+        {
+            _svgExporter.Export(sheet, path);
+        }
     }
 
-    public Task ExportPngAsync(Sheet sheet)
+    public async Task ExportPngAsync(Sheet sheet)
     {
-        // TODO: Port to Avalonia's TopLevel.StorageProvider.SaveFilePickerAsync.
-        return _dialogService.ShowErrorAsync("PNG export is not yet implemented on this platform.", "Not Implemented");
+        var file = await _owner.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Export PNG",
+            SuggestedFileName = sheet.Name,
+            DefaultExtension = "png",
+            FileTypeChoices = [SvgFileType]
+        });
+
+        var path = file?.TryGetLocalPath();
+
+        if (path is not null)
+        {
+            _pngExporter.Export(sheet, path);
+        }
     }
 
     private static Unit2D MeasureImageSize(byte[] imageData, double maxMm = 150.0)

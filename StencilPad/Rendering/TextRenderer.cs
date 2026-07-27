@@ -1,4 +1,5 @@
 using SkiaSharp;
+using StencilPad.Common;
 using StencilPad.Models;
 using StencilPad.Models.Resolvers;
 using StencilPad.Spatial;
@@ -9,11 +10,33 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
 {
     private static readonly string FallbackFont = "Arial";
     private static readonly string [] NewlineSplit = new[] { "\r\n", "\r", "\n" };
+
+    private class RenderedText : IDisposable
+    {
+        public SKPoint Point;
+        public SKFont Font = new SKFont();
+        public SKTextAlign Align;
+        public SKPaint Paint = new SKPaint();
+        public string [] Lines = Array.Empty<string>();
+
+        public void Dispose()
+        {
+            Font?.Dispose();
+            Font = null!;
+            
+            Paint?.Dispose();
+            Paint = null!;
+            
+            Lines = Array.Empty<string>();
+        }
+    }
     
     private SKMatrix? _matrix;
     private TextStyle _style;
     private UnitBounds? _bounds;
     private string _text;
+    
+    private SharedDisposable<RenderedText> _renderedText;
 
     public event Action? RendererDirty;
     
@@ -21,6 +44,8 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
     {
         _style = new TextStyle();
         _text = "";
+
+        _renderedText = new(new());
     }
 
     public void Dispose()
@@ -63,6 +88,22 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
 
         canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, SKMatrix.CreateScale(1, -1)));
 
+        using var textHandle = _renderedText.Get();
+
+        var text = textHandle.Value;
+        var point = text.Point;
+        
+        foreach (var line in text.Lines)
+        {
+            point.Y += text.Font.Size;
+            canvas.DrawText(line, point, text.Align, text.Font, text.Paint);
+        }
+
+        canvas.Restore();
+    }
+
+    private void InvokeRendererDirty()
+    {
         var point = new SKPoint(0, 0);
 
         if (_bounds is not null)
@@ -95,17 +136,15 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
 
         var lines = _text.Split(NewlineSplit, StringSplitOptions.None);
 
-        foreach (var line in lines)
+        _renderedText.SetValue(new RenderedText
         {
-            point.Y += font.Size;
-            canvas.DrawText(line, point, align, font, paint);
-        }
-
-        canvas.Restore();
-    }
-
-    private void InvokeRendererDirty()
-    {
+            Point = point,
+            Font = font,
+            Align = align,
+            Paint = paint,
+            Lines = lines
+        });
+        
         RendererDirty?.Invoke();
     }
 }

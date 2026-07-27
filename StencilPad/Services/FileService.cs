@@ -1,4 +1,3 @@
-using System.IO;
 using Avalonia.Platform.Storage;
 using StencilPad.Models;
 using StencilPad.Schemas;
