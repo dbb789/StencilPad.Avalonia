@@ -18,9 +18,9 @@ public class RulerToolOverlay : Control, IDisposable
     private readonly IViewport _viewport;
     private readonly IUnitSnap _unitSnap;
     private readonly IUnitSnapContext _unitSnapContext;
-    private readonly Ruler _previewRuler;
-    private readonly RulerResolver _previewResolver;
-    private readonly ModelRenderer _previewRenderer;
+    private readonly Ruler _ruler;
+    private readonly RulerResolver _resolver;
+    private readonly ModelRenderer _renderer;
     private readonly LockAxisState _lockAxisState;
     
     private Unit2D? _start;
@@ -36,11 +36,12 @@ public class RulerToolOverlay : Control, IDisposable
         _viewport = viewport;
         _unitSnap = unitSnap;
         _unitSnapContext = new DefaultUnitSnapContext(viewport);
-        _previewRuler = new Ruler { Color = Color.FromArgb(128, 0, 0, 0) };
-        _previewResolver = new RulerResolver(_previewRuler, settings, resourceService);
-        _previewRenderer = new ModelRenderer(resourceService);
+        _ruler = new Ruler { Color = Color.FromArgb(128, 0, 0, 0) };
+        _resolver = new RulerResolver(_ruler, settings, resourceService);
+        _renderer = new ModelRenderer(resourceService);
 
-        _previewResolver.Attach(_previewRenderer);
+        _resolver.Attach(_renderer);
+        _renderer.RendererDirty += RendererDirty;
         
         _lockAxisState = new();
 
@@ -49,11 +50,17 @@ public class RulerToolOverlay : Control, IDisposable
 
     public void Dispose()
     {
+        _renderer.RendererDirty -= RendererDirty;
+        _renderer.Dispose();
+        _resolver.Detach();
+        _resolver.Dispose();
+        
         _viewport.ViewportChanged -= OnViewportChanged;
-
-        _previewResolver.Detach();
-        _previewResolver.Dispose();
-        _previewRenderer.Dispose();
+    }
+    
+    private void RendererDirty()
+    {
+        Dispatcher.Invoke(InvalidateVisual);
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
@@ -69,12 +76,12 @@ public class RulerToolOverlay : Control, IDisposable
         }
         else if ((_start.Value - _currentSnappedMousePosition).Magnitude > Unit.FromMillimeters(1))
         {
-            OnRulerPlaced?.Invoke(_previewRuler.Min, _previewRuler.Max);
+            OnRulerPlaced?.Invoke(_ruler.Min, _ruler.Max);
             _start = null;
         }
 
-        InvalidateVisual();
-
+        UpdateRuler();
+        
         e.Handled = true;
     }
 
@@ -84,22 +91,25 @@ public class RulerToolOverlay : Control, IDisposable
 
         _currentSnappedMousePosition = CurrentSnappedMouseOverPosition(mousePosition, e);
 
-        if (_start is not null)
-        {
-            InvalidateVisual();
-        }
+        UpdateRuler();
     }
 
     public override void Render(DrawingContext dc)
     {
-
         dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, Bounds.Width, Bounds.Height));
 
+        using var state = dc.PushTransform(_viewport.MillimetersToPixelsTransform.Value);
+
+        dc.Custom(_renderer.CreateDrawOperation());
+    }
+
+    private void UpdateRuler()
+    {
         if (_start is null)
         {
             return;
         }
-
+        
         var min = _start.Value;
         var max = _currentSnappedMousePosition;
 
@@ -114,12 +124,8 @@ public class RulerToolOverlay : Control, IDisposable
             (min, max) = (max, min);
         }
 
-        _previewRuler.Min = min;
-        _previewRuler.Max = max;
-
-        //using var state = dc.PushTransform(_viewport.MillimetersToPixelsTransform.Value);
-        
-        //_previewRenderer.Render(dc);
+        _ruler.Min = min;
+        _ruler.Max = max;
     }
 
     private Unit2D CurrentSnappedMouseOverPosition(Point mousePosition,

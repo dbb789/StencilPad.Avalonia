@@ -48,21 +48,27 @@ public class RectToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEleme
         _renderer = new ModelRenderer(resourceService);
 
         _resolver?.Attach(_renderer);
-        _renderer.RendererDirty += InvalidateVisual;
+        _renderer.RendererDirty += RendererDirty;
         
         _viewport.ViewportChanged += InvalidateVisual;
     }
 
     public override void Dispose()
     {
-        _renderer.RendererDirty -= InvalidateVisual;
+        _renderer.RendererDirty -= RendererDirty;
         _renderer.Dispose();
         _resolver?.Detach();
-        
+        _resolver?.Dispose();
+
         _viewport.ViewportChanged -= InvalidateVisual;
         _hintService.ClearAll();
     }
     
+    private void RendererDirty()
+    {
+        Dispatcher.Invoke(InvalidateVisual);
+    }
+
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         if (e.GetCurrentPoint(this).Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonPressed)
@@ -119,17 +125,16 @@ public class RectToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEleme
 
     public override void Render(DrawingContext dc)
     {
-        
         dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, Bounds.Width, Bounds.Height));
 
         if (_polygon.Vertices.Count == 0)
         {
             return;
         }
+        
+        using var state = dc.PushTransform(_viewport.MillimetersToPixelsTransform.Value);
 
-        //using var state = dc.PushTransform(_viewport.MillimetersToPixelsTransform.Value);
-
-        //_renderer.Render(dc);
+        dc.Custom(_renderer.CreateDrawOperation());
     }
 
     private Unit2D CurrentSnappedMouseOverPosition(Point mousePosition)

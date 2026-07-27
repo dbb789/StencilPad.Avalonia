@@ -67,6 +67,7 @@ public class SharedDisposable<T> where T : class, IDisposable
             }
             else
             {
+                _pendingValue?.Dispose();
                 _pendingValue = value;
             }
         }

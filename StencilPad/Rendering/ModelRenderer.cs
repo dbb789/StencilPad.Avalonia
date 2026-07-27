@@ -1,14 +1,16 @@
+using Avalonia.Rendering.SceneGraph;
 using SkiaSharp;
 using StencilPad.Models.Resolvers;
 using StencilPad.Spatial;
 
 namespace StencilPad.Rendering;
 
-public class ModelRenderer : IModelWalker, IWalkerRenderer
+public class ModelRenderer : IRenderer, IModelWalker, IWalkerRenderer
 {
     private readonly IResourceSet _resourceSet;
     private readonly List<IWalkerRenderer> _renderers;
     private readonly object _renderersLock = new();
+    private readonly RendererDrawOperation _drawOperation;
     
     private SKMatrix? _matrix;
 
@@ -18,6 +20,7 @@ public class ModelRenderer : IModelWalker, IWalkerRenderer
     {
         _resourceSet = resourceSet;
         _renderers = new();
+        _drawOperation = new RendererDrawOperation(this);
     }
 
     public void Dispose()
@@ -36,7 +39,7 @@ public class ModelRenderer : IModelWalker, IWalkerRenderer
             renderer.Dispose();
         }
     }
-
+    
     public IModelWalker CreateModelWalker()
     {
         var renderer = new ModelRenderer(_resourceSet);
@@ -99,6 +102,11 @@ public class ModelRenderer : IModelWalker, IWalkerRenderer
         InvokeRendererDirty();
     }
     
+    public ICustomDrawOperation CreateDrawOperation()
+    {
+        return _drawOperation;
+    }
+
     public void Render(SKCanvas canvas)
     {
         if (_matrix is not null)

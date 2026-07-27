@@ -1,4 +1,3 @@
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
@@ -24,17 +23,17 @@ public class SheetRenderPanel : ContentControl
 
     private void OnLoaded(object? sender, RoutedEventArgs e)
     {
-        _sheetRenderer.RendererDirty += ForceRedraw;
+        _sheetRenderer.RendererDirty += RendererDirty;
     }
 
     public void OnUnloaded(object? sender, RoutedEventArgs e)
     {
-        _sheetRenderer.RendererDirty -= ForceRedraw;
+        _sheetRenderer.RendererDirty -= RendererDirty;
     }
     
-    private void ForceRedraw()
+    private void RendererDirty()
     {
-        Dispatcher.Invoke(() => { InvalidateVisual(); });
+        Dispatcher.Invoke(InvalidateVisual);
     }
     
     public override void Render(DrawingContext dc)

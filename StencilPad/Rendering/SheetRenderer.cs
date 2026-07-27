@@ -1,7 +1,5 @@
-using Avalonia;
-using Avalonia.Media;
 using Avalonia.Rendering.SceneGraph;
-using Avalonia.Skia;
+using SkiaSharp;
 using Microsoft.Extensions.Logging;
 using StencilPad.Collections;
 using StencilPad.Common;
@@ -9,7 +7,7 @@ using StencilPad.Models.Resolvers;
 
 namespace StencilPad.Rendering;
 
-public class SheetRenderer : IDisposable
+public class SheetRenderer : IRenderer, IDisposable
 {
     public class Factory(ILogger<SheetRenderer> Logger,
                          ISettings Settings,
@@ -21,37 +19,14 @@ public class SheetRenderer : IDisposable
         }
     }
 
-    private class DrawOperation : ICustomDrawOperation
-    {
-        private readonly SheetRenderer _sheetRenderer;
-
-        public DrawOperation(SheetRenderer sheetRenderer)
-        {
-            _sheetRenderer = sheetRenderer;
-        }
-
-        public void Dispose()
-        {
-            // Nothing to dispose
-        }
-
-        public void Render(ImmediateDrawingContext context)
-        {
-            _sheetRenderer.Render(context);
-        }
-
-        public bool HitTest(Point p) => _sheetRenderer.HitTest(p);
-        public bool Equals(ICustomDrawOperation? other) => _sheetRenderer.Equals(other);
-        public Rect Bounds => _sheetRenderer.Bounds;
-    }
-    
     private readonly ILogger<SheetRenderer> _logger;
     private readonly SheetResolver _resolver;
     private readonly ISettings _settings;
     private readonly IResourceSet _resourceSet;
     private readonly OrderedDictionary<ISheetElementResolver, ModelRenderer> _renderers;
     private readonly object _renderersLock = new();
-    
+    private readonly RendererDrawOperation _drawOperation;
+
     public event Action? RendererDirty;
 
     private SheetRenderer(ILogger<SheetRenderer> logger,
@@ -64,6 +39,7 @@ public class SheetRenderer : IDisposable
         _settings = settings;
         _resourceSet = resourceSet;
         _renderers = new();
+        _drawOperation = new RendererDrawOperation(this);
 
         int index = 0;
         
@@ -87,22 +63,11 @@ public class SheetRenderer : IDisposable
 
     public ICustomDrawOperation CreateDrawOperation()
     {
-        return new DrawOperation(this);
+        return _drawOperation;
     }
     
-    public void Render(ImmediateDrawingContext context)
+    public void Render(SKCanvas canvas)
     {
-        var feature = context.TryGetFeature<ISkiaSharpApiLeaseFeature>();
-
-        if (feature is null)
-        {
-            return;
-        }
-        
-        using var lease = feature.Lease();
-        
-        var canvas = lease.SkCanvas;
-
         lock (_renderersLock)
         {
             foreach (var (_, renderer) in _renderers)
@@ -111,10 +76,6 @@ public class SheetRenderer : IDisposable
             }
         }
     }
-
-    public bool HitTest(Point p) => false;
-    public bool Equals(ICustomDrawOperation? other) => false;
-    public Rect Bounds => new Rect(0, 0, 1000, 1000);
 
     private void OnElementsChanged(ObservableListChangedArgs<ISheetElementResolver> e)
     {
