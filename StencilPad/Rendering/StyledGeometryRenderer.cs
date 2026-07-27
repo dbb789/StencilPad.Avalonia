@@ -60,8 +60,8 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
     {
         _resourceSet = resourceSet;
         _entryMap = new();
-        _renderedGeometry = new(new RenderedGeometry());
-        _renderedPaint = new(new RenderedPaint());
+        _renderedGeometry = new(new());
+        _renderedPaint = new(new());
     }
 
     public void Dispose()

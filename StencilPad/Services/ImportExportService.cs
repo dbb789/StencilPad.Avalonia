@@ -1,3 +1,5 @@
+using System.IO;
+using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using StencilPad.Export;
 using StencilPad.Models;
@@ -16,6 +18,11 @@ public class ImportExportService : IImportExportService
     private static readonly FilePickerFileType PngFileType = new("PNG")
     {
         Patterns = ["*.png"]
+    };
+    
+    private static readonly FilePickerFileType ImageFileType = new("Image")
+    {
+        Patterns = ["*.png", "*.jpg", "*.jpeg"]
     };
 
     private readonly Avalonia.Controls.Window _owner;
@@ -37,11 +44,35 @@ public class ImportExportService : IImportExportService
         _svgExporter = svgExporter;
     }
     
-    public Task ImportImageAsync(Sheet sheet, IViewport viewport)
+    public async Task ImportImageAsync(Sheet sheet, IViewport viewport)
     {
-        // TODO: Port to Avalonia's TopLevel.StorageProvider.OpenFilePickerAsync
-        // and Avalonia.Media.Imaging.Bitmap for measuring image size.
-        return _dialogService.ShowErrorAsync("Image import is not yet implemented on this platform.", "Not Implemented");
+        var files = await _owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Open Image",
+            AllowMultiple = false,
+            FileTypeFilter = [ImageFileType]
+        });
+
+        var file = files.FirstOrDefault();
+        var path = file?.TryGetLocalPath();
+
+        if (path is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var imageData = await File.ReadAllBytesAsync(path);
+            var bounds = UnitBounds.FromCenterSize(Unit2D.Zero, MeasureImageSize(imageData));
+            var imageElement = new ImageElement(bounds.Min, bounds.Max, imageData);
+            
+            sheet.Elements.Add(imageElement.Id, imageElement);
+        }
+        catch (Exception e)
+        {
+            await _dialogService.ShowErrorAsync($"Failed to import image: {e.Message}", "Import Error");
+        }
     }
     
     public async Task ExportSvgAsync(Sheet sheet)
@@ -82,7 +113,13 @@ public class ImportExportService : IImportExportService
 
     private static Unit2D MeasureImageSize(byte[] imageData, double maxMm = 150.0)
     {
-        throw new NotImplementedException(
-            "Image size measurement needs porting to Avalonia.Media.Imaging.Bitmap.");
+        var memoryStream = new MemoryStream(imageData);
+        var bitmap = new Bitmap(memoryStream);
+
+        double widthMm = bitmap.PixelSize.Width * 25.4 / bitmap.Dpi.X;
+        double heightMm = bitmap.PixelSize.Height * 25.4 / bitmap.Dpi.Y;
+
+        return new Unit2D(Unit.FromMillimeters(widthMm),
+                          Unit.FromMillimeters(heightMm));
     }
 }
