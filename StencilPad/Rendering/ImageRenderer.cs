@@ -21,11 +21,12 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
     private class RenderedImageProperties : IDisposable
     {
         public UnitBounds Bounds = UnitBounds.Empty;
-        public double Opacity = 1.0;
+        public SKPaint Paint = new SKPaint();
         
         public void Dispose()
         {
-            // ...
+            Paint?.Dispose();
+            Paint = null!;
         }
     }
 
@@ -96,13 +97,7 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
         
         canvas.Save();
         canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, SKMatrix.CreateScale(1, -1)));
-
-        canvas.DrawImage(image.Image, rect, new SKPaint
-        {
-            Color = new SKColor(255, 255, 255, (byte)(properties.Opacity * 255)),
-            IsAntialias = true
-        });
-
+        canvas.DrawImage(image.Image, rect, properties.Paint);
         canvas.Restore();
     }
 
@@ -111,7 +106,11 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
         _renderedImageProperties.SetValue(new RenderedImageProperties
         {
             Bounds = _bounds ?? UnitBounds.Empty,
-            Opacity = _opacity
+            Paint = new SKPaint
+            {
+                Color = new SKColor(255, 255, 255, (byte)(_opacity * 255)),
+                IsAntialias = true
+            }
         });
         
         RendererDirty?.Invoke();
