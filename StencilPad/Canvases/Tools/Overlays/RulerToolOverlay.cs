@@ -45,7 +45,7 @@ public class RulerToolOverlay : Control, IDisposable
         
         _lockAxisState = new();
 
-        _viewport.ViewportChanged += OnViewportChanged;
+        _viewport.ViewportChanged += InvalidateVisual;
     }
 
     public void Dispose()
@@ -55,7 +55,7 @@ public class RulerToolOverlay : Control, IDisposable
         _resolver.Detach();
         _resolver.Dispose();
         
-        _viewport.ViewportChanged -= OnViewportChanged;
+        _viewport.ViewportChanged -= InvalidateVisual;
     }
     
     private void RendererDirty()
@@ -74,7 +74,7 @@ public class RulerToolOverlay : Control, IDisposable
         {
             _start = _currentSnappedMousePosition;
         }
-        else if ((_start.Value - _currentSnappedMousePosition).Magnitude > Unit.FromMillimeters(1))
+        else if ((_start.Value - _currentSnappedMousePosition).Magnitude > Unit.Epsilon)
         {
             OnRulerPlaced?.Invoke(_ruler.Min, _ruler.Max);
             _start = null;
@@ -97,6 +97,11 @@ public class RulerToolOverlay : Control, IDisposable
     public override void Render(DrawingContext dc)
     {
         dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, Bounds.Width, Bounds.Height));
+
+        if (_start is null)
+        {
+            return;
+        }
 
         using var state = dc.PushTransform(_viewport.MillimetersToPixelsTransform.Value);
 
@@ -148,10 +153,5 @@ public class RulerToolOverlay : Control, IDisposable
         }
 
         return unitPosition;
-    }
-
-    private void OnViewportChanged()
-    {
-        InvalidateVisual();
     }
 }
