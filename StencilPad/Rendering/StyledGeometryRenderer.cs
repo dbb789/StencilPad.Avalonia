@@ -209,7 +209,8 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
                                 style.LineColor.B,
                                 style.LineColor.A),
             StrokeWidth = (float)style.LineWidth.Millimeters,
-            IsAntialias = true
+            IsAntialias = true,
+            IsDither = true
         };
 
         return paint;
@@ -229,7 +230,8 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
                                 style.FillColor.G,
                                 style.FillColor.B,
                                 style.FillColor.A),
-            IsAntialias = true
+            IsAntialias = true,
+            IsDither = true
         };
 
         return paint;
