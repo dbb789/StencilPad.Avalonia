@@ -1,6 +1,5 @@
-using System.IO;
-using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
+using SkiaSharp;
 using StencilPad.Export;
 using StencilPad.Models;
 using StencilPad.Spatial;
@@ -111,13 +110,12 @@ public class ImportExportService : IImportExportService
         }
     }
 
-    private static Unit2D MeasureImageSize(byte[] imageData, double maxMm = 150.0)
+    private static Unit2D MeasureImageSize(byte [] imageData)
     {
-        var memoryStream = new MemoryStream(imageData);
-        var bitmap = new Bitmap(memoryStream);
+        var bitmap = SKBitmap.Decode(imageData);
 
-        double widthMm = bitmap.PixelSize.Width * 25.4 / bitmap.Dpi.X;
-        double heightMm = bitmap.PixelSize.Height * 25.4 / bitmap.Dpi.Y;
+        double widthMm = bitmap.Width * 25.4 / 96.0;
+        double heightMm = bitmap.Height * 25.4 / 96.0;
 
         return new Unit2D(Unit.FromMillimeters(widthMm),
                           Unit.FromMillimeters(heightMm));
