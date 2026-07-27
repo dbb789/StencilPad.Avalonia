@@ -41,7 +41,7 @@ public class InlineTextField : UserControl
             {
                 Children =
                 [
-                    new TranslateTransform(-5, -3),
+                    new TranslateTransform(-3, 0),
                     new RotateTransform(_rotation)
                 ]
             };

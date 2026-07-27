@@ -1,4 +1,3 @@
-using Avalonia.Media;
 using SkiaSharp;
 using StencilPad.Models;
 using StencilPad.Models.Resolvers;
@@ -8,13 +7,8 @@ namespace StencilPad.Rendering;
 
 public class TextRenderer : ITextWalker, IWalkerRenderer
 {
-    private static readonly FontFamily FallbackFont = new("Arial");
-    private static readonly Transform FlipY;
-    
-    static TextRenderer()
-    {
-        FlipY = new ScaleTransform(1, -1);
-    }
+    private static readonly string FallbackFont = "Arial";
+    private static readonly string [] NewlineSplit = new[] { "\r\n", "\r", "\n" };
     
     private SKMatrix? _matrix;
     private TextStyle _style;
@@ -70,7 +64,14 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
         canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, SKMatrix.CreateScale(1, -1)));
 
         var point = new SKPoint(0, 0);
-        var font = new SKFont(SKTypeface.FromFamilyName(_style.Font ?? FallbackFont.Name),
+
+        if (_bounds is not null)
+        {
+            point = new SKPoint((float)_bounds.Value.NW.X.Millimeters,
+                                (float)-_bounds.Value.NW.Y.Millimeters);
+        }
+                
+        var font = new SKFont(SKTypeface.FromFamilyName(_style.Font ?? FallbackFont),
                               (float)Unit.FromFontSizePoints(_style.Size).Millimeters);
 
         var align = _style.Justification switch
@@ -83,59 +84,25 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
         
         var paint = new SKPaint
         {
-            Color = new SKColor(_style.Color.R, _style.Color.G, _style.Color.B, _style.Color.A),
+            Color = new SKColor(_style.Color.R,
+                                _style.Color.G,
+                                _style.Color.B,
+                                _style.Color.A),
+                                
             IsAntialias = true,
             IsDither = true
         };
-        
-        canvas.DrawText(_text, point, align, font, paint);
+
+        var lines = _text.Split(NewlineSplit, StringSplitOptions.None);
+
+        foreach (var line in lines)
+        {
+            point.Y += font.Size;
+            canvas.DrawText(line, point, align, font, paint);
+        }
 
         canvas.Restore();
     }
-
-    // public void Render(DrawingContext dc)
-    // {
-    //     if (_formattedText is null || string.IsNullOrEmpty(_text))
-    //     {
-    //         return;
-    //     }
-
-    //     using var transformState = _transform is not null ? dc.PushTransform(_transform.Value) : default;
-
-    //     // Account for WPF's inverted Y-axis by flipping the Y-axis for text rendering.
-    //     using var flipState = dc.PushTransform(FlipY.Value);
-
-    //     if (_bounds is not null)
-    //     {
-    //         var flippedBounds = UnitBounds.FromCenterSize(new Unit2D(_bounds.Value.Center.X, -_bounds.Value.Center.Y),
-    //                                                       _bounds.Value.Size);
-    //         var clipRect = flippedBounds.Millimeters;
-    //         var height = _formattedText.Height;
-
-    //         Point textPos;
-
-    //         switch (_style.Justification)
-    //         {
-    //         case Justification.Center:
-    //             textPos = new Point((clipRect.Left + clipRect.Right) / 2, clipRect.Top);
-    //             break;
-    //         case Justification.Right:
-    //             textPos = new Point(clipRect.Right, clipRect.Top);
-    //             break;
-    //         case Justification.Left:
-    //         default:
-    //             textPos = new Point(clipRect.Left, clipRect.Top);
-    //             break;
-    //         }
-
-    //         using var clipState = dc.PushClip(clipRect);
-    //         dc.DrawText(_formattedText, textPos);
-    //     }
-    //     else
-    //     {
-    //         dc.DrawText(_formattedText, new Point(0, 0));
-    //     }
-    // }
 
     private void InvokeRendererDirty()
     {
