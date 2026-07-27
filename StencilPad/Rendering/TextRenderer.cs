@@ -1,5 +1,3 @@
-using System.Globalization;
-using Avalonia;
 using Avalonia.Media;
 using SkiaSharp;
 using StencilPad.Models;
@@ -18,17 +16,15 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
         FlipY = new ScaleTransform(1, -1);
     }
     
-    private Transform? _transform;
+    private SKMatrix? _matrix;
     private TextStyle _style;
     private UnitBounds? _bounds;
     private string _text;
-    private FormattedText? _formattedText;
 
     public event Action? RendererDirty;
     
     public TextRenderer()
     {
-        _transform = null;
         _style = new TextStyle();
         _text = "";
     }
@@ -40,34 +36,61 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
 
     public void SetTransform(UnitTransform transform)
     {
-        _transform = transform.CreateGroupTransform();
+        _matrix = transform.CreateMatrix();
         InvokeRendererDirty();
     }
 
     public void SetStyle(TextStyle style)
     {
         _style = style;
-        RebuildFormattedText();
         InvokeRendererDirty();
     }
 
     public void SetBounds(UnitBounds? bounds)
     {
         _bounds = bounds;
-        RebuildFormattedText();
         InvokeRendererDirty();
     }
     
     public void SetText(string text)
     {
         _text = text;
-        RebuildFormattedText();
         InvokeRendererDirty();
     }
 
     public void Render(SKCanvas canvas)
     {
+        canvas.Save();
         
+        if (_matrix is not null)
+        {
+            canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, _matrix.Value));
+        }
+
+        canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, SKMatrix.CreateScale(1, -1)));
+
+        var point = new SKPoint(0, 0);
+        var font = new SKFont(SKTypeface.FromFamilyName(_style.Font ?? FallbackFont.Name),
+                              (float)Unit.FromFontSizePoints(_style.Size).Millimeters);
+
+        var align = _style.Justification switch
+        {
+            Justification.Left => SKTextAlign.Left,
+            Justification.Center => SKTextAlign.Center,
+            Justification.Right => SKTextAlign.Right,
+            _ => SKTextAlign.Left
+        };
+        
+        var paint = new SKPaint
+        {
+            Color = new SKColor(_style.Color.R, _style.Color.G, _style.Color.B, _style.Color.A),
+            IsAntialias = true,
+            IsDither = true
+        };
+        
+        canvas.DrawText(_text, point, align, font, paint);
+
+        canvas.Restore();
     }
 
     // public void Render(DrawingContext dc)
@@ -114,51 +137,6 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
     //     }
     // }
 
-    private void RebuildFormattedText()
-    {
-        if (string.IsNullOrEmpty(_text))
-        {
-            _formattedText = null;
-            return;
-        }
-
-        var fontFamily = ResolveFont(_style.Font);
-
-        _formattedText = new FormattedText(
-            _text,
-            CultureInfo.InvariantCulture,
-            FlowDirection.LeftToRight,
-            new Typeface(fontFamily, FontStyle.Normal, FontWeight.Normal, FontStretch.Normal),
-            Unit.FromFontSizePoints(_style.Size).Millimeters,
-            new SolidColorBrush(_style.Color))
-        {
-            Trimming = TextTrimming.None,
-            TextAlignment = GetTextAlignment(_style.Justification)
-        };
-    }
-
-    private static FontFamily ResolveFont(string fontName)
-    {
-        if (FontManager.Current.SystemFonts.Any(
-                f => string.Equals(f.Name, fontName, StringComparison.OrdinalIgnoreCase)))
-        {
-            return new FontFamily(fontName);
-        }
-
-        return FallbackFont;
-    }
-
-    private static TextAlignment GetTextAlignment(Justification justification)
-    {
-        return justification switch
-        {
-            Justification.Left => TextAlignment.Left,
-            Justification.Center => TextAlignment.Center,
-            Justification.Right => TextAlignment.Right,
-            _ => TextAlignment.Left
-        };
-    }
-    
     private void InvokeRendererDirty()
     {
         RendererDirty?.Invoke();

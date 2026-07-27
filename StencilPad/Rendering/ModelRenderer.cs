@@ -10,7 +10,6 @@ public class ModelRenderer : IRenderer, IModelWalker, IWalkerRenderer
     private readonly IResourceSet _resourceSet;
     private readonly List<IWalkerRenderer> _renderers;
     private readonly object _renderersLock = new();
-    private readonly RendererDrawOperation _drawOperation;
     
     private SKMatrix? _matrix;
 
@@ -20,7 +19,6 @@ public class ModelRenderer : IRenderer, IModelWalker, IWalkerRenderer
     {
         _resourceSet = resourceSet;
         _renderers = new();
-        _drawOperation = new RendererDrawOperation(this);
     }
 
     public void Dispose()
@@ -104,7 +102,7 @@ public class ModelRenderer : IRenderer, IModelWalker, IWalkerRenderer
     
     public ICustomDrawOperation CreateDrawOperation()
     {
-        return _drawOperation;
+        return new RendererDrawOperation(this);
     }
 
     public void Render(SKCanvas canvas)
