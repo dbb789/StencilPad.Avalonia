@@ -72,7 +72,7 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
         _renderedPaint.Dispose();
     }
     
-    public void Render(SKCanvas canvas)
+    public void Render(SKCanvas canvas, GRContext? context)
     {
         using var geometryHandle = _renderedGeometry.Get();
         using var paintHandle = _renderedPaint.Get();

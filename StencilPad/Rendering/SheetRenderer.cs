@@ -66,13 +66,13 @@ public class SheetRenderer : IRenderer, IDisposable
         return _drawOperation;
     }
     
-    public void Render(SKCanvas canvas)
+    public void Render(SKCanvas canvas, GRContext? context)
     {
         lock (_renderersLock)
         {
             foreach (var (_, renderer) in _renderers)
             {
-                renderer.Render(canvas);
+                renderer.Render(canvas, context);
             }
         }
     }

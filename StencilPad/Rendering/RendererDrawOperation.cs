@@ -31,8 +31,9 @@ public class RendererDrawOperation : ICustomDrawOperation
         using var lease = feature.Lease();
         
         var canvas = lease.SkCanvas;
+        var grContext = lease.GrContext;
         
-        _renderer.Render(canvas);
+        _renderer.Render(canvas, grContext);
     }
 
     public bool HitTest(Point p)

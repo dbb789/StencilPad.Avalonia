@@ -77,7 +77,7 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
         InvokeRendererDirty();
     }
 
-    public void Render(SKCanvas canvas)
+    public void Render(SKCanvas canvas, GRContext? context)
     {
         canvas.Save();
         

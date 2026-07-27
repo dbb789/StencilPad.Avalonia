@@ -2,5 +2,5 @@ using SkiaSharp;
 
 public interface IRenderer
 {
-    void Render(SKCanvas canvas);
+    void Render(SKCanvas canvas, GRContext? grContext);
 }

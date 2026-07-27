@@ -6,5 +6,5 @@ public interface IWalkerRenderer : IDisposable
 {
     event Action? RendererDirty;
     
-    void Render(SKCanvas canvas);
+    void Render(SKCanvas canvas, GRContext? context);
 }

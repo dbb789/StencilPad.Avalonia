@@ -105,7 +105,7 @@ public class ModelRenderer : IRenderer, IModelWalker, IWalkerRenderer
         return new RendererDrawOperation(this);
     }
 
-    public void Render(SKCanvas canvas)
+    public void Render(SKCanvas canvas, GRContext? context)
     {
         if (_matrix is not null)
         {
@@ -117,7 +117,7 @@ public class ModelRenderer : IRenderer, IModelWalker, IWalkerRenderer
         {
             foreach (var renderer in _renderers)
             {
-                renderer.Render(canvas);
+                renderer.Render(canvas, context);
             }
         }
 

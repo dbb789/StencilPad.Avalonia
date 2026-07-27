@@ -99,6 +99,8 @@ public class ImageElement : SheetElement<ImageElement>
         _boundsHandleSource.AssignFrom(other._boundsHandleSource);
 
         Transform = other.Transform;
+        // Image data is considered immutable so this copy by reference is
+        // acceptable.
         ImageData = other.ImageData;
         Opacity = other.Opacity;
     }
