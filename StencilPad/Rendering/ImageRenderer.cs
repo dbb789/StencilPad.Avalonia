@@ -10,12 +10,22 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
     private class RenderedImage : IDisposable
     {
         public SKImage? Image;
-        public UnitBounds Bounds;
         
         public void Dispose()
         {
             Image?.Dispose();
             Image = null;
+        }
+    }
+    
+    private class RenderedImageProperties : IDisposable
+    {
+        public UnitBounds Bounds = UnitBounds.Empty;
+        public double Opacity = 1.0;
+        
+        public void Dispose()
+        {
+            // ...
         }
     }
 
@@ -24,12 +34,14 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
     private double _opacity = 1.0;
 
     private SharedDisposable<RenderedImage> _renderedImage;
+    private SharedDisposable<RenderedImageProperties> _renderedImageProperties;
 
     public event Action? RendererDirty;
     
     public ImageRenderer()
     {
         _renderedImage = new(new());
+        _renderedImageProperties = new(new());
     }
 
     public void Dispose()
@@ -40,14 +52,16 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
     public void SetBounds(UnitBounds? bounds)
     {
         _bounds = bounds;
+        
         InvokeRendererDirty();
     }
     
     public void SetImageData(byte[] imageData)
     {
-        _image = SKImage.FromBitmap(SKBitmap.Decode(imageData));
-
-        System.Diagnostics.Debug.WriteLine($"Decoded image with dimensions: {_image.Width}x{_image.Height}");
+        _renderedImage.SetValue(new RenderedImage
+        {
+            Image = ((imageData.Length > 0) ? SKImage.FromEncodedData(imageData) : default),
+        });
         
         InvokeRendererDirty();
     }
@@ -70,29 +84,36 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
             return;
         }
 
-        var bounds = image.Bounds;
-        var rect = SKRect.Create((float)bounds.Min.X.Millimeters,
-                                 (float)bounds.Min.Y.Millimeters,
-                                 (float)bounds.Size.X.Millimeters,
-                                 (float)bounds.Size.Y.Millimeters);
+        using var propertiesHandle = _renderedImageProperties.Get();
+        
+        var properties = propertiesHandle.Value;
+        
+        var bounds = properties.Bounds;
+        var rect = new SKRect((float)bounds.SW.X.Millimeters,
+                              -(float)bounds.NE.Y.Millimeters,
+                              (float)bounds.NE.X.Millimeters,
+                              -(float)bounds.SW.Y.Millimeters);
+        
+        canvas.Save();
+        canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, SKMatrix.CreateScale(1, -1)));
 
-        canvas.DrawImage(image.Image,
-                         rect,
-                         new SKPaint
-                         {
-                             Color = new SKColor(255, 255, 255, 255),
-                             IsAntialias = true
-                         });
+        canvas.DrawImage(image.Image, rect, new SKPaint
+        {
+            Color = new SKColor(255, 255, 255, (byte)(properties.Opacity * 255)),
+            IsAntialias = true
+        });
+
+        canvas.Restore();
     }
 
     private void InvokeRendererDirty()
     {
-        _renderedImage.SetValue(new RenderedImage
+        _renderedImageProperties.SetValue(new RenderedImageProperties
         {
-            Image = _image,
-            Bounds = _bounds ?? UnitBounds.Empty
+            Bounds = _bounds ?? UnitBounds.Empty,
+            Opacity = _opacity
         });
-
+        
         RendererDirty?.Invoke();
     }
 }

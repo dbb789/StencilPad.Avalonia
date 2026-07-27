@@ -114,8 +114,8 @@ public class ImportExportService : IImportExportService
     {
         var bitmap = SKBitmap.Decode(imageData);
 
-        double widthMm = bitmap.Width * 25.4 / 96.0;
-        double heightMm = bitmap.Height * 25.4 / 96.0;
+        double widthMm = bitmap.Width * 25.4 / 240.0;
+        double heightMm = bitmap.Height * 25.4 / 240.0;
 
         return new Unit2D(Unit.FromMillimeters(widthMm),
                           Unit.FromMillimeters(heightMm));
