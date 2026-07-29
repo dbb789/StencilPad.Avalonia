@@ -25,7 +25,7 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
     private class RenderedProperties : IDisposable
     {
         public UnitBounds Bounds = UnitBounds.Empty;
-        public SKPaint Paint = new SKPaint();
+        public SKPaint Paint = new();
         
         public void Dispose()
         {
