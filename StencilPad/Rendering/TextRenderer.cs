@@ -1,5 +1,4 @@
 using SkiaSharp;
-using StencilPad.Common;
 using StencilPad.Models;
 using StencilPad.Models.Resolvers;
 using StencilPad.Spatial;
@@ -13,20 +12,24 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
 
     private class RenderedText : IDisposable
     {
-        public SKPoint Point;
-        public SKFont Font = new SKFont();
-        public SKTextAlign Align;
-        public SKPaint Paint = new SKPaint();
+        public SKPoint Point = new SKPoint(0, 0);
+        public SKFont Font = new();
+        public SKTextAlign Align = SKTextAlign.Left;
+        public SKPaint Paint = new();
         public string [] Lines = Array.Empty<string>();
 
+        public void Reset()
+        {
+            Point = new SKPoint(0, 0);
+            Align = SKTextAlign.Left;
+            Paint.Reset();
+            Lines = Array.Empty<string>();
+        }
+        
         public void Dispose()
         {
-            Font?.Dispose();
-            Font = null!;
-            
-            Paint?.Dispose();
-            Paint = null!;
-            
+            Font.Dispose();
+            Paint.Dispose();
             Lines = Array.Empty<string>();
         }
     }
@@ -36,7 +39,7 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
     private UnitBounds? _bounds;
     private string _text;
     
-    private SharedDisposable<RenderedText> _renderedText;
+    private TripleBuffer<RenderedText> _renderedText;
 
     public event Action? RendererDirty;
     
@@ -44,8 +47,7 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
     {
         _style = new TextStyle();
         _text = "";
-
-        _renderedText = new(new());
+        _renderedText = new();
     }
 
     public void Dispose()
@@ -88,9 +90,9 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
 
         canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, SKMatrix.CreateScale(1, -1)));
 
-        using var textHandle = _renderedText.Get();
+        using var textHandle = _renderedText.Read();
 
-        var text = textHandle.Value;
+        var text = textHandle.Buffer;
         var point = text.Point;
         
         foreach (var line in text.Lines)
@@ -136,14 +138,14 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
 
         var lines = _text.Split(NewlineSplit, StringSplitOptions.None);
 
-        _renderedText.SetValue(new RenderedText
-        {
-            Point = point,
-            Font = font,
-            Align = align,
-            Paint = paint,
-            Lines = lines
-        });
+        using var textHandle = _renderedText.Write();
+
+        textHandle.Buffer.Reset();
+        textHandle.Buffer.Point = point;
+        textHandle.Buffer.Font = font;
+        textHandle.Buffer.Align = align;
+        textHandle.Buffer.Paint = paint;
+        textHandle.Buffer.Lines = lines;
         
         RendererDirty?.Invoke();
     }

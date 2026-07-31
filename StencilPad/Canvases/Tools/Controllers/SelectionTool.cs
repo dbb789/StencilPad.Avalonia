@@ -358,15 +358,21 @@ public class SelectionTool : ToolBase
     
     private void SelectionRotateStarted()
     {
+        System.Diagnostics.Debug.WriteLine("SelectionRotateStarted");
+        
         StartEditContext();
 
         _rotateAccumulatedAngle = 0m;
         _rotateLastSnappedAngle = 0m;
 
+        System.Diagnostics.Debug.WriteLine($"Normalizing positions of selected elements : {_sheet.Selection.Count}");
+
         foreach (var selected in _sheet.Selection)
         {
             selected.NormalizePosition();
         }
+
+        System.Diagnostics.Debug.WriteLine("Done normalizing positions of selected elements");
     }
 
     private void SelectionRotated(double totalRadians, double deltaRadians)

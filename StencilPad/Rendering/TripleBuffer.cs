@@ -8,7 +8,6 @@ public class TripleBuffer<T> : IDisposable where T : class, IDisposable, new()
         
         private TripleBuffer<T> _parent;
         private T _buffer;
-        private bool _flush;
 
         public WriteContext(TripleBuffer<T> parent)
         {
@@ -16,14 +15,9 @@ public class TripleBuffer<T> : IDisposable where T : class, IDisposable, new()
             _buffer = _parent.EnterWriteScope();
         }
 
-        public void Flush()
-        {
-            _flush = true;
-        }
-
         public void Dispose()
         {
-            _parent.ExitWriteScope(_flush);
+            _parent.ExitWriteScope();
         }
     }
     
@@ -71,9 +65,18 @@ public class TripleBuffer<T> : IDisposable where T : class, IDisposable, new()
 
     public void Dispose()
     {
-        _write.Dispose();
-        _pending.Dispose();
-        _read.Dispose();
+        lock (_writeLock)
+        {
+            lock (_readLock)
+            {
+                lock (_pendingLock)
+                {
+                    _write.Dispose();
+                    _pending.Dispose();
+                    _read.Dispose();
+                }
+            }
+        }
     }
 
     public WriteContext Write()
@@ -101,19 +104,16 @@ public class TripleBuffer<T> : IDisposable where T : class, IDisposable, new()
         return _write;
     }
 
-    private void ExitWriteScope(bool flush)
+    private void ExitWriteScope()
     {
         try
         {
-            if (flush)
+            lock (_pendingLock)
             {
-                lock (_pendingLock)
-                {
-                    (_pending, _write) = (_write, _pending);
-                    _pendingDirty = true;
-                }
+                (_pending, _write) = (_write, _pending);
+                _pendingDirty = true;
             }
-
+            
             _writing = false;
         }
         finally

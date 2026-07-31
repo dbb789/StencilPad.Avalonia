@@ -1,5 +1,4 @@
 using SkiaSharp;
-using StencilPad.Common;
 using StencilPad.Models.Resolvers;
 using StencilPad.Spatial;
 
@@ -10,15 +9,11 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
     private class RenderedImage : IDisposable
     {
         public SKImage? Image;
-        public SKImage? RenderImage;
 
         public void Dispose()
         {
             Image?.Dispose();
             Image = null;
-
-            RenderImage?.Dispose();
-            RenderImage = null;
         }
     }
     
@@ -26,7 +21,7 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
     {
         public UnitBounds Bounds = UnitBounds.Empty;
         public SKPaint Paint = new();
-        
+
         public void Dispose()
         {
             Paint?.Dispose();
@@ -37,15 +32,15 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
     private UnitBounds? _bounds;
     private double _opacity = 1.0;
 
-    private SharedDisposable<RenderedImage> _renderedImage;
-    private SharedDisposable<RenderedProperties> _renderedProperties;
-
+    private TripleBuffer<RenderedImage> _renderedImage;
+    private TripleBuffer<RenderedProperties> _renderedProperties;
+    
     public event Action? RendererDirty;
     
     public ImageRenderer()
     {
-        _renderedImage = new(new());
-        _renderedProperties = new(new());
+        _renderedImage = new();
+        _renderedProperties = new();
     }
 
     public void Dispose()
@@ -63,11 +58,10 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
     
     public void SetImageData(byte[] imageData)
     {
-        _renderedImage.SetValue(new RenderedImage
-        {
-            Image = ((imageData.Length > 0) ? SKImage.FromEncodedData(imageData) : default),
-        });
-        
+        using var imageHandle = _renderedImage.Write();
+
+        imageHandle.Buffer.Image = ((imageData.Length > 0) ? SKImage.FromEncodedData(imageData) : null);
+
         InvokeRendererDirty();
     }
 
@@ -77,56 +71,65 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
         
         InvokeRendererDirty();
     }
-
+    
+    private SKImage? _image;
+    private SKImage? _renderImage;
+    private object _renderImageLock = new();
+    
     public void Render(SKCanvas canvas, GRContext? context)
     {
-        using var imageHandle = _renderedImage.Get();
+        using var imageHandle = _renderedImage.Read();
 
-        var image = imageHandle.Value;
+        var image = imageHandle.Buffer;
 
-        if (image.Image is null)
+        // Lock should be unnecessary here - this is really just for safety.
+        lock (_renderImageLock)
         {
-            return;
-        }
+            if (image.Image is null)
+            {
+                _renderImage?.Dispose();
+                return;
+            }
 
-        if (image.RenderImage is null)
-        {
-            image.RenderImage = (context is not null) ?
-                image.Image.ToTextureImage(context) : image.Image.ToRasterImage();
-        }
+            if (_image != image.Image)
+            {
+                _image = image.Image;
+                _renderImage?.Dispose();
+                _renderImage = (context is not null) ?
+                    _image.ToTextureImage(context) : _image.ToRasterImage();
+            }
 
-        if (image.RenderImage is null)
-        {
-            return;
+            if (_renderImage is null)
+            {
+                return;
+            }
+
+            using var propertiesHandle = _renderedProperties.Read();
+
+            var properties = propertiesHandle.Buffer;
+
+            var bounds = properties.Bounds;
+            var rect = new SKRect((float)bounds.SW.X.Millimeters,
+                                  -(float)bounds.NE.Y.Millimeters,
+                                  (float)bounds.NE.X.Millimeters,
+                                  -(float)bounds.SW.Y.Millimeters);
+
+            canvas.Save();
+            canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, SKMatrix.CreateScale(1, -1)));
+            canvas.DrawImage(_renderImage, rect, properties.Paint);
+            canvas.Restore();
         }
-        
-        using var propertiesHandle = _renderedProperties.Get();
-        
-        var properties = propertiesHandle.Value;
-        
-        var bounds = properties.Bounds;
-        var rect = new SKRect((float)bounds.SW.X.Millimeters,
-                              -(float)bounds.NE.Y.Millimeters,
-                              (float)bounds.NE.X.Millimeters,
-                              -(float)bounds.SW.Y.Millimeters);
-        
-        canvas.Save();
-        canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, SKMatrix.CreateScale(1, -1)));
-        canvas.DrawImage(image.RenderImage, rect, properties.Paint);
-        canvas.Restore();
     }
 
     private void InvokeRendererDirty()
     {
-        _renderedProperties.SetValue(new RenderedProperties
-        {
-            Bounds = _bounds ?? UnitBounds.Empty,
-            Paint = new SKPaint
-            {
-                Color = new SKColor(255, 255, 255, (byte)(Math.Clamp(_opacity, 0, 1) * 255)),
-                IsAntialias = true
-            }
-        });
+        using var propertiesHandle = _renderedProperties.Write();
+        
+        var properties = propertiesHandle.Buffer;
+
+        properties.Bounds = _bounds ?? UnitBounds.Empty;
+        properties.Paint.Color = new SKColor(255, 255, 255, (byte)(Math.Clamp(_opacity, 0, 1) * 255));
+        properties.Paint.IsAntialias = true;
         
         RendererDirty?.Invoke();
     }

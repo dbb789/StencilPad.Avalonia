@@ -5,9 +5,7 @@ namespace StencilPad.Canvases.Common;
 
 public class DragState<T>
 {
-    // NOTE: Avalonia has no SystemParameters equivalent for drag thresholds;
-    // WPF's defaults for both axes are 4 device-independent pixels.
-    private const double MinimumDragDistance = 4.0;
+    private const double MinimumDragDistance = 2.0;
 
     public readonly struct DragResult
     {

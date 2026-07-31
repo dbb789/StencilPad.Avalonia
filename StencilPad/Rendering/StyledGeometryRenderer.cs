@@ -1,4 +1,3 @@
-using StencilPad.Common;
 using StencilPad.Models.Resolvers;
 using StencilPad.Spatial;
 using SkiaSharp;
@@ -12,64 +11,44 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
         public GeometrySet GeometrySet;
     }
     
-    private class RenderBuffer : IDisposable
-    {
-        public SKPath? FillPath;
-        public SKPath? OutlinePath;
-        public SKPath? OverlayPath;
-        public SKPaint? FillPaint;
-        public SKPaint? StrokePaint;
-
-        public void Dispose()
-        {
-            FillPath?.Dispose();
-            FillPath = null;
-            
-            OutlinePath?.Dispose();
-            OutlinePath = null;
-            
-            OverlayPath?.Dispose();
-            OverlayPath = null;
-            
-            FillPaint?.Dispose();
-            FillPaint = null;
-            
-            StrokePaint?.Dispose();
-            StrokePaint = null;
-        }
-    }
-
     private class RenderedGeometry : IDisposable
     {
-        public SKPath? FillPath;
-        public SKPath? OutlinePath;
-        public SKPath? OverlayPath;
+        public SKPath FillPath = new();
+        public SKPath OutlinePath = new();
+        public SKPath OverlayPath = new();
+
+        private bool _disposed;
+        
+        public void Reset()
+        {
+            FillPath.Reset();
+            OutlinePath.Reset();
+            OverlayPath.Reset();
+        }
 
         public void Dispose()
         {
-            FillPath?.Dispose();
-            FillPath = null;
-            
-            OutlinePath?.Dispose();
-            OutlinePath = null;
-            
-            OverlayPath?.Dispose();
-            OverlayPath = null;
+            FillPath.Dispose();            
+            OutlinePath.Dispose();            
+            OverlayPath.Dispose();
         }
     }
     
     private class RenderedPaint : IDisposable
     {
-        public SKPaint? FillPaint;
-        public SKPaint? StrokePaint;
+        public SKPaint FillPaint = new();
+        public SKPaint StrokePaint = new();
 
+        public void Reset()
+        {
+            FillPaint.Reset();
+            StrokePaint.Reset();
+        }
+        
         public void Dispose()
         {
-            FillPaint?.Dispose();
-            FillPaint = null;
-            
-            StrokePaint?.Dispose();
-            StrokePaint = null;
+            FillPaint.Dispose();
+            StrokePaint.Dispose();
         }
     }
 
@@ -78,10 +57,8 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
     private ClampedGeometryWalker? _clampedGeometryWalker;
     private SKPathGeometryWalker? _pathGeometryWalker;
 
-    private TripleBuffer<RenderBuffer> _renderBuffer = new();
-    
-    private SharedDisposable<RenderedGeometry> _renderedGeometry;
-    private SharedDisposable<RenderedPaint> _renderedPaint;
+    private TripleBuffer<RenderedGeometry> _renderedGeometry;
+    private TripleBuffer<RenderedPaint> _renderedPaint;
 
     public event Action? RendererDirty;
     
@@ -89,8 +66,8 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
     {
         _resourceSet = resourceSet;
         _entryMap = new();
-        _renderedGeometry = new(new());
-        _renderedPaint = new(new());
+        _renderedGeometry = new();
+        _renderedPaint = new();
     }
 
     public void Dispose()
@@ -103,30 +80,25 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
     
     public void Render(SKCanvas canvas, GRContext? context)
     {
-        using var read = _renderBuffer.Read();
-
-        var buffer = read.Buffer;
+        using var geometryHandle = _renderedGeometry.Read();
+        using var paintHandle = _renderedPaint.Read();
         
-        // using var geometryHandle = _renderedGeometry.Get();
-        // using var paintHandle = _renderedPaint.Get();
+        var geometry = geometryHandle.Buffer;
+        var paint = paintHandle.Buffer;
         
-        // var geometry = geometryHandle.Value;
-        // var paint = paintHandle.Value;
-        
-        // DrawPath(canvas, geometry.FillPath, paint.FillPaint);
-        // DrawPath(canvas, geometry.FillPath, paint.StrokePaint);
-        // DrawPath(canvas, geometry.OutlinePath, paint.StrokePaint);
-        // DrawPath(canvas, geometry.OverlayPath, paint.FillPaint);
-        // DrawPath(canvas, geometry.OverlayPath, paint.StrokePaint);
+        DrawPath(canvas, geometry.FillPath, paint.FillPaint);
+        DrawPath(canvas, geometry.FillPath, paint.StrokePaint);
+        DrawPath(canvas, geometry.OutlinePath, paint.StrokePaint);
+        DrawPath(canvas, geometry.OverlayPath, paint.FillPaint);
+        DrawPath(canvas, geometry.OverlayPath, paint.StrokePaint);
     }
     
     public void SetStyle(GeometryStyle style)
     {
-        _renderedPaint.SetValue(new RenderedPaint
-        {
-            FillPaint = CreateFillPaint(style),
-            StrokePaint = CreateStrokePaint(style),
-        });
+        using var paintHandle = _renderedPaint.Write();
+
+        CreateFillPaint(style, paintHandle.Buffer.FillPaint);
+        CreateStrokePaint(style, paintHandle.Buffer.StrokePaint);
 
         InvokeRendererDirty();
     }
@@ -165,8 +137,11 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
 
     private void RebuildGeometry()
     {
-        var renderedGeometry = new RenderedGeometry();
+        using var geometryHandle = _renderedGeometry.Write();
+        var geometry = geometryHandle.Buffer;
 
+        geometry.Reset();
+        
         SKPath.OpBuilder? fillBuilder = null;
 
         foreach (var (_, entry) in _entryMap)
@@ -180,14 +155,12 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
             }
             else
             {
-                renderedGeometry.OutlinePath ??= new();
-                renderedGeometry.OutlinePath.AddPath(path);
+                geometry.OutlinePath.AddPath(path);
             }
 
             foreach (var (resource, transform) in entry.GeometrySet.Overlays)
             {
-                renderedGeometry.OverlayPath ??= new();
-                renderedGeometry.OverlayPath.AddPath(resource.Path, transform.CreateMatrix());
+                geometry.OverlayPath.AddPath(resource.Path, transform.CreateMatrix());
             }
             
             path.Dispose();
@@ -195,12 +168,9 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
 
         if (fillBuilder is not null)
         {
-            renderedGeometry.FillPath = new();
-            fillBuilder.Resolve(renderedGeometry.FillPath);
+            fillBuilder.Resolve(geometry.FillPath);
             fillBuilder.Dispose();
         }
-
-        _renderedGeometry.SetValue(renderedGeometry);
     }
 
     private (SKPath, bool) CreatePath(GeometrySet geometrySet)
@@ -227,52 +197,32 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
         return (path, _pathGeometryWalker.Closed);
     }
 
-    private SKPaint? CreateStrokePaint(GeometryStyle style)
+    private void CreateStrokePaint(GeometryStyle style, SKPaint paint)
     {
-        if (style.LineColor.A == 0 || style.LineWidth.Millimeters <= 0)
-        {
-            return null;
-        }
-        
-        var paint = new SKPaint
-        {
-            Style = SKPaintStyle.Stroke,
-            Color = new SKColor(style.LineColor.R,
-                                style.LineColor.G,
-                                style.LineColor.B,
-                                style.LineColor.A),
-            StrokeWidth = (float)style.LineWidth.Millimeters,
-            IsAntialias = true,
-            IsDither = true
-        };
-
-        return paint;
+        paint.Style = SKPaintStyle.Stroke;
+        paint.Color = new SKColor(style.LineColor.R,
+                                  style.LineColor.G,
+                                  style.LineColor.B,
+                                  style.LineColor.A);
+        paint.StrokeWidth = (float)style.LineWidth.Millimeters;
+        paint.IsAntialias = true;
+        paint.IsDither = true;
     }
 
-    private SKPaint? CreateFillPaint(GeometryStyle style)
+    private void CreateFillPaint(GeometryStyle style, SKPaint paint)
     {
-        if (style.FillColor.A == 0)
-        {
-            return null;
-        }
-
-        var paint = new SKPaint
-        {
-            Style = SKPaintStyle.Fill,
-            Color = new SKColor(style.FillColor.R,
-                                style.FillColor.G,
-                                style.FillColor.B,
-                                style.FillColor.A),
-            IsAntialias = true,
-            IsDither = true
-        };
-
-        return paint;
+        paint.Style = SKPaintStyle.Fill;
+        paint.Color = new SKColor(style.FillColor.R,
+                                  style.FillColor.G,
+                                  style.FillColor.B,
+                                  style.FillColor.A);
+        paint.IsAntialias = true;
+        paint.IsDither = true;
     }
 
-    private void DrawPath(SKCanvas canvas, SKPath? path, SKPaint? paint)
+    private void DrawPath(SKCanvas canvas, SKPath path, SKPaint paint)
     {
-        if (paint is null || path is null)
+        if (paint.Color.Alpha == 0 || path.IsEmpty)
         {
             return;
         }

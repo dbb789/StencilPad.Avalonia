@@ -18,6 +18,17 @@ namespace StencilPad.Canvases.Tools.Overlays;
 
 public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
 {
+    private class RenderedPicture : IDisposable
+    {
+        public SKPicture? Picture;
+
+        public void Dispose()
+        {
+            Picture?.Dispose();
+            Picture = null;
+        }
+    }
+
     public IViewport Viewport => _viewport;
 
     private readonly ISettings _settings;
@@ -40,10 +51,10 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
 
     private double _resizeHandleSize;
     private double _rotateHandleRadius;
-    private Pen _elementPen = null!;
-    private Brush _elementFill = null!;
-    private Pen _groupPen = null!;
-    private Brush _groupFill = null!;
+    private SKPaint _elementPen = new();
+    private SKPaint _elementFill = new();
+    private SKPaint _groupPen = new();
+    private SKPaint _groupFill = new();
     private IPointer? _capturedPointer;
 
     public event Action? SelectionDragStarted;
@@ -59,6 +70,8 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
     public event Action? SelectionRotateEnded;
     
     public event Action<ISheetElementAction>? ActionInvoked;
+
+    private TripleBuffer<RenderedPicture> _renderedPicture = new();
 
     public SelectionToolOverlay(ISettings settings,
                                 IViewport viewport,
@@ -238,13 +251,19 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         var selectionColor = _settings.SelectionColor;
         var groupSelectionColor = _settings.GroupSelectionColor;
 
-        _elementPen = new Pen(new SolidColorBrush(ColorUtil.WithAlpha(selectionColor, 128)), 2);
+        _elementPen.Style = SKPaintStyle.Stroke;
+        _elementPen.Color = ColorUtil.ToSKColor(ColorUtil.WithAlpha(selectionColor, 128));
+        _elementPen.StrokeWidth = 2;
 
-        _elementFill = new SolidColorBrush(ColorUtil.WithAlpha(selectionColor, 32));
+        _elementFill.Style = SKPaintStyle.Fill;
+        _elementFill.Color = ColorUtil.ToSKColor(ColorUtil.WithAlpha(selectionColor, 32));
+        
+        _groupPen.Style = SKPaintStyle.Stroke;
+        _groupPen.Color = ColorUtil.ToSKColor(ColorUtil.WithAlpha(groupSelectionColor, 128));
+        _groupPen.StrokeWidth = 2;
 
-        _groupPen = new Pen(new SolidColorBrush(ColorUtil.WithAlpha(groupSelectionColor, 128)), 2);
-
-        _groupFill = new SolidColorBrush(ColorUtil.WithAlpha(groupSelectionColor, 32));
+        _groupFill.Style = SKPaintStyle.Fill;
+        _groupFill.Color = ColorUtil.ToSKColor(ColorUtil.WithAlpha(groupSelectionColor, 32));
 
         _resizeHandleSize = _settings.HandleSizePx;
         _rotateHandleRadius = _settings.HandleSizePx / 2;
@@ -573,18 +592,11 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         }
     }
 
-    private SKPicture? _overlayPicture;
-
     private void ForceRedraw()
     {
         using var recorder = new SKPictureRecorder();
         using var canvas = recorder.BeginRecording(new SKRect(0, 0, (float)Bounds.Width, (float)Bounds.Height));
 
-        using var elementFill = new SKPaint { Style = SKPaintStyle.Fill, Color = new SKColor(0, 0, 255, 127) };
-        using var groupFill = new SKPaint { Style = SKPaintStyle.Fill, Color = new SKColor(255, 0, 255, 127) };
-        using var elementPen = new SKPaint { Style = SKPaintStyle.Stroke, Color = new SKColor(0, 0, 255, 127), StrokeWidth = 2 };
-        using var groupPen = new SKPaint { Style = SKPaintStyle.Stroke, Color = new SKColor(255, 0, 255, 127), StrokeWidth = 2 };
-        
         foreach (var resolver in _sheetResolver.Selection)
         {
             var screenBoundsRect = _viewport.ToRect(resolver.GetOutlineBounds());
@@ -595,14 +607,14 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
             
             var element = resolver.Element;
 
-            var pen = (element is ElementGroup) ? groupPen : elementPen;
+            var pen = (element is ElementGroup) ? _groupPen : _elementPen;
             SKPaint? fill = null;
 
             if (_dragState.DraggedElement == element ||
                 _rotateDragState.DraggedElement == element ||
                 _resizeDragState.DraggedElement == element)
             {
-                fill = (element is ElementGroup) ? groupFill : elementFill;
+                fill = (element is ElementGroup) ? _groupFill : _elementFill;
             }
 
             if (fill is not null)
@@ -622,7 +634,10 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
                             pen);
         }
 
-        _overlayPicture = recorder.EndRecording();
+        using var pictureHandle = _renderedPicture.Write();
+
+        pictureHandle.Buffer.Picture?.Dispose();
+        pictureHandle.Buffer.Picture = recorder.EndRecording();
 
         InvalidateVisual();
     }
@@ -632,10 +647,14 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         base.Render(dc);
 
         dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, Bounds.Width, Bounds.Height));
+        
+        using var pictureHandle = _renderedPicture.Read();
 
-        if (_overlayPicture is not null)
+        var picture = pictureHandle.Buffer.Picture;
+        
+        if (picture is not null)
         {
-            dc.Custom(new SKPictureDrawOperation(_overlayPicture, new Rect(0, 0, Bounds.Width, Bounds.Height)));
+            dc.Custom(new SKPictureDrawOperation(picture, new Rect(0, 0, Bounds.Width, Bounds.Height)));
         }
     }
 
