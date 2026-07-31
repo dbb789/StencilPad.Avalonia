@@ -67,6 +67,7 @@ public class PngExporter
         }*/
 
         using var stream = File.OpenWrite(path);
-        bitmap.Save(stream);
+
+        bitmap.Save(stream, PngBitmapEncoderOptions.Default);
     }
 }

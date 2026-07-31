@@ -11,6 +11,33 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
     {
         public GeometrySet GeometrySet;
     }
+    
+    private class RenderBuffer : IDisposable
+    {
+        public SKPath? FillPath;
+        public SKPath? OutlinePath;
+        public SKPath? OverlayPath;
+        public SKPaint? FillPaint;
+        public SKPaint? StrokePaint;
+
+        public void Dispose()
+        {
+            FillPath?.Dispose();
+            FillPath = null;
+            
+            OutlinePath?.Dispose();
+            OutlinePath = null;
+            
+            OverlayPath?.Dispose();
+            OverlayPath = null;
+            
+            FillPaint?.Dispose();
+            FillPaint = null;
+            
+            StrokePaint?.Dispose();
+            StrokePaint = null;
+        }
+    }
 
     private class RenderedGeometry : IDisposable
     {
@@ -51,6 +78,8 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
     private ClampedGeometryWalker? _clampedGeometryWalker;
     private SKPathGeometryWalker? _pathGeometryWalker;
 
+    private TripleBuffer<RenderBuffer> _renderBuffer = new();
+    
     private SharedDisposable<RenderedGeometry> _renderedGeometry;
     private SharedDisposable<RenderedPaint> _renderedPaint;
 
@@ -74,17 +103,21 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
     
     public void Render(SKCanvas canvas, GRContext? context)
     {
-        using var geometryHandle = _renderedGeometry.Get();
-        using var paintHandle = _renderedPaint.Get();
+        using var read = _renderBuffer.Read();
+
+        var buffer = read.Buffer;
         
-        var geometry = geometryHandle.Value;
-        var paint = paintHandle.Value;
+        // using var geometryHandle = _renderedGeometry.Get();
+        // using var paintHandle = _renderedPaint.Get();
         
-        DrawPath(canvas, geometry.FillPath, paint.FillPaint);
-        DrawPath(canvas, geometry.FillPath, paint.StrokePaint);
-        DrawPath(canvas, geometry.OutlinePath, paint.StrokePaint);
-        DrawPath(canvas, geometry.OverlayPath, paint.FillPaint);
-        DrawPath(canvas, geometry.OverlayPath, paint.StrokePaint);
+        // var geometry = geometryHandle.Value;
+        // var paint = paintHandle.Value;
+        
+        // DrawPath(canvas, geometry.FillPath, paint.FillPaint);
+        // DrawPath(canvas, geometry.FillPath, paint.StrokePaint);
+        // DrawPath(canvas, geometry.OutlinePath, paint.StrokePaint);
+        // DrawPath(canvas, geometry.OverlayPath, paint.FillPaint);
+        // DrawPath(canvas, geometry.OverlayPath, paint.StrokePaint);
     }
     
     public void SetStyle(GeometryStyle style)

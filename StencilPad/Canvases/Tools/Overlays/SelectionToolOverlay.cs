@@ -6,11 +6,13 @@ using StencilPad.Collections;
 using StencilPad.Common;
 using StencilPad.Models;
 using StencilPad.Models.Resolvers;
+using StencilPad.Rendering;
 using StencilPad.Spatial;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
+using SkiaSharp;
 
 namespace StencilPad.Canvases.Tools.Overlays;
 
@@ -571,45 +573,69 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         }
     }
 
+    private SKPicture? _overlayPicture;
+
     private void ForceRedraw()
     {
+        using var recorder = new SKPictureRecorder();
+        using var canvas = recorder.BeginRecording(new SKRect(0, 0, (float)Bounds.Width, (float)Bounds.Height));
+
+        using var elementFill = new SKPaint { Style = SKPaintStyle.Fill, Color = new SKColor(0, 0, 255, 127) };
+        using var groupFill = new SKPaint { Style = SKPaintStyle.Fill, Color = new SKColor(255, 0, 255, 127) };
+        using var elementPen = new SKPaint { Style = SKPaintStyle.Stroke, Color = new SKColor(0, 0, 255, 127), StrokeWidth = 2 };
+        using var groupPen = new SKPaint { Style = SKPaintStyle.Stroke, Color = new SKColor(255, 0, 255, 127), StrokeWidth = 2 };
+        
+        foreach (var resolver in _sheetResolver.Selection)
+        {
+            var screenBoundsRect = _viewport.ToRect(resolver.GetOutlineBounds());
+            var screenBounds = new SKRect((float)screenBoundsRect.Left,
+                                          (float)screenBoundsRect.Top,
+                                          (float)screenBoundsRect.Right,
+                                          (float)screenBoundsRect.Bottom);
+            
+            var element = resolver.Element;
+
+            var pen = (element is ElementGroup) ? groupPen : elementPen;
+            SKPaint? fill = null;
+
+            if (_dragState.DraggedElement == element ||
+                _rotateDragState.DraggedElement == element ||
+                _resizeDragState.DraggedElement == element)
+            {
+                fill = (element is ElementGroup) ? groupFill : elementFill;
+            }
+
+            if (fill is not null)
+            {
+                canvas.DrawRect(screenBounds, fill);
+            }
+            
+            canvas.DrawRect(screenBounds, pen);
+            canvas.DrawRect(ResizeHandleRect(screenBounds), pen);
+
+            var rotateHandleRect = RotateHandleRect(screenBounds);
+
+            canvas.DrawOval((float)(rotateHandleRect.Left + rotateHandleRect.Width / 2),
+                            (float)(rotateHandleRect.Top + rotateHandleRect.Height / 2),
+                            (float)(rotateHandleRect.Width / 2),
+                            (float)(rotateHandleRect.Height / 2),
+                            pen);
+        }
+
+        _overlayPicture = recorder.EndRecording();
+
         InvalidateVisual();
     }
-
+    
     public override void Render(DrawingContext dc)
     {
         base.Render(dc);
 
         dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, Bounds.Width, Bounds.Height));
 
-        foreach (var resolver in _sheetResolver.Selection)
+        if (_overlayPicture is not null)
         {
-            var screenBounds = _viewport.ToRect(resolver.GetOutlineBounds());
-            var element = resolver.Element;
-
-            Pen pen = (element is ElementGroup) ? _groupPen : _elementPen;
-            Brush? fill = null;
-
-            if (_dragState.DraggedElement == element ||
-                _rotateDragState.DraggedElement == element ||
-                _resizeDragState.DraggedElement == element)
-            {
-                fill = (element is ElementGroup) ? _groupFill : _elementFill;
-            }
-            
-            dc.DrawRectangle(fill, pen, screenBounds);
-
-            dc.DrawRectangle(null,
-                             pen,
-                             ResizeHandleRect(screenBounds));
-
-            var rotateHandleRect = RotateHandleRect(screenBounds);
-
-            dc.DrawEllipse(null,
-                           pen,
-                           new Point(rotateHandleRect.Left + rotateHandleRect.Width / 2,
-                                     rotateHandleRect.Top + rotateHandleRect.Height / 2),
-                           rotateHandleRect.Width / 2, rotateHandleRect.Height / 2);
+            dc.Custom(new SKPictureDrawOperation(_overlayPicture, new Rect(0, 0, Bounds.Width, Bounds.Height)));
         }
     }
 
@@ -623,5 +649,21 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
     {
         return new Rect(screenBounds.BottomRight,
                         new Size(_resizeHandleSize, _resizeHandleSize));
+    }
+
+    private SKRect RotateHandleRect(SKRect screenBounds)
+    {
+        return new SKRect(screenBounds.Right,
+                          screenBounds.Top - (float)_resizeHandleSize,
+                          screenBounds.Right + (float)_resizeHandleSize,
+                          screenBounds.Top);
+    }
+
+    private SKRect ResizeHandleRect(SKRect screenBounds)
+    {
+        return new SKRect(screenBounds.Right,
+                          screenBounds.Bottom,
+                          screenBounds.Right + (float)_resizeHandleSize,
+                          screenBounds.Bottom + (float)_resizeHandleSize);
     }
 }
