@@ -155,7 +155,7 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
 
     private void BuildInputBindings(SheetElementEditActionSet actionSet)
     {
-        var builder = new InputBindingsBuilder(_sheet, ActionInvoked, KeyBindings);
+        var builder = new InputBindingsBuilder(_sheet, InvokeAction, KeyBindings);
 
         builder.Add(Key.P, KeyModifiers.Control, actionSet.CornerProperties);
         builder.Add(Key.I, KeyModifiers.Control, actionSet.InsertPoint);
@@ -163,6 +163,11 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
         builder.Add(Key.C, KeyModifiers.Control | KeyModifiers.Shift, actionSet.ClosePath);
         builder.Add(Key.S, KeyModifiers.Control | KeyModifiers.Shift, actionSet.SetAsStraight);
         builder.Add(Key.U, KeyModifiers.Control | KeyModifiers.Shift, actionSet.SetAsCurve);
+    }
+
+    private void InvokeAction(ISheetElementAction action)
+    {
+        ActionInvoked?.Invoke(action);
     }
     
     private bool BuildContextMenu(SheetElementEditActionSet actionSet)

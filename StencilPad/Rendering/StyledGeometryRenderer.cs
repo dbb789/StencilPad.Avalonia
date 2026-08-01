@@ -12,8 +12,6 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
         public SKPath OutlinePath = new();
         public SKPath OverlayPath = new();
 
-        private bool _disposed;
-        
         public void Reset()
         {
             FillPath.Reset();
