@@ -82,6 +82,8 @@ public class ModelRenderer : IRenderer, IModelWalker, IWalkerRenderer
     
     public ICustomDrawOperation CreateDrawOperation()
     {
+        PreRender();
+        
         return new RendererDrawOperation(this);
     }
 
