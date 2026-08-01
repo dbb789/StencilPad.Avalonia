@@ -634,8 +634,13 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
                             pen);
         }
 
-        using var pictureHandle = _renderedPicture.Write();
+        using var pictureHandle = _renderedPicture.TryWrite();
 
+        if (!pictureHandle.IsValid)
+        {
+            return;
+        }
+        
         pictureHandle.Buffer.Picture?.Dispose();
         pictureHandle.Buffer.Picture = recorder.EndRecording();
 
@@ -648,8 +653,13 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
 
         dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, Bounds.Width, Bounds.Height));
         
-        using var pictureHandle = _renderedPicture.Read();
+        using var pictureHandle = _renderedPicture.TryRead();
 
+        if (!pictureHandle.IsValid)
+        {
+            return;
+        }
+        
         var picture = pictureHandle.Buffer.Picture;
         
         if (picture is not null)

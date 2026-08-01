@@ -6,11 +6,6 @@ namespace StencilPad.Rendering;
 
 public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
 {
-    private class Entry
-    {
-        public GeometrySet GeometrySet;
-    }
-    
     private class RenderedGeometry : IDisposable
     {
         public SKPath FillPath = new();
@@ -53,35 +48,50 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
     }
 
     private readonly IResourceSet _resourceSet;
-    private readonly Dictionary<int, Entry> _entryMap;
+    private readonly Dictionary<int, GeometrySet> _geometrySetMap;
     private ClampedGeometryWalker? _clampedGeometryWalker;
     private SKPathGeometryWalker? _pathGeometryWalker;
 
     private TripleBuffer<RenderedGeometry> _renderedGeometry;
     private TripleBuffer<RenderedPaint> _renderedPaint;
-
+    private bool _geometryDirty;
+    
     public event Action? RendererDirty;
     
     public StyledGeometryRenderer(IResourceSet resourceSet)
     {
         _resourceSet = resourceSet;
-        _entryMap = new();
+        _geometrySetMap = new();
         _renderedGeometry = new();
         _renderedPaint = new();
     }
 
     public void Dispose()
     {
-        _entryMap.Clear();
+        _geometrySetMap.Clear();
         
         _renderedGeometry.Dispose();
         _renderedPaint.Dispose();
     }
-    
+
+    public void PreRender()
+    {
+        if (_geometryDirty)
+        {
+            _geometryDirty = false;
+            RebuildGeometry();
+        }
+    }
+
     public void Render(SKCanvas canvas, GRContext? context)
     {
-        using var geometryHandle = _renderedGeometry.Read();
-        using var paintHandle = _renderedPaint.Read();
+        using var geometryHandle = _renderedGeometry.TryRead();
+        using var paintHandle = _renderedPaint.TryRead();
+
+        if (!geometryHandle.IsValid || !paintHandle.IsValid)
+        {
+            return;
+        }
         
         var geometry = geometryHandle.Buffer;
         var paint = paintHandle.Buffer;
@@ -95,7 +105,12 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
     
     public void SetStyle(GeometryStyle style)
     {
-        using var paintHandle = _renderedPaint.Write();
+        using var paintHandle = _renderedPaint.TryWrite();
+
+        if (!paintHandle.IsValid)
+        {
+            return;
+        }
 
         CreateFillPaint(style, paintHandle.Buffer.FillPaint);
         CreateStrokePaint(style, paintHandle.Buffer.StrokePaint);
@@ -105,48 +120,46 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
     
     public void Create(int id, GeometrySet geometry)
     {
-        _entryMap[id] = new Entry
-        {
-            GeometrySet = geometry,
-        };
+        _geometrySetMap[id] = geometry;
 
-        RebuildGeometry();
+        MarkGeometryDirty();
         InvokeRendererDirty();
     }
 
     public void Update(int id, GeometrySet geometry)
     {
-        if (!_entryMap.TryGetValue(id, out var entry))
-        {
-            return;
-        }
-        
-        entry.GeometrySet = geometry;
+        _geometrySetMap[id] = geometry;
 
-        RebuildGeometry();
+        MarkGeometryDirty();
         InvokeRendererDirty();
     }
 
     public void Destroy(int id)
     {
-        _entryMap.Remove(id);
+        _geometrySetMap.Remove(id);
 
-        RebuildGeometry();
+        MarkGeometryDirty();
         InvokeRendererDirty();
     }
 
     private void RebuildGeometry()
     {
-        using var geometryHandle = _renderedGeometry.Write();
+        using var geometryHandle = _renderedGeometry.TryWrite();
+
+        if (!geometryHandle.IsValid)
+        {
+            return;
+        }
+        
         var geometry = geometryHandle.Buffer;
 
         geometry.Reset();
         
         SKPath.OpBuilder? fillBuilder = null;
 
-        foreach (var (_, entry) in _entryMap)
+        foreach (var (_, geometrySet) in _geometrySetMap)
         {
-            var (path, closed) = CreatePath(entry.GeometrySet);
+            var (path, closed) = CreatePath(geometrySet);
 
             if (closed)
             {
@@ -158,7 +171,7 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
                 geometry.OutlinePath.AddPath(path);
             }
 
-            foreach (var (resource, transform) in entry.GeometrySet.Overlays)
+            foreach (var (resource, transform) in geometrySet.Overlays)
             {
                 geometry.OverlayPath.AddPath(resource.Path, transform.CreateMatrix());
             }
@@ -228,6 +241,11 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
         }
 
         canvas.DrawPath(path, paint);
+    }
+
+    private void MarkGeometryDirty()
+    {
+        _geometryDirty = true;
     }
     
     private void InvokeRendererDirty()

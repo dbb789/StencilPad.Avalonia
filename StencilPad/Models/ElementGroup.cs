@@ -80,9 +80,14 @@ public class ElementGroup : SheetElement<ElementGroup>
             return;
         }
 
+        System.Diagnostics.Debug.WriteLine($"Normalizing position of group with {Children.Count()} children");
+        int count = 0;
         foreach (var child in _children)
         {
+            long startTimeMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             child.NormalizePosition();
+            long endTimeMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            System.Diagnostics.Debug.WriteLine($"Normalizing position of child {count++} : {child.GetType().Name} took {endTimeMs - startTimeMs} ms");
         }
         
         var midpoint = Unit2D.Zero;

@@ -1,3 +1,5 @@
+using StencilPad.Collections;
+
 namespace StencilPad.Rendering;
 
 public class TripleBuffer<T> : IDisposable where T : class, IDisposable, new()
@@ -5,38 +7,42 @@ public class TripleBuffer<T> : IDisposable where T : class, IDisposable, new()
     public ref struct WriteContext : IDisposable
     {
         public T Buffer => _buffer;
+        public bool IsValid => _parent is not null;
         
-        private TripleBuffer<T> _parent;
+        private TripleBuffer<T>? _parent;
         private T _buffer;
 
-        public WriteContext(TripleBuffer<T> parent)
+        public WriteContext(TripleBuffer<T>? parent, T buffer)
         {
             _parent = parent;
-            _buffer = _parent.EnterWriteScope();
+            _buffer = buffer;
         }
 
         public void Dispose()
         {
-            _parent.ExitWriteScope();
+            _parent?.ExitWriteScope();
+            _parent = null;
         }
     }
     
     public ref struct ReadContext : IDisposable
     {
         public T Buffer => _buffer;
-        
-        private TripleBuffer<T> _parent;
+        public bool IsValid => _parent is not null;
+
+        private TripleBuffer<T>? _parent;
         private T _buffer;
 
-        public ReadContext(TripleBuffer<T> parent)
+        public ReadContext(TripleBuffer<T>? parent, T buffer)
         {
             _parent = parent;
-            _buffer = _parent.EnterReadScope();
+            _buffer = buffer;
         }
         
         public void Dispose()
         {
-            _parent.ExitReadScope();
+            _parent?.ExitReadScope();
+            _parent = null;
         }
     }
 
@@ -51,6 +57,8 @@ public class TripleBuffer<T> : IDisposable where T : class, IDisposable, new()
     private bool _writing;
     private bool _reading;
     private bool _pendingDirty;
+    
+    private AtomicBool _disposed;
 
     public TripleBuffer()
     {
@@ -61,6 +69,8 @@ public class TripleBuffer<T> : IDisposable where T : class, IDisposable, new()
         _writeLock = new object();
         _pendingLock = new object();
         _readLock = new object();
+
+        _disposed = new(false);
     }
 
     public void Dispose()
@@ -71,6 +81,11 @@ public class TripleBuffer<T> : IDisposable where T : class, IDisposable, new()
             {
                 lock (_pendingLock)
                 {
+                    if (_disposed.Swap(true))
+                    {
+                        return;
+                    }
+                    
                     _write.Dispose();
                     _pending.Dispose();
                     _read.Dispose();
@@ -78,21 +93,41 @@ public class TripleBuffer<T> : IDisposable where T : class, IDisposable, new()
             }
         }
     }
-
-    public WriteContext Write()
+    
+    public WriteContext TryWrite()
     {
-        return new WriteContext(this);
+        var buffer = TryEnterWriteScope();
+
+        if (buffer is null)
+        {
+            return new WriteContext(null, default!);
+        }
+
+        return new WriteContext(this, buffer);
     }
 
-    public ReadContext Read()
+    public ReadContext TryRead()
     {
-        return new ReadContext(this);
-    }
+        var buffer = TryEnterReadScope();
 
-    private T EnterWriteScope()
+        if (buffer is null)
+        {
+            return new ReadContext(null, default!);
+        }
+
+        return new ReadContext(this, buffer);
+    }
+    
+    private T? TryEnterWriteScope()
     {
         Monitor.Enter(_writeLock);
 
+        if (_disposed.Value)
+        {
+            Monitor.Exit(_writeLock);
+            return null;
+        }
+        
         if (_writing)
         {
             Monitor.Exit(_writeLock);
@@ -122,10 +157,16 @@ public class TripleBuffer<T> : IDisposable where T : class, IDisposable, new()
         }
     }
 
-    private T EnterReadScope()
+    private T? TryEnterReadScope()
     {
         Monitor.Enter(_readLock);
         
+        if (_disposed.Value)
+        {
+            Monitor.Exit(_readLock);
+            return null;
+        }
+
         if (_reading)
         {
             Monitor.Exit(_readLock);

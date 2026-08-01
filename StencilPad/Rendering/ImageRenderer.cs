@@ -58,8 +58,13 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
     
     public void SetImageData(byte[] imageData)
     {
-        using var imageHandle = _renderedImage.Write();
+        using var imageHandle = _renderedImage.TryWrite();
 
+        if (!imageHandle.IsValid)
+        {
+            return;
+        }
+        
         imageHandle.Buffer.Image = ((imageData.Length > 0) ? SKImage.FromEncodedData(imageData) : null);
 
         InvokeRendererDirty();
@@ -75,11 +80,21 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
     private SKImage? _image;
     private SKImage? _renderImage;
     private object _renderImageLock = new();
-    
+
+    public void PreRender()
+    {
+        // Nothing to do here - the image is already prepared in SetImageData.
+    }
+
     public void Render(SKCanvas canvas, GRContext? context)
     {
-        using var imageHandle = _renderedImage.Read();
-
+        using var imageHandle = _renderedImage.TryRead();
+        
+        if (!imageHandle.IsValid)
+        {
+            return;
+        }
+        
         var image = imageHandle.Buffer;
 
         // Lock should be unnecessary here - this is really just for safety.
@@ -104,8 +119,13 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
                 return;
             }
 
-            using var propertiesHandle = _renderedProperties.Read();
+            using var propertiesHandle = _renderedProperties.TryRead();
 
+            if (!propertiesHandle.IsValid)
+            {
+                return;
+            }
+            
             var properties = propertiesHandle.Buffer;
 
             var bounds = properties.Bounds;
@@ -123,7 +143,12 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
 
     private void InvokeRendererDirty()
     {
-        using var propertiesHandle = _renderedProperties.Write();
+        using var propertiesHandle = _renderedProperties.TryWrite();
+
+        if (!propertiesHandle.IsValid)
+        {
+            return;
+        }
         
         var properties = propertiesHandle.Buffer;
 

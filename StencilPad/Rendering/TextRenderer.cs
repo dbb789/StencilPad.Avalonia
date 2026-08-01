@@ -79,6 +79,11 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
         InvokeRendererDirty();
     }
 
+    public void PreRender()
+    {
+        // No pre-rendering needed for text
+    }
+    
     public void Render(SKCanvas canvas, GRContext? context)
     {
         canvas.Save();
@@ -90,8 +95,13 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
 
         canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, SKMatrix.CreateScale(1, -1)));
 
-        using var textHandle = _renderedText.Read();
+        using var textHandle = _renderedText.TryRead();
 
+        if (!textHandle.IsValid)
+        {
+            return;
+        }
+        
         var text = textHandle.Buffer;
         var point = text.Point;
         
@@ -138,8 +148,13 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
 
         var lines = _text.Split(NewlineSplit, StringSplitOptions.None);
 
-        using var textHandle = _renderedText.Write();
+        using var textHandle = _renderedText.TryWrite();
 
+        if (!textHandle.IsValid)
+        {
+            return;
+        }
+        
         textHandle.Buffer.Reset();
         textHandle.Buffer.Point = point;
         textHandle.Buffer.Font = font;

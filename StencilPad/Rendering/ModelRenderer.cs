@@ -8,10 +8,10 @@ namespace StencilPad.Rendering;
 public class ModelRenderer : IRenderer, IModelWalker, IWalkerRenderer
 {
     private readonly IResourceSet _resourceSet;
-    private readonly List<IWalkerRenderer> _renderers;
-    private readonly object _renderersLock = new();
-    
+
+    private List<IWalkerRenderer> _renderers;
     private SKMatrix? _matrix;
+    private readonly object _lock;    
 
     public event Action? RendererDirty;
 
@@ -19,84 +19,64 @@ public class ModelRenderer : IRenderer, IModelWalker, IWalkerRenderer
     {
         _resourceSet = resourceSet;
         _renderers = new();
+        _matrix = null;
+        _lock = new();
     }
 
     public void Dispose()
     {
-        List<IWalkerRenderer> renderersList;
-        
-        lock (_renderersLock)
+        lock (_lock)
         {
-            renderersList = _renderers.ToList();
+            foreach (var renderer in _renderers)
+            {
+                renderer.RendererDirty -= InvokeRendererDirty;
+                renderer.Dispose();
+            }
+            
             _renderers.Clear();
-        }
-        
-        foreach (var renderer in renderersList)
-        {
-            renderer.RendererDirty -= InvokeRendererDirty;
-            renderer.Dispose();
         }
     }
     
     public IModelWalker CreateModelWalker()
     {
-        var renderer = new ModelRenderer(_resourceSet);
-        
-        renderer.RendererDirty += InvokeRendererDirty;
-
-        lock (_renderersLock)
-        {
-            _renderers.Add(renderer);
-        }
-        
-        return renderer;
+        return AddRenderer(new ModelRenderer(_resourceSet));
     }
     
     public IStyledGeometryWalker CreateStyledGeometryWalker()
     {
-        var renderer = new StyledGeometryRenderer(_resourceSet);
-        
-        renderer.RendererDirty += InvokeRendererDirty;
-
-        lock (_renderersLock)
-        {
-            _renderers.Add(renderer);
-        }
-        
-        return renderer;
+        return AddRenderer(new StyledGeometryRenderer(_resourceSet));
     }
 
     public ITextWalker CreateTextWalker()
     {
-        var renderer = new TextRenderer();
-        
-        renderer.RendererDirty += InvokeRendererDirty;
-
-        lock (_renderersLock)
-        {
-            _renderers.Add(renderer);
-        }
-        
-        return renderer;
+        return AddRenderer(new TextRenderer());
     }
 
     public IImageWalker CreateImageWalker()
     {
-        var renderer = new ImageRenderer();
-        
+        return AddRenderer(new ImageRenderer());
+    }
+
+    private TWalkerRenderer AddRenderer<TWalkerRenderer>(TWalkerRenderer renderer)
+        where TWalkerRenderer : IWalkerRenderer
+    {
         renderer.RendererDirty += InvokeRendererDirty;
 
-        lock (_renderersLock)
+        lock (_lock)
         {
             _renderers.Add(renderer);
         }
-        
+
         return renderer;
     }
-
+    
     public void SetTransform(UnitTransform transform)
     {
-        _matrix = transform.CreateMatrix();
+        lock (_lock)
+        {
+            _matrix = transform.CreateMatrix();
+        }
+        
         InvokeRendererDirty();
     }
     
@@ -105,25 +85,36 @@ public class ModelRenderer : IRenderer, IModelWalker, IWalkerRenderer
         return new RendererDrawOperation(this);
     }
 
+    public void PreRender()
+    {
+        lock (_lock)
+        {
+            foreach (var renderer in _renderers)
+            {
+                renderer.PreRender();
+            }
+        }
+    }
+    
     public void Render(SKCanvas canvas, GRContext? context)
     {
-        if (_matrix is not null)
+        lock (_lock)
         {
-            canvas.Save();
-            canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, _matrix.Value));
-        }
+            if (_matrix is not null)
+            {
+                canvas.Save();
+                canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, _matrix.Value));
+            }
 
-        lock (_renderersLock)
-        {
             foreach (var renderer in _renderers)
             {
                 renderer.Render(canvas, context);
             }
-        }
 
-        if (_matrix is not null)
-        {
-            canvas.Restore();
+            if (_matrix is not null)
+            {
+                canvas.Restore();
+            }
         }
     }
 

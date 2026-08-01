@@ -65,6 +65,17 @@ public class SheetRenderer : IRenderer, IDisposable
     {
         return _drawOperation;
     }
+
+    public void PreRender()
+    {
+        lock (_renderersLock)
+        {
+            foreach (var (_, renderer) in _renderers)
+            {
+                renderer.PreRender();
+            }
+        }
+    }
     
     public void Render(SKCanvas canvas, GRContext? context)
     {
