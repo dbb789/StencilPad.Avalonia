@@ -31,6 +31,8 @@ public class UnitSnapOverlay : ContentControl, IUnitSnapOverlay
         _unitSnap = unitSnap;
         _defaultContext = new DefaultUnitSnapContext(_viewport);
         _context = null;
+
+        AddHandler(PointerMovedEvent, HandlePointerMoved, handledEventsToo: true);
     }
 
     public void Begin(IUnitSnapContext? context = null)
@@ -50,7 +52,7 @@ public class UnitSnapOverlay : ContentControl, IUnitSnapOverlay
         InvalidateVisual();        
     }
 
-    protected override void OnPointerMoved(PointerEventArgs e)
+    private void HandlePointerMoved(object? sender, PointerEventArgs e)
     {
         if (!_isActive)
         {
