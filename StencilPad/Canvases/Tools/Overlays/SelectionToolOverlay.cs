@@ -194,12 +194,14 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         }
 
         _settings.Changed += SettingsChanged;
+        _viewport.ViewportChanged += ForceRedraw;
     }
 
     public void Dispose()
     {
         _settings.Changed -= SettingsChanged;
-        
+        _viewport.ViewportChanged -= ForceRedraw;
+
         _sheetResolver.SelectionChanged -= OnSelectionChanged;
 
         foreach (var resolver in _sheetResolver.Selection)
