@@ -121,7 +121,7 @@ public class RubberBandEventPanel : ContentControl, IRubberBand
         {
             return null;
         }
-
+        
         return _rubberBandHandle.DragBounds;
     }
 
