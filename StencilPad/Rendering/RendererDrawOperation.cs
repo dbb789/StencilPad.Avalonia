@@ -6,7 +6,7 @@ using Avalonia.Skia;
 public class RendererDrawOperation : ICustomDrawOperation
 {
     private readonly IRenderer _renderer;
-
+    
     public Rect Bounds => new Rect(0, 0, 0, 0);
 
     public RendererDrawOperation(IRenderer renderer)

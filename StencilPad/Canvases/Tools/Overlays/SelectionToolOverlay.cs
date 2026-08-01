@@ -29,7 +29,6 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
 
     private class RenderedOverlay : IDisposable
     {
-        public double Scale = 1.0;
         public List<OverlayEntry> Entries = new();
 
         public void Reset()
@@ -156,11 +155,13 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         }
 
         _settings.Changed += SettingsChanged;
+        _viewport.ViewportChanged += InvalidateOverlay;
     }
 
     public void Dispose()
     {
         _settings.Changed -= SettingsChanged;
+        _viewport.ViewportChanged -= InvalidateOverlay;
         _sheetResolver.SelectionChanged -= OnSelectionChanged;
 
         _renderHooks.PreRenderHook -= PreRender;
@@ -667,8 +668,6 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         var overlay = entriesHandle.Buffer;
 
         overlay.Reset();
-        
-        overlay.Scale = _viewport.Zoom;
         
         foreach (var resolver in _sheetResolver.Selection)
         {
