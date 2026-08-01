@@ -7,7 +7,7 @@ using StencilPad.Models.Resolvers;
 
 namespace StencilPad.Rendering;
 
-public class SheetRenderer : IRenderer, IDisposable
+public class SheetRenderer : IRenderer, IDisposable, IRenderHooks
 {
     public class Factory(ILogger<SheetRenderer> Logger,
                          ISettings Settings,
@@ -24,11 +24,15 @@ public class SheetRenderer : IRenderer, IDisposable
     private readonly ISettings _settings;
     private readonly IResourceSet _resourceSet;
     private readonly OrderedDictionary<ISheetElementResolver, ModelRenderer> _renderers;
+    private SKMatrix _viewportMatrix;
     private readonly object _renderersLock = new();
     private readonly RendererDrawOperation _drawOperation;
 
     public event Action? RendererDirty;
 
+    public event Action? PreRenderHook;
+    public event Action<SKCanvas, GRContext?>? OverlayRenderHook;
+    
     private SheetRenderer(ILogger<SheetRenderer> logger,
                           SheetResolver resolver,
                           ISettings settings,
@@ -66,6 +70,14 @@ public class SheetRenderer : IRenderer, IDisposable
         return _drawOperation;
     }
 
+    public void SetViewportMatrix(SKMatrix matrix)
+    {
+        lock (_renderersLock)
+        {
+            _viewportMatrix = matrix;
+        }
+    }
+
     public void PreRender()
     {
         lock (_renderersLock)
@@ -75,19 +87,28 @@ public class SheetRenderer : IRenderer, IDisposable
                 renderer.PreRender();
             }
         }
+
+        PreRenderHook?.Invoke();
     }
     
     public void Render(SKCanvas canvas, GRContext? context)
     {
         lock (_renderersLock)
         {
+            canvas.Save();
+            canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, _viewportMatrix));
+            
             foreach (var (_, renderer) in _renderers)
             {
                 renderer.Render(canvas, context);
             }
-        }
-    }
 
+            canvas.Restore();
+        }
+
+        OverlayRenderHook?.Invoke(canvas, context);
+    }
+    
     private void OnElementsChanged(ObservableListChangedArgs<ISheetElementResolver> e)
     {
         switch (e.Action)
@@ -110,7 +131,7 @@ public class SheetRenderer : IRenderer, IDisposable
     {
         var renderer = new ModelRenderer(_resourceSet);
 
-        renderer.RendererDirty += InvokeRendererDirty;
+        renderer.RendererDirty += Redraw;
         resolver.Attach(renderer);
 
         lock (_renderersLock)
@@ -118,7 +139,7 @@ public class SheetRenderer : IRenderer, IDisposable
             _renderers.Insert(index, resolver, renderer);
         }
         
-        InvokeRendererDirty();
+        Redraw();
     }
 
     private void OnElementRemoved(ISheetElementResolver resolver)
@@ -129,7 +150,7 @@ public class SheetRenderer : IRenderer, IDisposable
             return;
         }
 
-        renderer.RendererDirty -= InvokeRendererDirty;
+        renderer.RendererDirty -= Redraw;
         renderer.Dispose();
 
         lock (_renderersLock)
@@ -137,7 +158,7 @@ public class SheetRenderer : IRenderer, IDisposable
             _renderers.Remove(resolver);
         }
         
-        InvokeRendererDirty();
+        Redraw();
     }
 
     private void OnElementMoved(int oldIndex, int newIndex)
@@ -150,10 +171,10 @@ public class SheetRenderer : IRenderer, IDisposable
             _renderers.Insert(newIndex, kvp.Key, kvp.Value);
         }
         
-        InvokeRendererDirty();
+        Redraw();
     }
     
-    private void InvokeRendererDirty()
+    public void Redraw()
     {
         RendererDirty?.Invoke();
     }

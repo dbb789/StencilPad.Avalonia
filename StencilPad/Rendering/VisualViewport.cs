@@ -98,14 +98,14 @@ public class VisualViewport : IViewport
     {
         get
         {
-            var scale = ToPixels(Unit.FromMillimeters(1.0));
+            var scaleFactor = ToPixels(Unit.FromMillimeters(1.0));
             var translateX = _size.X.Millimeters / 2.0;
             var translateY = -_size.Y.Millimeters / 2.0;
 
-            return SKMatrix.CreateScaleTranslation((float)scale,
-                                                   (float)-scale,
-                                                   (float)translateX,
-                                                   (float)translateY);
+            var scale = SKMatrix.CreateScale((float)scaleFactor, (float)-scaleFactor);
+            var translate = SKMatrix.CreateTranslation((float)translateX, (float)translateY);
+
+            return SKMatrix.Concat(scale, translate);
         }
     }
     

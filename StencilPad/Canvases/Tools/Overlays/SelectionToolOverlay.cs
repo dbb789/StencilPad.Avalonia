@@ -2,8 +2,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
-using Avalonia.Rendering.SceneGraph;
-using Avalonia.Skia;
 using SkiaSharp;
 using StencilPad.Canvases.Common;
 using StencilPad.Canvases.Tools.Actions;
@@ -31,6 +29,7 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
 
     private class RenderedOverlay : IDisposable
     {
+        public double Scale = 1.0;
         public List<OverlayEntry> Entries = new();
 
         public void Reset()
@@ -68,52 +67,11 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         }
     }
 
-    private class SelectionOverlayDrawOperation : ICustomDrawOperation
-    {
-        public Rect Bounds { get; }
-
-        private readonly SelectionToolOverlay _owner;
-
-        public SelectionOverlayDrawOperation(SelectionToolOverlay owner, Rect bounds)
-        {
-            _owner = owner;
-            Bounds = bounds;
-        }
-
-        public void Dispose()
-        {
-            // This component is reusable - Dispose() is a no-op.
-        }
-
-        public void Render(ImmediateDrawingContext context)
-        {
-            var feature = context.TryGetFeature<ISkiaSharpApiLeaseFeature>();
-
-            if (feature is null)
-            {
-                return;
-            }
-
-            using var lease = feature.Lease();
-
-            _owner.RenderOverlayGeometry(lease.SkCanvas);
-        }
-
-        public bool HitTest(Point p)
-        {
-            return Bounds.Contains(p);
-        }
-
-        public bool Equals(ICustomDrawOperation? other)
-        {
-            return ReferenceEquals(this, other);
-        }
-    }
-
     public IViewport Viewport => _viewport;
 
     private readonly ISettings _settings;
     private readonly IViewport _viewport;
+    private readonly IRenderHooks _renderHooks;
     private readonly IUnitSnap _unitSnap;
     private readonly SheetResolver _sheetResolver;
     private readonly Sheet _sheet;
@@ -154,6 +112,7 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
 
     public SelectionToolOverlay(ISettings settings,
                                 IViewport viewport,
+                                IRenderHooks renderHooks,
                                 IUnitSnap unitSnap,
                                 Sheet sheet,
                                 SheetResolver sheetResolver,
@@ -161,6 +120,7 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
     {
         _settings = settings;
         _viewport = viewport;
+        _renderHooks = renderHooks;
         _unitSnap = unitSnap;
         _sheetResolver = sheetResolver;
         _sheet = sheet;
@@ -174,8 +134,10 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         _overlayDirty = true;
 
         BuildPens();
-
         BuildInputBindings(actionSet);
+
+        _renderHooks.PreRenderHook += PreRender;
+        _renderHooks.OverlayRenderHook += RenderOverlayGeometry;
         
         ContextMenu = new ContextMenu();
         ContextMenu.Opening += (_, e) =>
@@ -194,16 +156,16 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         }
 
         _settings.Changed += SettingsChanged;
-        _viewport.ViewportChanged += ForceRedraw;
     }
 
     public void Dispose()
     {
         _settings.Changed -= SettingsChanged;
-        _viewport.ViewportChanged -= ForceRedraw;
-
         _sheetResolver.SelectionChanged -= OnSelectionChanged;
 
+        _renderHooks.PreRenderHook -= PreRender;
+        _renderHooks.OverlayRenderHook -= RenderOverlayGeometry;
+        
         foreach (var resolver in _sheetResolver.Selection)
         {
             OnSelectionRemoved(resolver);
@@ -642,14 +604,14 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
     
     private void OnSelectionAdded(ISheetElementResolver resolver)
     {
-        resolver.OutlineChanged += ForceRedraw;
+        resolver.OutlineChanged += InvalidateOverlay;
 
         ForceRedraw();
     }
 
     private void OnSelectionRemoved(ISheetElementResolver resolver)
     {
-        resolver.OutlineChanged -= ForceRedraw;
+        resolver.OutlineChanged -= InvalidateOverlay;
 
         ForceRedraw();
     }
@@ -681,11 +643,16 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
             return new Unit2D(_resizeInitialNW.X + seBx, targetSE.Y);
         }
     }
+    
+    private void InvalidateOverlay()
+    {
+        _overlayDirty = true;
+    }
 
     private void ForceRedraw()
     {
-        _overlayDirty = true;
-        InvalidateVisual();
+        InvalidateOverlay();
+        _renderHooks.Redraw();
     }
 
     private void RebuildOverlay()
@@ -700,7 +667,9 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         var overlay = entriesHandle.Buffer;
 
         overlay.Reset();
-
+        
+        overlay.Scale = _viewport.Zoom;
+        
         foreach (var resolver in _sheetResolver.Selection)
         {
             var screenBoundsRect = _viewport.ToRect(resolver.GetOutlineBounds());
@@ -732,17 +701,18 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         base.Render(dc);
 
         dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, Bounds.Width, Bounds.Height));
-        
+    }
+
+    private void PreRender()
+    {
         if (_overlayDirty)
         {
             _overlayDirty = false;
             RebuildOverlay();
         }
-
-        dc.Custom(new SelectionOverlayDrawOperation(this, new Rect(0, 0, Bounds.Width, Bounds.Height)));
     }
-
-    private void RenderOverlayGeometry(SKCanvas canvas)
+    
+    private void RenderOverlayGeometry(SKCanvas canvas, GRContext? context)
     {
         using var entriesHandle = _renderedOverlay.TryRead();
         using var paintsHandle = _renderedOverlayPaints.TryRead();

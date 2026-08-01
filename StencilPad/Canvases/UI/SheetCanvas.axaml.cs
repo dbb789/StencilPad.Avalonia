@@ -166,6 +166,7 @@ namespace StencilPad.Canvases.UI
             services.AddSingleton<IUnitSnap>(_unitSnap);
             services.AddSingleton<IUnitSnapOverlay>(_unitSnapOverlay);
             services.AddSingleton<SheetResolver>(_resolver);
+            services.AddSingleton<IRenderHooks>(_renderer);
         }
         
         private void OnSheetChanged(AvaloniaPropertyChangedEventArgs e)
