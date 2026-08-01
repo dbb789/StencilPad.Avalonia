@@ -38,9 +38,6 @@ public class SheetRenderPanel : ContentControl
     
     public override void Render(DrawingContext dc)
     {
-        _sheetRenderer.SetViewportMatrix(_viewport.MillimetersToPixelsMatrix);
-        _sheetRenderer.PreRender();
-
-        dc.Custom(_sheetRenderer.CreateDrawOperation());
+        dc.Custom(_sheetRenderer.CreateDrawOperation(_viewport.MillimetersToPixelsMatrix));
     }
 }

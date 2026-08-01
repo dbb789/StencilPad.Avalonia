@@ -5,7 +5,7 @@ using StencilPad.Spatial;
 
 namespace StencilPad.Rendering;
 
-public class ModelRenderer : IRenderer, IModelWalker, IWalkerRenderer
+public class ModelRenderer : IModelWalker, IWalkerRenderer
 {
     private readonly IResourceSet _resourceSet;
 
@@ -84,7 +84,7 @@ public class ModelRenderer : IRenderer, IModelWalker, IWalkerRenderer
     {
         PreRender();
         
-        return new RendererDrawOperation(this);
+        return new WalkerRendererDrawOperation(this);
     }
 
     public void PreRender()

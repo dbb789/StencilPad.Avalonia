@@ -7,7 +7,7 @@ using StencilPad.Models.Resolvers;
 
 namespace StencilPad.Rendering;
 
-public class SheetRenderer : IRenderer, IDisposable, IRenderHooks
+public class SheetRenderer : IViewportRenderer, IDisposable, IRenderHooks
 {
     public class Factory(ILogger<SheetRenderer> Logger,
                          ISettings Settings,
@@ -24,9 +24,7 @@ public class SheetRenderer : IRenderer, IDisposable, IRenderHooks
     private readonly ISettings _settings;
     private readonly IResourceSet _resourceSet;
     private readonly OrderedDictionary<ISheetElementResolver, ModelRenderer> _renderers;
-    private SKMatrix _viewportMatrix;
     private readonly object _renderersLock = new();
-    private readonly RendererDrawOperation _drawOperation;
 
     public event Action? RendererDirty;
 
@@ -43,7 +41,6 @@ public class SheetRenderer : IRenderer, IDisposable, IRenderHooks
         _settings = settings;
         _resourceSet = resourceSet;
         _renderers = new();
-        _drawOperation = new RendererDrawOperation(this);
 
         int index = 0;
         
@@ -65,20 +62,14 @@ public class SheetRenderer : IRenderer, IDisposable, IRenderHooks
         _resolver.ElementsChanged -= OnElementsChanged;
     }
 
-    public ICustomDrawOperation CreateDrawOperation()
+    public ICustomDrawOperation CreateDrawOperation(SKMatrix viewportMatrix)
     {
-        return _drawOperation;
+        PreRender();
+        
+        return new ViewportRendererDrawOperation(this, viewportMatrix);
     }
 
-    public void SetViewportMatrix(SKMatrix matrix)
-    {
-        lock (_renderersLock)
-        {
-            _viewportMatrix = matrix;
-        }
-    }
-
-    public void PreRender()
+    private void PreRender()
     {
         lock (_renderersLock)
         {
@@ -91,12 +82,12 @@ public class SheetRenderer : IRenderer, IDisposable, IRenderHooks
         PreRenderHook?.Invoke();
     }
     
-    public void Render(SKCanvas canvas, GRContext? context)
+    public void Render(SKCanvas canvas, GRContext? context, SKMatrix viewportMatrix)
     {
         lock (_renderersLock)
         {
             canvas.Save();
-            canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, _viewportMatrix));
+            canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, viewportMatrix));
             
             foreach (var (_, renderer) in _renderers)
             {

@@ -3,13 +3,15 @@ using Avalonia.Media;
 using Avalonia.Rendering.SceneGraph;
 using Avalonia.Skia;
 
-public class RendererDrawOperation : ICustomDrawOperation
+namespace StencilPad.Rendering;
+
+public class WalkerRendererDrawOperation : ICustomDrawOperation
 {
-    private readonly IRenderer _renderer;
+    private readonly IWalkerRenderer _renderer;
     
     public Rect Bounds => new Rect(0, 0, 0, 0);
 
-    public RendererDrawOperation(IRenderer renderer)
+    public WalkerRendererDrawOperation(IWalkerRenderer renderer)
     {
         _renderer = renderer;
     }
