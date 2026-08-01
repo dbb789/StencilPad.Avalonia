@@ -1,7 +1,6 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using StencilPad.Canvases.Tools.Actions;
-using StencilPad.Canvases.Tools.Common;
 using StencilPad.Canvases.Tools.Overlays;
 using StencilPad.Common;
 using StencilPad.Models;
