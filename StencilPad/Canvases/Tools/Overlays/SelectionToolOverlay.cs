@@ -56,6 +56,9 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
     private SKPaint _groupPen = new();
     private SKPaint _groupFill = new();
     private IPointer? _capturedPointer;
+    
+    private TripleBuffer<RenderedPicture> _renderedPicture;
+    private bool _pictureDirty;
 
     public event Action? SelectionDragStarted;
     public event Action<Unit2D, Unit2D>? SelectionDragged;
@@ -70,8 +73,6 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
     public event Action? SelectionRotateEnded;
     
     public event Action<ISheetElementAction>? ActionInvoked;
-
-    private TripleBuffer<RenderedPicture> _renderedPicture = new();
 
     public SelectionToolOverlay(ISettings settings,
                                 IViewport viewport,
@@ -91,6 +92,9 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         _rotateDragState = new();
 
         BuildPens();
+
+        _renderedPicture = new();
+        _pictureDirty = true;
 
         BuildInputBindings(actionSet);
         
@@ -272,7 +276,7 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
     private void SettingsChanged()
     {
         BuildPens();
-        InvalidateVisual();
+        ForceRedraw();
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
@@ -594,6 +598,12 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
 
     private void ForceRedraw()
     {
+        _pictureDirty = true;
+        InvalidateVisual();
+    }
+
+    private void RebuildPicture()
+    {
         using var recorder = new SKPictureRecorder();
         using var canvas = recorder.BeginRecording(new SKRect(0, 0, (float)Bounds.Width, (float)Bounds.Height));
 
@@ -643,16 +653,20 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         
         pictureHandle.Buffer.Picture?.Dispose();
         pictureHandle.Buffer.Picture = recorder.EndRecording();
-
-        InvalidateVisual();
     }
-    
+
     public override void Render(DrawingContext dc)
     {
         base.Render(dc);
 
         dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, Bounds.Width, Bounds.Height));
         
+        if (_pictureDirty)
+        {
+            _pictureDirty = false;
+            RebuildPicture();
+        }
+
         using var pictureHandle = _renderedPicture.TryRead();
 
         if (!pictureHandle.IsValid)
