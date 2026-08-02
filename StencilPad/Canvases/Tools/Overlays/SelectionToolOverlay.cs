@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Skia;
 using SkiaSharp;
 using StencilPad.Canvases.Common;
 using StencilPad.Canvases.Tools.Actions;
@@ -27,7 +28,7 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         public bool IsFilled;
     }
 
-    private class RenderedOverlay : IDisposable
+    private class RenderedEntries : IDisposable
     {
         public List<OverlayEntry> Entries = new();
 
@@ -38,11 +39,11 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
 
         public void Dispose()
         {
-            Entries.Clear();
+            Reset();
         }
     }
 
-    private class RenderedOverlayPaints : IDisposable
+    private class RenderedPaint : IDisposable
     {
         public SKPaint ElementPen = new();
         public SKPaint ElementFill = new();
@@ -91,8 +92,8 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
     private double _rotateHandleRadius;
     private IPointer? _capturedPointer;
     
-    private TripleBuffer<RenderedOverlay> _renderedOverlay;
-    private TripleBuffer<RenderedOverlayPaints> _renderedOverlayPaints;
+    private TripleBuffer<RenderedEntries> _renderedEntries;
+    private TripleBuffer<RenderedPaint> _renderedPaint;
     private bool _overlayDirty;
 
     public event Action? SelectionDragStarted;
@@ -128,8 +129,8 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         _resizeDragState = new();
         _rotateDragState = new();
 
-        _renderedOverlay = new();
-        _renderedOverlayPaints = new();
+        _renderedEntries = new();
+        _renderedPaint = new();
         _overlayDirty = true;
 
         BuildPens();
@@ -172,8 +173,8 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
             OnSelectionRemoved(resolver);
         }
 
-        _renderedOverlay.Dispose();
-        _renderedOverlayPaints.Dispose();
+        _renderedEntries.Dispose();
+        _renderedPaint.Dispose();
     }
 
     private void BuildInputBindings(SheetElementActionSet actionSet)
@@ -297,25 +298,25 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         var selectionColor = _settings.SelectionColor;
         var groupSelectionColor = _settings.GroupSelectionColor;
 
-        using var paintsHandle = _renderedOverlayPaints.TryWrite();
+        using var paintHandle = _renderedPaint.TryWrite();
 
-        if (paintsHandle.IsValid)
+        if (paintHandle.IsValid)
         {
-            var paints = paintsHandle.Buffer;
+            var paint = paintHandle.Buffer;
 
-            paints.ElementPen.Style = SKPaintStyle.Stroke;
-            paints.ElementPen.Color = ColorUtil.ToSKColor(ColorUtil.WithAlpha(selectionColor, 128));
-            paints.ElementPen.StrokeWidth = 2;
+            paint.ElementPen.Style = SKPaintStyle.Stroke;
+            paint.ElementPen.Color = ColorUtil.WithAlpha(selectionColor, 128).ToSKColor();
+            paint.ElementPen.StrokeWidth = 2;
 
-            paints.ElementFill.Style = SKPaintStyle.Fill;
-            paints.ElementFill.Color = ColorUtil.ToSKColor(ColorUtil.WithAlpha(selectionColor, 32));
+            paint.ElementFill.Style = SKPaintStyle.Fill;
+            paint.ElementFill.Color = ColorUtil.WithAlpha(selectionColor, 32).ToSKColor();
 
-            paints.GroupPen.Style = SKPaintStyle.Stroke;
-            paints.GroupPen.Color = ColorUtil.ToSKColor(ColorUtil.WithAlpha(groupSelectionColor, 128));
-            paints.GroupPen.StrokeWidth = 2;
+            paint.GroupPen.Style = SKPaintStyle.Stroke;
+            paint.GroupPen.Color = ColorUtil.WithAlpha(groupSelectionColor, 128).ToSKColor();
+            paint.GroupPen.StrokeWidth = 2;
 
-            paints.GroupFill.Style = SKPaintStyle.Fill;
-            paints.GroupFill.Color = ColorUtil.ToSKColor(ColorUtil.WithAlpha(groupSelectionColor, 32));
+            paint.GroupFill.Style = SKPaintStyle.Fill;
+            paint.GroupFill.Color = ColorUtil.WithAlpha(groupSelectionColor, 32).ToSKColor();
         }
 
         _resizeHandleSize = _settings.HandleSizePx;
@@ -655,46 +656,7 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         InvalidateOverlay();
         _renderHooks.Redraw();
     }
-
-    private void RebuildOverlay()
-    {
-        using var entriesHandle = _renderedOverlay.TryWrite();
-
-        if (!entriesHandle.IsValid)
-        {
-            return;
-        }
-
-        var overlay = entriesHandle.Buffer;
-
-        overlay.Reset();
-        
-        foreach (var resolver in _sheetResolver.Selection)
-        {
-            var screenBoundsRect = _viewport.ToRect(resolver.GetOutlineBounds());
-            var screenBounds = new SKRect((float)screenBoundsRect.Left,
-                                          (float)screenBoundsRect.Top,
-                                          (float)screenBoundsRect.Right,
-                                          (float)screenBoundsRect.Bottom);
-            
-            var element = resolver.Element;
-            var isGroup = element is ElementGroup;
-
-            var isFilled = _dragState.DraggedElement == element ||
-                           _rotateDragState.DraggedElement == element ||
-                           _resizeDragState.DraggedElement == element;
-
-            overlay.Entries.Add(new OverlayEntry
-            {
-                Bounds = screenBounds,
-                ResizeHandleBounds = ResizeHandleRect(screenBounds),
-                RotateHandleBounds = RotateHandleRect(screenBounds),
-                IsGroup = isGroup,
-                IsFilled = isFilled
-            });
-        }
-    }
-
+    
     public override void Render(DrawingContext dc)
     {
         base.Render(dc);
@@ -710,26 +672,61 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
             RebuildOverlay();
         }
     }
-    
-    private void RenderOverlayGeometry(SKCanvas canvas, GRContext? context)
-    {
-        using var entriesHandle = _renderedOverlay.TryRead();
-        using var paintsHandle = _renderedOverlayPaints.TryRead();
 
-        if (!entriesHandle.IsValid || !paintsHandle.IsValid)
+    private void RebuildOverlay()
+    {
+        using var entriesHandle = _renderedEntries.TryWrite();
+
+        if (!entriesHandle.IsValid)
         {
             return;
         }
 
-        var paints = paintsHandle.Buffer;
+        var overlay = entriesHandle.Buffer;
+
+        overlay.Reset();
+        
+        foreach (var resolver in _sheetResolver.Selection)
+        {
+            var screenBounds = _viewport.ToRect(resolver.GetOutlineBounds());
+            
+            var element = resolver.Element;
+            var isGroup = element is ElementGroup;
+
+            var isFilled = _dragState.DraggedElement == element ||
+                           _rotateDragState.DraggedElement == element ||
+                           _resizeDragState.DraggedElement == element;
+
+            overlay.Entries.Add(new OverlayEntry
+            {
+                Bounds = screenBounds.ToSKRect(),
+                ResizeHandleBounds = ResizeHandleRect(screenBounds).ToSKRect(),
+                RotateHandleBounds = RotateHandleRect(screenBounds).ToSKRect(),
+                IsGroup = isGroup,
+                IsFilled = isFilled
+            });
+        }
+    }
+
+    private void RenderOverlayGeometry(SKCanvas canvas, GRContext? context)
+    {
+        using var entriesHandle = _renderedEntries.TryRead();
+        using var paintHandle = _renderedPaint.TryRead();
+
+        if (!entriesHandle.IsValid || !paintHandle.IsValid)
+        {
+            return;
+        }
+
+        var paint = paintHandle.Buffer;
 
         foreach (var entry in entriesHandle.Buffer.Entries)
         {
-            var pen = entry.IsGroup ? paints.GroupPen : paints.ElementPen;
+            var pen = entry.IsGroup ? paint.GroupPen : paint.ElementPen;
 
             if (entry.IsFilled)
             {
-                var fill = entry.IsGroup ? paints.GroupFill : paints.ElementFill;
+                var fill = entry.IsGroup ? paint.GroupFill : paint.ElementFill;
 
                 canvas.DrawRect(entry.Bounds, fill);
             }
@@ -757,21 +754,5 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
     {
         return new Rect(screenBounds.BottomRight,
                         new Size(_resizeHandleSize, _resizeHandleSize));
-    }
-
-    private SKRect RotateHandleRect(SKRect screenBounds)
-    {
-        return new SKRect(screenBounds.Right,
-                          screenBounds.Top - (float)_resizeHandleSize,
-                          screenBounds.Right + (float)_resizeHandleSize,
-                          screenBounds.Top);
-    }
-
-    private SKRect ResizeHandleRect(SKRect screenBounds)
-    {
-        return new SKRect(screenBounds.Right,
-                          screenBounds.Bottom,
-                          screenBounds.Right + (float)_resizeHandleSize,
-                          screenBounds.Bottom + (float)_resizeHandleSize);
     }
 }
