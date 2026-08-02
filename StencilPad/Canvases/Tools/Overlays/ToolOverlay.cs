@@ -36,7 +36,7 @@ public class ToolOverlay
         GetList().ListChanged += ElementsChanged;        
     }
 
-    public virtual void Dispose()
+    public void Dispose()
     {
         GetList().ListChanged -= ElementsChanged;
         

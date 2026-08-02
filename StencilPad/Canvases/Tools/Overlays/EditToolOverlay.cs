@@ -124,13 +124,12 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
         _handleMap.HandleSelectionChanged += ForceRedraw;
 
         BuildPens();
-        
+        BuildInputBindings(_actionSet);
+
         _toolOverlay = new ToolOverlay(sheet, renderHooks, true);
         _toolOverlay.RegisterOverlay(PolygonToolOverlayRenderer.Factory);
         _toolOverlay.RegisterOverlay(TextElementToolOverlayRenderer.Factory);
         _toolOverlay.RegisterOverlay(ImageElementToolOverlayRenderer.Factory);
-
-        BuildInputBindings(_actionSet);
         
         _renderHooks.PreRenderHook += PreRender;
         _renderHooks.OverlayRenderHook += RenderOverlayGeometry;
@@ -283,6 +282,7 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
     {
         if (e.GetCurrentPoint(this).Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonPressed)
         {
+            base.OnPointerPressed(e);
             return;
         }
 
@@ -311,8 +311,9 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
-        if (e.InitialPressMouseButton != MouseButton.Left)
+        if (e.GetCurrentPoint(this).Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonPressed)
         {
+            base.OnPointerReleased(e);
             return;
         }
 
