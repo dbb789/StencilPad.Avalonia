@@ -1,4 +1,6 @@
 using Avalonia.Media;
+using Avalonia.Skia;
+using SkiaSharp;
 using StencilPad.Models;
 using StencilPad.Spatial;
 using StencilPad.Rendering;
@@ -21,12 +23,24 @@ public class PolygonToolOverlayRenderer : IToolOverlayRenderer
             return null;
         }
     }
-    
+
+    private static SKPaint EdgeOverlayPaint = new SKPaint
+    {
+        Color = new SKColor(0, 0, 255, 128),
+        StrokeWidth = 0.3f,
+        IsStroke = true
+    };
+
+    private static SKPaint ControlStemPaint = new SKPaint
+    {
+        Color = new SKColor(0, 200, 0, 128),
+        StrokeWidth = 0.2f,
+        IsStroke = true
+    };
+
     private readonly IPolygonSheetElement _element;
     private readonly StreamGeometryWalker _walker;
 
-    private Pen? _edgeOverlayPen;
-    private Pen? _controlStemPen;
     private Transform? _transform;
     private StreamGeometry? _edgeOverlayGeometry;
     private StreamGeometry? _controlStemGeometry;
@@ -43,10 +57,6 @@ public class PolygonToolOverlayRenderer : IToolOverlayRenderer
         _element.TransformChanged += TransformChanged;
         
         _walker = new();
-        
-        _edgeOverlayPen = new Pen(Brushes.Blue, 0.3);
-
-        _controlStemPen = new Pen(new SolidColorBrush(Color.FromArgb(128, 0, 200, 0)), 0.2);
         
         foreach (var polygon in _element.PolygonSet)
         {
@@ -164,34 +174,42 @@ public class PolygonToolOverlayRenderer : IToolOverlayRenderer
 
     public void Render(DrawingContext dc)
     {
-        if (_geometryDirty)
-        {
-            _geometryDirty = false;
-            RebuildGeometry();
-        }
+        // if (_geometryDirty)
+        // {
+        //     _geometryDirty = false;
+        //     RebuildGeometry();
+        // }
 
-        if (_transform is null)
-        {
-            return;
-        }
+        // if (_transform is null)
+        // {
+        //     return;
+        // }
         
-        using var state = dc.PushTransform(_transform.Value);
+        // using var state = dc.PushTransform(_transform.Value);
         
-        if (_edgeOverlayGeometry is not null)
-        {
-            dc.DrawGeometry(Brushes.Transparent,
-                            _edgeOverlayPen,
-                            _edgeOverlayGeometry);
-        }
+        // if (_edgeOverlayGeometry is not null)
+        // {
+        //     dc.DrawGeometry(Brushes.Transparent,
+        //                     _edgeOverlayPen,
+        //                     _edgeOverlayGeometry);
+        // }
 
-        if (_controlStemGeometry is not null)
-        {
-            dc.DrawGeometry(Brushes.Transparent,
-                            _controlStemPen,
-                            _controlStemGeometry);
-        }
+        // if (_controlStemGeometry is not null)
+        // {
+        //     dc.DrawGeometry(Brushes.Transparent,
+        //                     _controlStemPen,
+        //                     _controlStemGeometry);
+        // }
     }
 
+    public void PreRender()
+    {
+    }
+    
+    public void Render(SKCanvas canvas, GRContext? context)
+    {
+    }
+    
     private void InvokeRendererDirty()
     {
         RendererDirty?.Invoke();

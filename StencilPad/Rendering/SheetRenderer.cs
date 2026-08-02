@@ -29,6 +29,7 @@ public class SheetRenderer : IViewportRenderer, IDisposable, IRenderHooks
     public event Action? RendererDirty;
 
     public event Action? PreRenderHook;
+    public event Action<SKCanvas, GRContext?>? ViewportRenderHook;
     public event Action<SKCanvas, GRContext?>? OverlayRenderHook;
     
     private SheetRenderer(ILogger<SheetRenderer> logger,
@@ -94,6 +95,8 @@ public class SheetRenderer : IViewportRenderer, IDisposable, IRenderHooks
                 renderer.Render(canvas, context);
             }
 
+            ViewportRenderHook?.Invoke(canvas, context);
+            
             canvas.Restore();
         }
 

@@ -1,4 +1,4 @@
-using Avalonia.Media;
+using SkiaSharp;
 using StencilPad.Models;
 
 namespace StencilPad.Canvases.Tools.Overlays;
@@ -10,8 +10,10 @@ public class GroupToolOverlayRenderer : IToolOverlayRenderer
 {
     private readonly ElementGroup _group;
     private readonly List<IToolOverlayRendererFactory> _factories;
+
     private readonly Dictionary<ISheetElement, IToolOverlayRenderer> _renderers;
-    private Transform _transform;
+    private SKMatrix _matrix;
+    private object _lock;
     
     public event Action? RendererDirty;
     
@@ -21,7 +23,8 @@ public class GroupToolOverlayRenderer : IToolOverlayRenderer
         _group = group;
         _factories = new(factories);
         _renderers = new();
-        _transform = _group.Transform.CreateGroupTransform();
+        _matrix = _group.Transform.CreateMatrix();
+        _lock = new();
         
         _group.ChildrenChanged += BuildRenderers;
         _group.TransformChanged += TransformChanged;
@@ -36,66 +39,92 @@ public class GroupToolOverlayRenderer : IToolOverlayRenderer
         _group.ChildrenChanged -= BuildRenderers;
         _group.TransformChanged -= TransformChanged;
     }
-    
-    public void Render(DrawingContext dc)
-    {
-        using var state = dc.PushTransform(_transform.Value);
 
-        foreach (var renderer in _renderers.Values)
+    public void PreRender()
+    {
+        lock (_lock)
         {
-            renderer.Render(dc);
+            foreach (var renderer in _renderers.Values)
+            {
+                renderer.PreRender();
+            }
+        }
+    }
+
+    public void Render(SKCanvas canvas, GRContext? context)
+    {
+        lock (_lock)
+        {
+            canvas.Save();
+            canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, _matrix));
+
+            foreach (var renderer in _renderers.Values)
+            {
+                renderer.Render(canvas, context);
+            }
+
+            canvas.Restore();
         }
     }
     
     public void RegisterOverlay(IToolOverlayRendererFactory factory)
     {
-        _factories.Add(factory);
-
-        foreach (var element in _group.Children)
+        lock (_lock)
         {
-            if (!_renderers.ContainsKey(element))
-            {
-                var renderer = factory.CreateOverlay(element);
+            _factories.Add(factory);
 
-                if (renderer is not null)
+            foreach (var element in _group.Children)
+            {
+                if (!_renderers.ContainsKey(element))
                 {
-                    renderer.RendererDirty += InvokeRendererDirty;
-                    _renderers.Add(element, renderer);
+                    var renderer = factory.CreateOverlay(element);
+
+                    if (renderer is not null)
+                    {
+                        renderer.RendererDirty += InvokeRendererDirty;
+                        _renderers.Add(element, renderer);
+                    }
                 }
             }
-        }
 
-        foreach (var renderer in _renderers.Values)
-        {
-            if (renderer is GroupToolOverlayRenderer groupRenderer)
+            foreach (var renderer in _renderers.Values)
             {
-                groupRenderer.RegisterOverlay(factory);
+                if (renderer is GroupToolOverlayRenderer groupRenderer)
+                {
+                    groupRenderer.RegisterOverlay(factory);
+                }
             }
         }
     }
     
     private void TransformChanged(ISheetElement element)
     {
-        _transform = _group.Transform.CreateGroupTransform();
+        lock (_lock)
+        {
+            _matrix = _group.Transform.CreateMatrix();
+        }
         
         InvokeRendererDirty();
     }
 
     private void BuildRenderers()
     {
-        ClearRenderers();
-
-        foreach (var child in _group.Children)
+        lock (_lock)
         {
-            foreach (var factory in _factories)
-            {
-                var renderer = factory.CreateOverlay(child);
+            ClearRenderers();
 
-                if (renderer is not null)
+            foreach (var child in _group.Children)
+            {
+                foreach (var factory in _factories)
                 {
-                    renderer.RendererDirty += InvokeRendererDirty;
-                    _renderers.Add(child, renderer);
-                    break;
+                    var renderer = factory.CreateOverlay(child);
+
+                    if (renderer is not null)
+                    {
+                        renderer.RendererDirty += InvokeRendererDirty;
+                        _renderers.Add(child, renderer);
+                        break;
+                    }
                 }
             }
         }
@@ -105,13 +134,16 @@ public class GroupToolOverlayRenderer : IToolOverlayRenderer
 
     private void ClearRenderers()
     {
-        foreach (var renderer in _renderers.Values)
+        lock (_lock)
         {
-            renderer.RendererDirty -= InvokeRendererDirty;
-            renderer.Dispose();
+            foreach (var renderer in _renderers.Values)
+            {
+                renderer.RendererDirty -= InvokeRendererDirty;
+                renderer.Dispose();
+            }
+
+            _renderers.Clear();
         }
-        
-        _renderers.Clear();
     }
 
     private void InvokeRendererDirty()

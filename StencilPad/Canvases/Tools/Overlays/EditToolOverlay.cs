@@ -18,9 +18,6 @@ namespace StencilPad.Canvases.Tools.Overlays;
 
 public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
 {
-    // Limit pointer move event handling to 60hz so we don't clog up the UI thread.
-    private const long MouseMoveEventThrottleMs = 16;
-
     private class RenderedEntries : IDisposable
     {
         public List<SKPoint> MoveHandlePoints = new();
@@ -85,12 +82,12 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
     private List<IHandleMapEntry> _queryResults;
     private DragState<IHandleMapEntry> _dragState;
     private LockAxisState _lockAxisState;
-    private long _lastMouseMoveEvent;
     private IPointer? _capturedPointer;
     private double _handleSize;
     
-    private TripleBuffer<RenderedEntries> _renderedEntries;
-    private TripleBuffer<RenderedPaint> _renderedPaint;
+    private readonly ToolOverlay _toolOverlay;
+    private readonly TripleBuffer<RenderedEntries> _renderedEntries;
+    private readonly TripleBuffer<RenderedPaint> _renderedPaint;
     private bool _overlayDirty;
     
     public EditToolOverlay(Sheet sheet,
@@ -128,9 +125,10 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
 
         BuildPens();
         
-        // RegisterOverlay(PolygonToolOverlayRenderer.Factory);
-        // RegisterOverlay(TextElementToolOverlayRenderer.Factory);
-        // RegisterOverlay(ImageElementToolOverlayRenderer.Factory);
+        _toolOverlay = new ToolOverlay(sheet, renderHooks, true);
+        _toolOverlay.RegisterOverlay(PolygonToolOverlayRenderer.Factory);
+        _toolOverlay.RegisterOverlay(TextElementToolOverlayRenderer.Factory);
+        _toolOverlay.RegisterOverlay(ImageElementToolOverlayRenderer.Factory);
 
         BuildInputBindings(_actionSet);
         
@@ -154,6 +152,8 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
         _settings.Changed -= SettingsChanged;
         _viewport.ViewportChanged -= ForceRedraw;
 
+        _toolOverlay.Dispose();
+        
         _renderHooks.PreRenderHook -= PreRender;
         _renderHooks.OverlayRenderHook -= RenderOverlayGeometry;
 
@@ -165,8 +165,6 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
 
         _renderedEntries.Dispose();
         _renderedPaint.Dispose();
-
-        // base.Dispose();
     }
 
     public void DeleteSelection()
@@ -343,15 +341,6 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
 
     protected override void OnPointerMoved(PointerEventArgs e)
     {
-        var now = Environment.TickCount;
-        
-        if (_lastMouseMoveEvent > (now - MouseMoveEventThrottleMs))
-        {
-            return;
-        }
-        
-        _lastMouseMoveEvent = now;
-        
         var mousePosition = e.GetPosition(this.GetVisualParent());
 
         if (!_dragState.DragStarted)
@@ -427,19 +416,12 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
         _overlayDirty = true;
     }
 
-    private void ForceRedraw()
+    protected void ForceRedraw()
     {
         InvalidateOverlay();
         _renderHooks.Redraw();
     }
     
-    public override void Render(DrawingContext dc)
-    {
-        base.Render(dc);
-
-        dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, Bounds.Width, Bounds.Height));
-    }
-
     private void PreRender()
     {
         if (_overlayDirty)
@@ -570,5 +552,12 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
                             overlay.LockLineEnd.Value,
                             paint.AxisLockPen);
         }
+    }
+
+    public override void Render(DrawingContext dc)
+    {
+        base.Render(dc);
+
+        dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, Bounds.Width, Bounds.Height));
     }
 }

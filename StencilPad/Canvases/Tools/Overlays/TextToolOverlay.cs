@@ -1,19 +1,22 @@
-using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
 using StencilPad.Canvases.Common;
 using StencilPad.Canvases.Tools.Widgets;
 using StencilPad.Models;
+using StencilPad.Rendering;
 using StencilPad.Spatial;
 
 namespace StencilPad.Canvases.Tools.Overlays;
 
-public class TextToolOverlay : ToolOverlay, IDisposable
+public class TextToolOverlay : Canvas, IDisposable
 {
     public const string DefaultFontFamilyName = "Arial";
     public const double DefaultFontSize = 12.0;
 
+    private readonly Sheet _sheet;
     private readonly IViewport _viewport;
+    private readonly ToolOverlay _toolOverlay;
     private readonly IUnitSnap _unitSnap;
     private readonly IUnitSnapContext _unitSnapContext;
     private InlineTextField? _textField;
@@ -24,23 +27,27 @@ public class TextToolOverlay : ToolOverlay, IDisposable
     public event Action<UnitBounds, string>? OnTextPlaced;
     public event Action<TextElement, string>? OnTextUpdated;
 
-    public TextToolOverlay(Sheet sheet ,IViewport viewport, IUnitSnap unitSnap)
-        : base(viewport, sheet, false)
+    public TextToolOverlay(Sheet sheet,
+                           IViewport viewport,
+                           IRenderHooks renderHooks,
+                           IUnitSnap unitSnap)
     {
+        _sheet = sheet;
         _viewport = viewport;
         _unitSnap = unitSnap;
         _unitSnapContext = new DefaultUnitSnapContext(viewport);
         _viewport.ViewportChanged += OnViewportChanged;
 
-        RegisterOverlay(TextElementToolOverlayRenderer.Factory);
+        _toolOverlay = new ToolOverlay(sheet, renderHooks, true);
+        _toolOverlay.RegisterOverlay(TextElementToolOverlayRenderer.Factory);
     }
 
-    public override void Dispose()
+    public void Dispose()
     {
+        _toolOverlay.Dispose();
+        
         _viewport.ViewportChanged -= OnViewportChanged;
         CancelEdit();
-        
-        base.Dispose();
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
@@ -57,7 +64,7 @@ public class TextToolOverlay : ToolOverlay, IDisposable
         }
 
         var mousePosition = _viewport.FromPoint(e.GetPosition(this));
-        var (textElement, parentTransform) = GetTextElementAtPosition(Sheet.Elements, mousePosition, UnitTransform.Identity);
+        var (textElement, parentTransform) = GetTextElementAtPosition(_sheet.Elements, mousePosition, UnitTransform.Identity);
         
         if (textElement is not null)
         {
@@ -105,14 +112,6 @@ public class TextToolOverlay : ToolOverlay, IDisposable
         }
 
         return (null, parentTransform);
-    }
-
-    protected override void RenderOverlayContent(DrawingContext dc)
-    {
-        
-        dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, Bounds.Width, Bounds.Height));
-
-        RenderOverlay(dc);
     }
 
     private void ShowTextField(Unit2D position)
@@ -226,6 +225,5 @@ public class TextToolOverlay : ToolOverlay, IDisposable
     private void OnViewportChanged()
     {
         UpdateTextFieldPosition();
-        InvalidateVisual();
     }
 }
