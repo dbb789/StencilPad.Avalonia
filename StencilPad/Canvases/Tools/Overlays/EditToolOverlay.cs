@@ -311,7 +311,7 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
-        if (e.GetCurrentPoint(this).Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonPressed)
+        if (e.GetCurrentPoint(this).Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonReleased)
         {
             base.OnPointerReleased(e);
             return;
@@ -342,13 +342,13 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
 
     protected override void OnPointerMoved(PointerEventArgs e)
     {
-        var mousePosition = e.GetPosition(this.GetVisualParent());
-
         if (!_dragState.DragStarted)
         {
+            base.OnPointerMoved(e);
             return;
         }
-        
+
+        var mousePosition = e.GetPosition(this.GetVisualParent());
         var dragResult = _dragState.OnDragMove(_viewport,
                                                mousePosition);
 

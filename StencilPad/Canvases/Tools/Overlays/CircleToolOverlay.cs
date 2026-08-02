@@ -72,6 +72,11 @@ public class CircleToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEle
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
+        if (e.GetCurrentPoint(this).Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonPressed)
+        {
+            return;
+        }
+
         if (e.ClickCount == 1)
         {
             if (_initialPoint is null)
