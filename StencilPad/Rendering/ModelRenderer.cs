@@ -1,5 +1,6 @@
 using Avalonia.Rendering.SceneGraph;
 using SkiaSharp;
+using StencilPad.Collections;
 using StencilPad.Models.Resolvers;
 using StencilPad.Spatial;
 
@@ -9,9 +10,10 @@ public class ModelRenderer : IModelWalker, IWalkerRenderer
 {
     private readonly IResourceSet _resourceSet;
 
-    private List<IWalkerRenderer> _renderers;
+    private ConcurrentList<IWalkerRenderer> _renderers;
+    
     private SKMatrix? _matrix;
-    private readonly object _lock;    
+    private readonly object _matrixLock;    
 
     public event Action? RendererDirty;
 
@@ -20,20 +22,19 @@ public class ModelRenderer : IModelWalker, IWalkerRenderer
         _resourceSet = resourceSet;
         _renderers = new();
         _matrix = null;
-        _lock = new();
+        _matrixLock = new();
     }
 
     public void Dispose()
     {
-        lock (_lock)
+        var renderers = _renderers.ToList();
+        
+        _renderers.Clear();
+        
+        foreach (var renderer in renderers)
         {
-            foreach (var renderer in _renderers)
-            {
-                renderer.RendererDirty -= InvokeRendererDirty;
-                renderer.Dispose();
-            }
-            
-            _renderers.Clear();
+            renderer.RendererDirty -= InvokeRendererDirty;
+            renderer.Dispose();
         }
     }
     
@@ -62,17 +63,14 @@ public class ModelRenderer : IModelWalker, IWalkerRenderer
     {
         renderer.RendererDirty += InvokeRendererDirty;
 
-        lock (_lock)
-        {
-            _renderers.Add(renderer);
-        }
+        _renderers.Add(renderer);
 
         return renderer;
     }
     
     public void SetTransform(UnitTransform transform)
     {
-        lock (_lock)
+        lock (_matrixLock)
         {
             _matrix = transform.CreateMatrix();
         }
@@ -89,37 +87,38 @@ public class ModelRenderer : IModelWalker, IWalkerRenderer
 
     public void PreRender()
     {
-        lock (_lock)
+        foreach (var renderer in _renderers)
         {
-            foreach (var renderer in _renderers)
-            {
-                renderer.PreRender();
-            }
+            renderer.PreRender();
         }
     }
     
     public void Render(SKCanvas canvas, GRContext? context)
     {
-        lock (_lock)
+        SKMatrix? matrix;
+
+        lock (_matrixLock)
         {
-            if (_matrix is not null)
-            {
-                canvas.Save();
-                canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, _matrix.Value));
-            }
+            matrix = _matrix;
+        }
 
-            foreach (var renderer in _renderers)
-            {
-                renderer.Render(canvas, context);
-            }
+        if (matrix is not null)
+        {
+            canvas.Save();
+            canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, matrix.Value));
+        }
 
-            if (_matrix is not null)
-            {
-                canvas.Restore();
-            }
+        foreach (var renderer in _renderers)
+        {
+            renderer.Render(canvas, context);
+        }
+
+        if (matrix is not null)
+        {
+            canvas.Restore();
         }
     }
-
+    
     private void InvokeRendererDirty()
     {
         RendererDirty?.Invoke();
