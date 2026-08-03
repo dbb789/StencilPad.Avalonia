@@ -23,8 +23,7 @@ public class SheetRenderer : IViewportRenderer, IDisposable, IRenderHooks
     private readonly SheetResolver _resolver;
     private readonly ISettings _settings;
     private readonly IResourceSet _resourceSet;
-    private readonly OrderedDictionary<ISheetElementResolver, ModelRenderer> _renderers;
-    private readonly object _renderersLock = new();
+    private readonly ConcurrentOrderedDictionary<ISheetElementResolver, ModelRenderer> _renderers;
 
     public event Action? RendererDirty;
 
@@ -72,12 +71,9 @@ public class SheetRenderer : IViewportRenderer, IDisposable, IRenderHooks
 
     private void PreRender()
     {
-        lock (_renderersLock)
+        foreach (var renderer in _renderers)
         {
-            foreach (var (_, renderer) in _renderers)
-            {
-                renderer.PreRender();
-            }
+            renderer.PreRender();
         }
 
         PreRenderHook?.Invoke();
@@ -85,20 +81,17 @@ public class SheetRenderer : IViewportRenderer, IDisposable, IRenderHooks
     
     public void Render(SKCanvas canvas, GRContext? context, SKMatrix viewportMatrix)
     {
-        lock (_renderersLock)
+        canvas.Save();
+        canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, viewportMatrix));
+        
+        foreach (var renderer in _renderers)
         {
-            canvas.Save();
-            canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, viewportMatrix));
-            
-            foreach (var (_, renderer) in _renderers)
-            {
-                renderer.Render(canvas, context);
-            }
-
-            ViewportRenderHook?.Invoke(canvas, context);
-            
-            canvas.Restore();
+            renderer.Render(canvas, context);
         }
+        
+        ViewportRenderHook?.Invoke(canvas, context);
+        
+        canvas.Restore();
 
         OverlayRenderHook?.Invoke(canvas, context);
     }
@@ -127,18 +120,14 @@ public class SheetRenderer : IViewportRenderer, IDisposable, IRenderHooks
 
         renderer.RendererDirty += Redraw;
         resolver.Attach(renderer);
-
-        lock (_renderersLock)
-        {
-            _renderers.Insert(index, resolver, renderer);
-        }
+        _renderers.Insert(index, resolver, renderer);
         
         Redraw();
     }
 
     private void OnElementRemoved(ISheetElementResolver resolver)
-    {
-        if (!_renderers.TryGetValue(resolver, out var renderer))
+    {   
+        if (!_renderers.TryGetRemove(resolver, out var renderer))
         {
             _logger.LogError("Could not find renderer for resolver {ResolverType}.", resolver.GetType().Name);
             return;
@@ -146,24 +135,13 @@ public class SheetRenderer : IViewportRenderer, IDisposable, IRenderHooks
 
         renderer.RendererDirty -= Redraw;
         renderer.Dispose();
-
-        lock (_renderersLock)
-        {
-            _renderers.Remove(resolver);
-        }
         
         Redraw();
     }
 
     private void OnElementMoved(int oldIndex, int newIndex)
     {
-        lock (_renderersLock)
-        {
-            var kvp = _renderers.GetAt(oldIndex);
-
-            _renderers.RemoveAt(oldIndex);
-            _renderers.Insert(newIndex, kvp.Key, kvp.Value);
-        }
+        _renderers.Move(oldIndex, newIndex);
         
         Redraw();
     }
