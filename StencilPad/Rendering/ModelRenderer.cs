@@ -72,11 +72,11 @@ public class ModelRenderer : IModelWalker, IWalkerRenderer
         InvokeRendererDirty();
     }
     
-    public ICustomDrawOperation CreateDrawOperation()
+    public ICustomDrawOperation CreateDrawOperation(SKMatrix matrix)
     {
         PreRender();
         
-        return new WalkerRendererDrawOperation(this);
+        return new WalkerRendererDrawOperation(this, matrix);
     }
 
     public void PreRender()

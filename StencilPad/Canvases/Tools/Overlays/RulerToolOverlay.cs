@@ -103,9 +103,7 @@ public class RulerToolOverlay : Control, IDisposable
             return;
         }
 
-        using var state = dc.PushTransform(_viewport.MillimetersToPixelsTransform.Value);
-
-        dc.Custom(_renderer.CreateDrawOperation());
+        dc.Custom(_renderer.CreateDrawOperation(_viewport.MillimetersToPixelsMatrix));
     }
 
     private void UpdateRuler()

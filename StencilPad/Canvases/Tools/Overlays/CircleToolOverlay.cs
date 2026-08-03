@@ -203,9 +203,7 @@ public class CircleToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEle
             return;
         }
 
-        using var state = dc.PushTransform(_viewport.MillimetersToPixelsTransform.Value);
-
-        dc.Custom(_renderer.CreateDrawOperation());
+        dc.Custom(_renderer.CreateDrawOperation(_viewport.MillimetersToPixelsMatrix));
     }
 
     private Unit2D CurrentSnappedMouseOverPosition(Point mousePosition)
