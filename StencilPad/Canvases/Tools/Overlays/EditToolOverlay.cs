@@ -559,6 +559,6 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
     {
         base.Render(dc);
 
-        dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, Bounds.Width, Bounds.Height));
+        dc.DrawRectangle(Brushes.Transparent, null, Bounds);
     }
 }
