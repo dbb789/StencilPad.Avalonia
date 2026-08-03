@@ -12,6 +12,7 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
 
     private class RenderedText : IDisposable
     {
+        public SKMatrix Matrix = SKMatrix.CreateIdentity();
         public SKPoint Point = new SKPoint(0, 0);
         public SKFont Font = new();
         public SKTextAlign Align = SKTextAlign.Left;
@@ -20,6 +21,7 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
 
         public void Reset()
         {
+            Matrix = SKMatrix.CreateIdentity();
             Point = new SKPoint(0, 0);
             Align = SKTextAlign.Left;
             Paint.Reset();
@@ -33,11 +35,12 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
             Lines = Array.Empty<string>();
         }
     }
-    
-    private SKMatrix? _matrix;
+
+    private SKMatrix _matrix;
     private TextStyle _style;
     private UnitBounds? _bounds;
     private string _text;
+    private bool _textDirty;
     
     private TripleBuffer<RenderedText> _renderedText;
 
@@ -57,54 +60,54 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
 
     public void SetTransform(UnitTransform transform)
     {
-        _matrix = transform.CreateMatrix();
-        InvokeRendererDirty();
+        _matrix = SKMatrix.Concat(transform.CreateMatrix(),
+                                  SKMatrix.CreateScale(1, -1));
+        
+        MarkTextDirty();
     }
 
     public void SetStyle(TextStyle style)
     {
         _style = style;
-        InvokeRendererDirty();
+        MarkTextDirty();
     }
 
     public void SetBounds(UnitBounds? bounds)
     {
         _bounds = bounds;
-        InvokeRendererDirty();
+        MarkTextDirty();
     }
     
     public void SetText(string text)
     {
         _text = text;
-        InvokeRendererDirty();
+        MarkTextDirty();
     }
 
     public void PreRender()
     {
-        // No pre-rendering needed for text
+        if (_textDirty)
+        {
+            _textDirty = false;
+            RebuildText();
+        }
     }
     
     public void Render(SKCanvas canvas, GRContext? context)
     {
-        canvas.Save();
-        
-        if (_matrix is not null)
-        {
-            canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, _matrix.Value));
-        }
-
-        canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, SKMatrix.CreateScale(1, -1)));
-
         using var textHandle = _renderedText.TryRead();
 
         if (!textHandle.IsValid)
         {
             return;
         }
-        
+
         var text = textHandle.Buffer;
         var point = text.Point;
         
+        canvas.Save();
+        canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, text.Matrix));
+
         foreach (var line in text.Lines)
         {
             point.Y += text.Font.Size;
@@ -114,7 +117,13 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
         canvas.Restore();
     }
 
-    private void InvokeRendererDirty()
+    private void MarkTextDirty()
+    {
+        _textDirty = true;
+        RendererDirty?.Invoke();
+    }
+    
+    private void RebuildText()
     {
         var point = new SKPoint(0, 0);
 
@@ -156,12 +165,11 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
         }
         
         textHandle.Buffer.Reset();
+        textHandle.Buffer.Matrix = _matrix;
         textHandle.Buffer.Point = point;
         textHandle.Buffer.Font = font;
         textHandle.Buffer.Align = align;
         textHandle.Buffer.Paint = paint;
         textHandle.Buffer.Lines = lines;
-        
-        RendererDirty?.Invoke();
     }
 }

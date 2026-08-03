@@ -16,7 +16,7 @@ public class TextToolOverlay : Canvas, IDisposable
 
     private readonly Sheet _sheet;
     private readonly IViewport _viewport;
-    private readonly ToolOverlay _toolOverlay;
+    private readonly ToolOverlayRenderer _toolOverlay;
     private readonly IUnitSnap _unitSnap;
     private readonly IUnitSnapContext _unitSnapContext;
     private InlineTextField? _textField;
@@ -38,8 +38,11 @@ public class TextToolOverlay : Canvas, IDisposable
         _unitSnapContext = new DefaultUnitSnapContext(viewport);
         _viewport.ViewportChanged += OnViewportChanged;
 
-        _toolOverlay = new ToolOverlay(sheet, renderHooks, true);
-        _toolOverlay.RegisterOverlay(TextElementToolOverlayRenderer.Factory);
+        _toolOverlay = new ToolOverlayRenderer(
+            sheet,
+            renderHooks,
+            true,
+            [TextElementToolOverlayRenderer.Factory]);
     }
 
     public void Dispose()

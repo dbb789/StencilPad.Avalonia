@@ -96,8 +96,10 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
         }
         
         var image = imageHandle.Buffer;
+        SKImage? renderImage = null;
 
-        // Lock should be unnecessary here - this is really just for safety.
+        // Lock should be unnecessary here as we shouldn't ever be rendering the
+        // same object concurrently - this is really just for safety.
         lock (_renderImageLock)
         {
             if (image.Image is null)
@@ -114,31 +116,33 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
                     _image.ToTextureImage(context) : _image.ToRasterImage();
             }
 
-            if (_renderImage is null)
-            {
-                return;
-            }
-
-            using var propertiesHandle = _renderedProperties.TryRead();
-
-            if (!propertiesHandle.IsValid)
-            {
-                return;
-            }
-            
-            var properties = propertiesHandle.Buffer;
-
-            var bounds = properties.Bounds;
-            var rect = new SKRect((float)bounds.SW.X.Millimeters,
-                                  -(float)bounds.NE.Y.Millimeters,
-                                  (float)bounds.NE.X.Millimeters,
-                                  -(float)bounds.SW.Y.Millimeters);
-
-            canvas.Save();
-            canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, SKMatrix.CreateScale(1, -1)));
-            canvas.DrawImage(_renderImage, rect, properties.Paint);
-            canvas.Restore();
+            renderImage = _renderImage;
         }
+
+        if (renderImage is null)
+        {
+            return;
+        }
+        
+        using var propertiesHandle = _renderedProperties.TryRead();
+        
+        if (!propertiesHandle.IsValid)
+        {
+            return;
+        }
+        
+        var properties = propertiesHandle.Buffer;
+        
+        var bounds = properties.Bounds;
+        var rect = new SKRect((float)bounds.SW.X.Millimeters,
+                              -(float)bounds.NE.Y.Millimeters,
+                              (float)bounds.NE.X.Millimeters,
+                              -(float)bounds.SW.Y.Millimeters);
+        
+        canvas.Save();
+        canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, SKMatrix.CreateScale(1, -1)));
+        canvas.DrawImage(renderImage, rect, properties.Paint);
+        canvas.Restore();
     }
 
     private void InvokeRendererDirty()

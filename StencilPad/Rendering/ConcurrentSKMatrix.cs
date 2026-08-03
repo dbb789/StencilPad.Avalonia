@@ -29,5 +29,11 @@ public class ConcurrentSKMatrix
     {
         _matrix = SKMatrix.CreateIdentity();
         _lock = new();
-    }   
+    }
+
+    public ConcurrentSKMatrix(SKMatrix matrix)
+    {
+        _matrix = matrix;
+        _lock = new();
+    }
 }

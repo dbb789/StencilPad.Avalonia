@@ -5,24 +5,26 @@ using StencilPad.Rendering;
 
 namespace StencilPad.Canvases.Tools.Overlays;
 
-public class ToolOverlay
+public class ToolOverlayRenderer
 {
     protected Sheet Sheet => _sheet;
     
     private readonly Sheet _sheet;
     private readonly IRenderHooks _renderHooks;
     private readonly bool _selectionOnly;
-    private readonly List<IToolOverlayRendererFactory> _factories;
-    private readonly Dictionary<ISheetElement, IToolOverlayRenderer> _renderers;
+
+    private readonly ConcurrentList<IToolOverlayRendererFactory> _factories;
+    private readonly ConcurrentOrderedDictionary<ISheetElement, IToolOverlayRenderer> _renderers;
     
-    public ToolOverlay(Sheet sheet,
-                       IRenderHooks renderHooks,
-                       bool selectionOnly)
+    public ToolOverlayRenderer(Sheet sheet,
+                               IRenderHooks renderHooks,
+                               bool selectionOnly,
+                               IEnumerable<IToolOverlayRendererFactory> factories)
     {
         _sheet = sheet;
         _renderHooks = renderHooks;
         _selectionOnly = selectionOnly;
-        _factories = new();
+        _factories = new(factories);
         _renderers = new();
 
         foreach (var element in GetElements())
@@ -43,13 +45,11 @@ public class ToolOverlay
         _renderHooks.PreRenderHook -= PreRender;
         _renderHooks.ViewportRenderHook -= RenderOverlay;
 
-        foreach (var (_, renderer) in _renderers)
+        foreach (var (_, renderer) in _renderers.GetClear())
         {
             renderer.RendererDirty -= ForceRedraw;
             renderer.Dispose();
         }
-
-        _renderers.Clear();
     }
 
     private IEnumerable<ISheetElement> GetElements()
@@ -62,36 +62,9 @@ public class ToolOverlay
         return _selectionOnly ? _sheet.Selection : _sheet.Elements;
     }
 
-    public void RegisterOverlay(IToolOverlayRendererFactory factory)
-    {
-        _factories.Add(factory);
-
-        foreach (var element in GetElements())
-        {
-            if (!_renderers.ContainsKey(element))
-            {
-                var renderer = factory.CreateOverlay(element);
-
-                if (renderer is not null)
-                {
-                    renderer.RendererDirty += ForceRedraw;
-                    _renderers.Add(element, renderer);
-                }
-            }
-        }
-
-        foreach (var renderer in _renderers.Values)
-        {
-            if (renderer is GroupToolOverlayRenderer groupRenderer)
-            {
-                groupRenderer.RegisterOverlay(factory);
-            }
-        }
-    }
-
     private void PreRender()
     {
-        foreach (var (_, renderer) in _renderers)
+        foreach (var  renderer in _renderers)
         {
             renderer.PreRender();
         }
@@ -99,7 +72,7 @@ public class ToolOverlay
     
     private void RenderOverlay(SKCanvas canvas, GRContext? context)
     {
-        foreach (var (_, renderer) in _renderers)
+        foreach (var renderer in _renderers)
         {
             renderer.Render(canvas, context);
         }
@@ -148,14 +121,11 @@ public class ToolOverlay
 
     private void RemoveRenderer(ISheetElement element)
     {
-        if (!_renderers.TryGetValue(element, out var renderer))
+        if (_renderers.TryGetRemove(element, out var renderer))
         {
-            return;
+            renderer.RendererDirty -= ForceRedraw;
+            renderer.Dispose();
         }
-        
-        renderer.RendererDirty -= ForceRedraw;
-        renderer.Dispose();
-        _renderers.Remove(element);
 
         ForceRedraw();
     }

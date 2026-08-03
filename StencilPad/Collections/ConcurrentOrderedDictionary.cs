@@ -22,6 +22,15 @@ public class ConcurrentOrderedDictionary<TKey, TValue> where TKey : notnull
         }
     }
 
+    public void Add(TKey key, TValue value)
+    {
+        lock (_lock)
+        {
+            _data.Add(key, value);
+            _orderedValues.Add(value);
+        }
+    }
+
     public void Insert(int index, TKey key, TValue value)
     {
         lock (_lock)
@@ -67,6 +76,23 @@ public class ConcurrentOrderedDictionary<TKey, TValue> where TKey : notnull
             value = default!;
             
             return false;
+        }
+    }
+
+    public IEnumerable<(TKey, TValue)> GetClear()
+    {
+        lock (_lock)
+        {
+            var list = new List<(TKey, TValue)>(_data.Count);
+
+            foreach (var kvp in _data)
+            {
+                list.Add((kvp.Key, kvp.Value));
+            }
+
+            _data.Clear();
+
+            return list;
         }
     }
     

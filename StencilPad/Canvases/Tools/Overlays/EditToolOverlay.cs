@@ -85,7 +85,7 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
     private IPointer? _capturedPointer;
     private double _handleSize;
     
-    private readonly ToolOverlay _toolOverlay;
+    private readonly ToolOverlayRenderer _toolOverlay;
     private readonly TripleBuffer<RenderedEntries> _renderedEntries;
     private readonly TripleBuffer<RenderedPaint> _renderedPaint;
     private bool _overlayDirty;
@@ -126,11 +126,14 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
         BuildPens();
         BuildInputBindings(_actionSet);
 
-        _toolOverlay = new ToolOverlay(sheet, renderHooks, true);
-        _toolOverlay.RegisterOverlay(PolygonToolOverlayRenderer.Factory);
-        _toolOverlay.RegisterOverlay(TextElementToolOverlayRenderer.Factory);
-        _toolOverlay.RegisterOverlay(ImageElementToolOverlayRenderer.Factory);
-        
+        _toolOverlay = new ToolOverlayRenderer(
+            sheet,
+            renderHooks,
+            true,
+            [ PolygonToolOverlayRenderer.Factory,
+              TextElementToolOverlayRenderer.Factory,
+              ImageElementToolOverlayRenderer.Factory]);
+
         _renderHooks.PreRenderHook += PreRender;
         _renderHooks.OverlayRenderHook += RenderOverlayGeometry;
 

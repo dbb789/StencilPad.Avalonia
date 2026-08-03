@@ -1,11 +1,14 @@
+using System.Collections;
 using System.Collections.Immutable;
+
 namespace StencilPad.Collections;
 
-public class ConcurrentList<T>
+public class ConcurrentList<T> : IEnumerable<T>
 {
-    public struct Enumerator
+    public struct Enumerator : IEnumerator<T>
     {
         public T Current => _enumerator.Current;
+        object? IEnumerator.Current => _enumerator.Current;
         
         private ImmutableList<T>.Enumerator _enumerator;
         
@@ -37,6 +40,11 @@ public class ConcurrentList<T>
         _list = ImmutableList<T>.Empty;
     }
 
+    public ConcurrentList(IEnumerable<T> collection)
+    {
+        _list = ImmutableList.CreateRange(collection);
+    }
+    
     public void Add(T item)
     {
         ImmutableInterlocked.Update(ref _list, list => list.Add(item));
@@ -75,6 +83,16 @@ public class ConcurrentList<T>
     }
     
     public Enumerator GetEnumerator()
+    {
+        return new Enumerator(_list.GetEnumerator());
+    }
+
+    IEnumerator<T> IEnumerable<T>.GetEnumerator()
+    {
+        return new Enumerator(_list.GetEnumerator());
+    }
+    
+    IEnumerator IEnumerable.GetEnumerator()
     {
         return new Enumerator(_list.GetEnumerator());
     }
