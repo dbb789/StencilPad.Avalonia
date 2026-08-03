@@ -91,7 +91,8 @@ public class ConcurrentOrderedDictionary<TKey, TValue> where TKey : notnull
             }
 
             _data.Clear();
-
+            _orderedValues.Clear();
+            
             return list;
         }
     }
