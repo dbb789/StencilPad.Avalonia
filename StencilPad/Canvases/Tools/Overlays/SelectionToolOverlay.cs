@@ -21,9 +21,7 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
 {
     private struct OverlayEntry
     {
-        public SKRect Bounds;
-        public SKRect ResizeHandleBounds;
-        public SKRect RotateHandleBounds;
+        public UnitBounds Bounds;
         public bool IsGroup;
         public bool IsFilled;
     }
@@ -699,16 +697,14 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
 
             overlay.Entries.Add(new OverlayEntry
             {
-                Bounds = screenBounds.ToSKRect(),
-                ResizeHandleBounds = ResizeHandleRect(screenBounds).ToSKRect(),
-                RotateHandleBounds = RotateHandleRect(screenBounds).ToSKRect(),
+                Bounds = resolver.GetOutlineBounds(),
                 IsGroup = isGroup,
                 IsFilled = isFilled
             });
         }
     }
 
-    private void RenderOverlayGeometry(SKCanvas canvas, GRContext? context)
+    private void RenderOverlayGeometry(SKCanvas canvas, GRContext? context, SKMatrix viewportMatrix)
     {
         using var entriesHandle = _renderedEntries.TryRead();
         using var paintHandle = _renderedPaint.TryRead();
@@ -723,18 +719,21 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         foreach (var entry in entriesHandle.Buffer.Entries)
         {
             var pen = entry.IsGroup ? paint.GroupPen : paint.ElementPen;
+            var bounds = entry.Bounds.Millimeters.ToSKRect();
 
+            bounds = viewportMatrix.MapRect(bounds);
+            
             if (entry.IsFilled)
             {
                 var fill = entry.IsGroup ? paint.GroupFill : paint.ElementFill;
 
-                canvas.DrawRect(entry.Bounds, fill);
+                canvas.DrawRect(bounds, fill);
             }
             
-            canvas.DrawRect(entry.Bounds, pen);
-            canvas.DrawRect(entry.ResizeHandleBounds, pen);
+            canvas.DrawRect(bounds, pen);
+            canvas.DrawRect(ResizeHandleRect(bounds), pen);
 
-            var rotateHandleRect = entry.RotateHandleBounds;
+            var rotateHandleRect = RotateHandleRect(bounds);
 
             canvas.DrawOval(rotateHandleRect.MidX,
                             rotateHandleRect.MidY,
@@ -742,6 +741,22 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
                             rotateHandleRect.Height / 2,
                             pen);
         }
+    }
+
+    private SKRect ResizeHandleRect(SKRect screenBounds)
+    {
+        return new SKRect(screenBounds.Right,
+                         screenBounds.Bottom,
+                         screenBounds.Right + (float)_resizeHandleSize,
+                         screenBounds.Bottom + (float)_resizeHandleSize);
+    }
+
+    private SKRect RotateHandleRect(SKRect screenBounds)
+    {
+        return new SKRect(screenBounds.Right,
+                         screenBounds.Top - (float)_resizeHandleSize,
+                         screenBounds.Right + (float)_resizeHandleSize,
+                         screenBounds.Top);
     }
 
     private Rect RotateHandleRect(Rect screenBounds)

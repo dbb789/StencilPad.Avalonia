@@ -459,7 +459,7 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
                 continue;
             }
 
-            var point = _viewport.ToPoint(entry.Position);
+            var point = entry.Position.Millimeters;
 
             if (entry.Handle.Type == HandleType.Move)
             {
@@ -489,23 +489,31 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
         {
             if (_lockAxisState.LockedAxis == UnitAxis.X)
             {
-                var lockPoint = _viewport.ToPoint(new Unit2D(Unit.Zero, _lockAxisState.LockPosition.Value));
+                var lockPoint = new Unit2D(Unit.Zero, _lockAxisState.LockPosition.Value).Millimeters;
 
-                overlay.LockLineStart = new SKPoint(0, (float)lockPoint.Y);
-                overlay.LockLineEnd = new SKPoint((float)Bounds.Width, (float)lockPoint.Y);
+                var sheetX = _sheet.Format.Size.X.Millimeters;
+                var sheetXMin = -sheetX / 2;
+                var sheetXMax = sheetX / 2;
+
+                overlay.LockLineStart = new SKPoint((float)sheetXMin, (float)lockPoint.Y);
+                overlay.LockLineEnd = new SKPoint((float)sheetXMax, (float)lockPoint.Y);
             }
             else
             {
-                var lockPoint = _viewport.ToPoint(new Unit2D(_lockAxisState.LockPosition.Value, Unit.Zero));
+                var lockPoint = new Unit2D(_lockAxisState.LockPosition.Value, Unit.Zero).Millimeters;
 
-                overlay.LockLineStart = new SKPoint((float)lockPoint.X, 0);
-                overlay.LockLineEnd = new SKPoint((float)lockPoint.X, (float)Bounds.Height);
+                var sheetY = _sheet.Format.Size.Y.Millimeters;
+                var sheetYMin = -sheetY / 2;
+                var sheetYMax = sheetY / 2;
+                
+                overlay.LockLineStart = new SKPoint((float)lockPoint.X, (float)sheetYMin);
+                overlay.LockLineEnd = new SKPoint((float)lockPoint.X, (float)sheetYMax);
             }
         }
 
     }
 
-    private void RenderOverlayGeometry(SKCanvas canvas, GRContext? context)
+    private void RenderOverlayGeometry(SKCanvas canvas, GRContext? context, SKMatrix viewportMatrix)
     {
         using var entriesHandle = _renderedEntries.TryRead();
         using var paintHandle = _renderedPaint.TryRead();
@@ -518,23 +526,27 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
         var overlay = entriesHandle.Buffer;
         var paint = paintHandle.Buffer;
 
-        foreach (var point in overlay.MoveHandlePoints)
+        foreach (var handlePoint in overlay.MoveHandlePoints)
         {
+            var point = viewportMatrix.MapPoint(handlePoint);
             var rect = new SKRect(point.X - (float)(paint.HandleSize / 2),
                                   point.Y - (float)(paint.HandleSize / 2),
                                   point.X + (float)(paint.HandleSize / 2),
                                   point.Y + (float)(paint.HandleSize / 2));
-            
+
             canvas.DrawRect(rect, paint.MoveBrush);
         }
 
-        foreach (var point in overlay.AdjustHandlePoints)
+        foreach (var handlePoint in overlay.AdjustHandlePoints)
         {
+            var point = viewportMatrix.MapPoint(handlePoint);
+            
             canvas.DrawCircle(point, (float)(paint.HandleSize / 2), paint.AdjustBrush);
         }
         
-        foreach (var point in overlay.MoveHandleSelectedPoints)
+        foreach (var handlePoint in overlay.MoveHandleSelectedPoints)
         {
+            var point = viewportMatrix.MapPoint(handlePoint);
             var rect = new SKRect(point.X - (float)(paint.HandleSize / 2),
                                   point.Y - (float)(paint.HandleSize / 2),
                                   point.X + (float)(paint.HandleSize / 2),
@@ -544,16 +556,18 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
             canvas.DrawRect(rect, paint.SelectedPen);
         }
         
-        foreach (var point in overlay.AdjustHandleSelectedPoints)
+        foreach (var handlePoint in overlay.AdjustHandleSelectedPoints)
         {
+            var point = viewportMatrix.MapPoint(handlePoint);
+
             canvas.DrawCircle(point, (float)(paint.HandleSize / 2), paint.AdjustBrush);
             canvas.DrawCircle(point, (float)(paint.HandleSize / 2), paint.SelectedPen);
         }
 
         if (overlay.LockLineStart is not null && overlay.LockLineEnd is not null)
         {
-            canvas.DrawLine(overlay.LockLineStart.Value,
-                            overlay.LockLineEnd.Value,
+            canvas.DrawLine(viewportMatrix.MapPoint(overlay.LockLineStart.Value),
+                            viewportMatrix.MapPoint(overlay.LockLineEnd.Value),
                             paint.AxisLockPen);
         }
     }

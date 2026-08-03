@@ -29,7 +29,7 @@ public class SheetRenderer : IViewportRenderer, IDisposable, IRenderHooks
 
     public event Action? PreRenderHook;
     public event Action<SKCanvas, GRContext?>? ViewportRenderHook;
-    public event Action<SKCanvas, GRContext?>? OverlayRenderHook;
+    public event Action<SKCanvas, GRContext?, SKMatrix>? OverlayRenderHook;
     
     private SheetRenderer(ILogger<SheetRenderer> logger,
                           SheetResolver resolver,
@@ -93,7 +93,7 @@ public class SheetRenderer : IViewportRenderer, IDisposable, IRenderHooks
         
         canvas.Restore();
 
-        OverlayRenderHook?.Invoke(canvas, context);
+        OverlayRenderHook?.Invoke(canvas, context, viewportMatrix);
     }
     
     private void OnElementsChanged(ObservableListChangedArgs<ISheetElementResolver> e)
