@@ -10,10 +10,8 @@ public class ModelRenderer : IModelWalker, IWalkerRenderer
 {
     private readonly IResourceSet _resourceSet;
 
-    private ConcurrentList<IWalkerRenderer> _renderers;
-    
-    private SKMatrix? _matrix;
-    private readonly object _matrixLock;    
+    private readonly ConcurrentList<IWalkerRenderer> _renderers;
+    private readonly ConcurrentSKMatrix _matrix;
 
     public event Action? RendererDirty;
 
@@ -21,8 +19,7 @@ public class ModelRenderer : IModelWalker, IWalkerRenderer
     {
         _resourceSet = resourceSet;
         _renderers = new();
-        _matrix = null;
-        _matrixLock = new();
+        _matrix = new();
     }
 
     public void Dispose()
@@ -70,10 +67,7 @@ public class ModelRenderer : IModelWalker, IWalkerRenderer
     
     public void SetTransform(UnitTransform transform)
     {
-        lock (_matrixLock)
-        {
-            _matrix = transform.CreateMatrix();
-        }
+        _matrix.Value = transform.CreateMatrix();
         
         InvokeRendererDirty();
     }
@@ -95,28 +89,15 @@ public class ModelRenderer : IModelWalker, IWalkerRenderer
     
     public void Render(SKCanvas canvas, GRContext? context)
     {
-        SKMatrix? matrix;
-
-        lock (_matrixLock)
-        {
-            matrix = _matrix;
-        }
-
-        if (matrix is not null)
-        {
-            canvas.Save();
-            canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, matrix.Value));
-        }
+        canvas.Save();
+        canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, _matrix.Value));
 
         foreach (var renderer in _renderers)
         {
             renderer.Render(canvas, context);
         }
 
-        if (matrix is not null)
-        {
-            canvas.Restore();
-        }
+        canvas.Restore();
     }
     
     private void InvokeRendererDirty()
