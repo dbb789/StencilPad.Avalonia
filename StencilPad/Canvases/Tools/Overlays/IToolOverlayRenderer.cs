@@ -1,11 +1,11 @@
-using Avalonia.Media;
+using SkiaSharp;
 
 namespace StencilPad.Canvases.Tools.Overlays;
 
-public interface IToolOverlayRenderer
+public interface IToolOverlayRenderer : IDisposable
 {
     event Action? RendererDirty;
 
-    void Render(DrawingContext dc);
-    void Dispose();
+    void PreRender();
+    void Render(SKCanvas canvas, GRContext? context);
 }

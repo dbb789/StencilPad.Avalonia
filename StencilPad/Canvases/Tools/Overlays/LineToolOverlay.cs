@@ -52,7 +52,7 @@ public class LineToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEleme
         _renderer = new ModelRenderer(resourceService);
 
         _resolver?.Attach(_renderer);
-        _renderer.RendererDirty += InvalidateVisual;
+        _renderer.RendererDirty += RendererDirty;
         
         _lockAxisState = new();
         _viewport.ViewportChanged += InvalidateVisual;
@@ -65,13 +65,18 @@ public class LineToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEleme
     public override void Dispose()
     {
         _settings.Changed -= SettingsChanged;
-        _renderer.RendererDirty -= InvalidateVisual;
+        _renderer.RendererDirty -= RendererDirty;
         _renderer.Dispose();
         _resolver?.Detach();
 
         _viewport.ViewportChanged -= InvalidateVisual;
     }
     
+    private void RendererDirty()
+    {
+        Dispatcher.Invoke(InvalidateVisual);
+    }
+
     private void BuildPens()
     {
         var moveHandleColor = _settings.MoveHandleColor;
@@ -177,10 +182,7 @@ public class LineToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEleme
             return;
         }
 
-        using (dc.PushTransform(_viewport.MillimetersToPixelsTransform.Value))
-        {
-            _renderer.Render(dc);
-        }
+        dc.Custom(_renderer.CreateDrawOperation(_viewport.MillimetersToPixelsMatrix));    
 
         for (int i = 0; i < _polygon.Vertices.Count; ++i)
         {

@@ -1,16 +1,13 @@
 using Avalonia;
+using StencilPad.Common;
 
 namespace StencilPad.Canvases.Tools.Overlays;
 
 public class RubberBandHandle
 {
-    // NOTE: Avalonia has no SystemParameters equivalent for drag thresholds;
-    // WPF's defaults for both axes are 4 device-independent pixels.
-    private const double MinimumDragDistance = 4.0;
-
     public bool IsDragging => _isDragging;
     public Rect DragBounds => _dragStart is null ?
-        default : new Rect(_dragStart.Value, _dragCurrent);
+        default : NormalizeRect(_dragStart.Value, _dragCurrent);
     
     private Point? _dragStart;
     private Point _dragCurrent;
@@ -34,10 +31,7 @@ public class RubberBandHandle
 
         if (!_isDragging)
         {
-            var delta = _dragCurrent - _dragStart.Value;
-
-            if (Math.Abs(delta.X) > MinimumDragDistance ||
-                Math.Abs(delta.Y) > MinimumDragDistance)
+            if (DragUtil.DragThresholdExceeded(_dragStart.Value, _dragCurrent))
             {
                 _isDragging = true;
             }
@@ -50,5 +44,15 @@ public class RubberBandHandle
     {
         _dragStart = null;
         _isDragging = false;
+    }
+
+    private Rect NormalizeRect(Point p1, Point p2)
+    {
+        var x = Math.Min(p1.X, p2.X);
+        var y = Math.Min(p1.Y, p2.Y);
+        var width = Math.Abs(p1.X - p2.X);
+        var height = Math.Abs(p1.Y - p2.Y);
+
+        return new Rect(x, y, width, height);
     }
 }

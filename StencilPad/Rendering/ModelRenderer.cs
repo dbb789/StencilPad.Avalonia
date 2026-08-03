@@ -1,4 +1,6 @@
-using Avalonia.Media;
+using Avalonia.Rendering.SceneGraph;
+using SkiaSharp;
+using StencilPad.Collections;
 using StencilPad.Models.Resolvers;
 using StencilPad.Spatial;
 
@@ -7,8 +9,9 @@ namespace StencilPad.Rendering;
 public class ModelRenderer : IModelWalker, IWalkerRenderer
 {
     private readonly IResourceSet _resourceSet;
-    private readonly List<IWalkerRenderer> _renderers;
-    private Transform? _transform;
+
+    private readonly ConcurrentList<IWalkerRenderer> _renderers;
+    private readonly ConcurrentSKMatrix _matrix;
 
     public event Action? RendererDirty;
 
@@ -16,79 +19,87 @@ public class ModelRenderer : IModelWalker, IWalkerRenderer
     {
         _resourceSet = resourceSet;
         _renderers = new();
+        _matrix = new();
     }
 
     public void Dispose()
     {
-        foreach (var renderer in _renderers)
+        var renderers = _renderers.ToList();
+        
+        _renderers.Clear();
+        
+        foreach (var renderer in renderers)
         {
             renderer.RendererDirty -= InvokeRendererDirty;
             renderer.Dispose();
         }
-
-        _renderers.Clear();
     }
-
+    
     public IModelWalker CreateModelWalker()
     {
-        var renderer = new ModelRenderer(_resourceSet);
-        
-        renderer.RendererDirty += InvokeRendererDirty;
-
-        _renderers.Add(renderer);
-        
-        return renderer;
+        return AddRenderer(new ModelRenderer(_resourceSet));
     }
     
     public IStyledGeometryWalker CreateStyledGeometryWalker()
     {
-        var renderer = new StyledGeometryRenderer(_resourceSet);
-        
-        renderer.RendererDirty += InvokeRendererDirty;
-
-        _renderers.Add(renderer);
-        
-        return renderer;
+        return AddRenderer(new StyledGeometryRenderer(_resourceSet));
     }
 
     public ITextWalker CreateTextWalker()
     {
-        var renderer = new TextRenderer();
-        
-        renderer.RendererDirty += InvokeRendererDirty;
-
-        _renderers.Add(renderer);
-        
-        return renderer;
+        return AddRenderer(new TextRenderer());
     }
 
     public IImageWalker CreateImageWalker()
     {
-        var renderer = new ImageRenderer();
-        
+        return AddRenderer(new ImageRenderer());
+    }
+
+    private TWalkerRenderer AddRenderer<TWalkerRenderer>(TWalkerRenderer renderer)
+        where TWalkerRenderer : IWalkerRenderer
+    {
         renderer.RendererDirty += InvokeRendererDirty;
 
         _renderers.Add(renderer);
-        
+
         return renderer;
     }
-
+    
     public void SetTransform(UnitTransform transform)
     {
-        _transform = transform.CreateGroupTransform();
+        _matrix.Value = transform.CreateMatrix();
+        
         InvokeRendererDirty();
     }
     
-    public void Render(DrawingContext dc)
+    public ICustomDrawOperation CreateDrawOperation(SKMatrix matrix)
     {
-        using var state = _transform is not null ? dc.PushTransform(_transform.Value) : default;
+        PreRender();
+        
+        return new WalkerRendererDrawOperation(this, matrix);
+    }
+
+    public void PreRender()
+    {
+        foreach (var renderer in _renderers)
+        {
+            renderer.PreRender();
+        }
+    }
+    
+    public void Render(SKCanvas canvas, GRContext? context)
+    {
+        canvas.Save();
+        canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, _matrix.Value));
 
         foreach (var renderer in _renderers)
         {
-            renderer.Render(dc);
+            renderer.Render(canvas, context);
         }
-    }
 
+        canvas.Restore();
+    }
+    
     private void InvokeRendererDirty()
     {
         RendererDirty?.Invoke();

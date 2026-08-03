@@ -1,4 +1,5 @@
 using Avalonia.Media;
+using SkiaSharp;
 
 namespace StencilPad.Spatial;
 
@@ -8,7 +9,6 @@ public readonly record struct UnitTransform
     
     public Unit2D Position { get; init; }
     public decimal Angle { get; init; }
-
 
     public UnitTransform(Unit2D position, decimal angle)
     {
@@ -36,6 +36,19 @@ public readonly record struct UnitTransform
         group.Children.Add(new TranslateTransform(Position.X.Millimeters, Position.Y.Millimeters));
 
         return group;
+    }
+
+    public SKMatrix CreateMatrix()
+    {
+        var matrix = SKMatrix.CreateTranslation((float)Position.X.Millimeters,
+                                                (float)Position.Y.Millimeters);
+
+        if (Angle != 0m)
+        {
+            matrix = SKMatrix.Concat(matrix, SKMatrix.CreateRotationDegrees((float)Angle));
+        }
+
+        return matrix;
     }
 
     public Unit2D Apply(Unit2D point)

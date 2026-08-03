@@ -1,6 +1,4 @@
-using  StencilPad.Canvases.Tools.Common;
-using  StencilPad.Canvases.Tools.Overlays;
-using StencilPad.Models;
+using StencilPad.Canvases.Tools.Overlays;
 
 namespace StencilPad.Canvases.Tools.Controllers;
 

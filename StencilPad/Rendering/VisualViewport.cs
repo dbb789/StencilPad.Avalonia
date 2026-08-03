@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using SkiaSharp;
 using StencilPad.Spatial;
 
 namespace StencilPad.Rendering;
@@ -88,18 +89,18 @@ public class VisualViewport : IViewport
         }
     }
     
-    public Transform MillimetersToPixelsTransform
+    public SKMatrix MillimetersToPixelsMatrix
     {
-        get => _millimetersToPixelsTransform;
+        get => _millimetersToPixelsMatrix;
     }
-
+    
     private Visual? _visual = null;
     private Unit2D _sheetSize;
     private Unit2D _size;
     private Vector _halfPixelSize;
     private double _zoom;
     private double _dpi;
-    private Transform _millimetersToPixelsTransform;
+    private SKMatrix _millimetersToPixelsMatrix;
     
     public event Action? ViewportChanged;
 
@@ -110,7 +111,7 @@ public class VisualViewport : IViewport
         _size = _sheetSize * 1.1;
         _zoom = 1.0;
         _dpi = 96.0;
-        _millimetersToPixelsTransform = GetMillimetersToPixelsTransform();
+        _millimetersToPixelsMatrix = GetMillimetersToPixelsMatrix();
 
         OnViewportChanged();
     }
@@ -152,21 +153,21 @@ public class VisualViewport : IViewport
 
     private void OnViewportChanged()
     {
-        _millimetersToPixelsTransform = GetMillimetersToPixelsTransform();
+        _millimetersToPixelsMatrix = GetMillimetersToPixelsMatrix();
         _halfPixelSize = new Vector(ToPixels(_size.X) / 2.0, ToPixels(_size.Y) / 2.0);
         
         ViewportChanged?.Invoke();
     }
-    
-    private Transform GetMillimetersToPixelsTransform()
+
+    private SKMatrix GetMillimetersToPixelsMatrix()
     {
-        var scale = ToPixels(Unit.FromMillimeters(1.0));
-        var transform = new TransformGroup();
+        var scaleFactor = ToPixels(Unit.FromMillimeters(1.0));
+        var translateX = _size.X.Millimeters / 2.0;
+        var translateY = -_size.Y.Millimeters / 2.0;
 
-        transform.Children.Add(new TranslateTransform(_size.X.Millimeters / 2.0,
-                                                      -_size.Y.Millimeters / 2.0));
-        transform.Children.Add(new ScaleTransform(scale, -scale));
+        var scale = SKMatrix.CreateScale((float)scaleFactor, (float)-scaleFactor);
+        var translate = SKMatrix.CreateTranslation((float)translateX, (float)translateY);
 
-        return transform;
+        return SKMatrix.Concat(scale, translate);
     }
 }

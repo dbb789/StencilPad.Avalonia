@@ -1,3 +1,9 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Media;
+using Avalonia.Skia;
+using SkiaSharp;
 using StencilPad.Canvases.Common;
 using StencilPad.Canvases.Tools.Actions;
 using StencilPad.Canvases.Tools.Common;
@@ -6,20 +12,64 @@ using StencilPad.Collections;
 using StencilPad.Common;
 using StencilPad.Models;
 using StencilPad.Models.Resolvers;
+using StencilPad.Rendering;
 using StencilPad.Spatial;
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Input;
-using Avalonia.Media;
 
 namespace StencilPad.Canvases.Tools.Overlays;
 
 public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
 {
+    private struct OverlayEntry
+    {
+        public UnitBounds Bounds;
+        public bool IsGroup;
+        public bool IsFilled;
+    }
+
+    private class RenderedEntries : IDisposable
+    {
+        public List<OverlayEntry> Entries = new();
+
+        public void Reset()
+        {
+            Entries.Clear();
+        }
+
+        public void Dispose()
+        {
+            Reset();
+        }
+    }
+
+    private class RenderedPaint : IDisposable
+    {
+        public SKPaint ElementPen = new();
+        public SKPaint ElementFill = new();
+        public SKPaint GroupPen = new();
+        public SKPaint GroupFill = new();
+
+        public void Reset()
+        {
+            ElementPen.Reset();
+            ElementFill.Reset();
+            GroupPen.Reset();
+            GroupFill.Reset();
+        }
+
+        public void Dispose()
+        {
+            ElementPen.Dispose();
+            ElementFill.Dispose();
+            GroupPen.Dispose();
+            GroupFill.Dispose();
+        }
+    }
+
     public IViewport Viewport => _viewport;
 
     private readonly ISettings _settings;
     private readonly IViewport _viewport;
+    private readonly IRenderHooks _renderHooks;
     private readonly IUnitSnap _unitSnap;
     private readonly SheetResolver _sheetResolver;
     private readonly Sheet _sheet;
@@ -38,11 +88,11 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
 
     private double _resizeHandleSize;
     private double _rotateHandleRadius;
-    private Pen _elementPen = null!;
-    private Brush _elementFill = null!;
-    private Pen _groupPen = null!;
-    private Brush _groupFill = null!;
     private IPointer? _capturedPointer;
+    
+    private TripleBuffer<RenderedEntries> _renderedEntries;
+    private TripleBuffer<RenderedPaint> _renderedPaint;
+    private bool _overlayDirty;
 
     public event Action? SelectionDragStarted;
     public event Action<Unit2D, Unit2D>? SelectionDragged;
@@ -60,6 +110,7 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
 
     public SelectionToolOverlay(ISettings settings,
                                 IViewport viewport,
+                                IRenderHooks renderHooks,
                                 IUnitSnap unitSnap,
                                 Sheet sheet,
                                 SheetResolver sheetResolver,
@@ -67,6 +118,7 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
     {
         _settings = settings;
         _viewport = viewport;
+        _renderHooks = renderHooks;
         _unitSnap = unitSnap;
         _sheetResolver = sheetResolver;
         _sheet = sheet;
@@ -75,20 +127,16 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         _resizeDragState = new();
         _rotateDragState = new();
 
-        BuildPens();
+        _renderedEntries = new();
+        _renderedPaint = new();
+        _overlayDirty = true;
 
+        BuildPens();
         BuildInputBindings(actionSet);
+
+        _renderHooks.PreRenderHook += PreRender;
+        _renderHooks.OverlayRenderHook += RenderOverlayGeometry;
         
-        // NOTE: Wiring ContextMenu population via Control.ContextRequested
-        // doesn't work reliably in Avalonia: setting ContextMenu subscribes
-        // an internal handler to ContextRequested that opens the popup using
-        // whatever is currently in ContextMenu.Items, and since that internal
-        // subscription happens before ours (it's added the moment ContextMenu
-        // is assigned above), it runs first and pops up with stale/empty
-        // items - our rebuild would always run too late. ContextMenu.Opening
-        // fires synchronously just before the popup is actually shown, so
-        // rebuilding the items there (and cancelling if there's nothing to
-        // show) works correctly.
         ContextMenu = new ContextMenu();
         ContextMenu.Opening += (_, e) =>
         {
@@ -106,23 +154,30 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         }
 
         _settings.Changed += SettingsChanged;
+        _viewport.ViewportChanged += InvalidateOverlay;
     }
 
     public void Dispose()
     {
         _settings.Changed -= SettingsChanged;
-        
+        _viewport.ViewportChanged -= InvalidateOverlay;
         _sheetResolver.SelectionChanged -= OnSelectionChanged;
 
+        _renderHooks.PreRenderHook -= PreRender;
+        _renderHooks.OverlayRenderHook -= RenderOverlayGeometry;
+        
         foreach (var resolver in _sheetResolver.Selection)
         {
             OnSelectionRemoved(resolver);
         }
+
+        _renderedEntries.Dispose();
+        _renderedPaint.Dispose();
     }
 
     private void BuildInputBindings(SheetElementActionSet actionSet)
     {
-        var builder = new InputBindingsBuilder(_sheet, ActionInvoked, KeyBindings);
+        var builder = new InputBindingsBuilder(_sheet, InvokeAction, KeyBindings);
 
         builder.Add(Key.P,
                     KeyModifiers.Control,
@@ -159,6 +214,11 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         builder.Add(Key.B,
                     KeyModifiers.Control,
                     actionSet.SendToBack);
+    }
+
+    private void InvokeAction(ISheetElementAction action)
+    {
+        ActionInvoked?.Invoke(action);
     }
 
     private bool BuildContextMenu(SheetElementActionSet actionSet)
@@ -236,13 +296,26 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
         var selectionColor = _settings.SelectionColor;
         var groupSelectionColor = _settings.GroupSelectionColor;
 
-        _elementPen = new Pen(new SolidColorBrush(ColorUtil.WithAlpha(selectionColor, 128)), 2);
+        using var paintHandle = _renderedPaint.TryWrite();
 
-        _elementFill = new SolidColorBrush(ColorUtil.WithAlpha(selectionColor, 32));
+        if (paintHandle.IsValid)
+        {
+            var paint = paintHandle.Buffer;
 
-        _groupPen = new Pen(new SolidColorBrush(ColorUtil.WithAlpha(groupSelectionColor, 128)), 2);
+            paint.ElementPen.Style = SKPaintStyle.Stroke;
+            paint.ElementPen.Color = ColorUtil.WithAlpha(selectionColor, 128).ToSKColor();
+            paint.ElementPen.StrokeWidth = 2;
 
-        _groupFill = new SolidColorBrush(ColorUtil.WithAlpha(groupSelectionColor, 32));
+            paint.ElementFill.Style = SKPaintStyle.Fill;
+            paint.ElementFill.Color = ColorUtil.WithAlpha(selectionColor, 32).ToSKColor();
+
+            paint.GroupPen.Style = SKPaintStyle.Stroke;
+            paint.GroupPen.Color = ColorUtil.WithAlpha(groupSelectionColor, 128).ToSKColor();
+            paint.GroupPen.StrokeWidth = 2;
+
+            paint.GroupFill.Style = SKPaintStyle.Fill;
+            paint.GroupFill.Color = ColorUtil.WithAlpha(groupSelectionColor, 32).ToSKColor();
+        }
 
         _resizeHandleSize = _settings.HandleSizePx;
         _rotateHandleRadius = _settings.HandleSizePx / 2;
@@ -251,7 +324,7 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
     private void SettingsChanged()
     {
         BuildPens();
-        InvalidateVisual();
+        ForceRedraw();
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
@@ -531,14 +604,14 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
     
     private void OnSelectionAdded(ISheetElementResolver resolver)
     {
-        resolver.OutlineChanged += ForceRedraw;
+        resolver.OutlineChanged += InvalidateOverlay;
 
         ForceRedraw();
     }
 
     private void OnSelectionRemoved(ISheetElementResolver resolver)
     {
-        resolver.OutlineChanged -= ForceRedraw;
+        resolver.OutlineChanged -= InvalidateOverlay;
 
         ForceRedraw();
     }
@@ -570,47 +643,120 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
             return new Unit2D(_resizeInitialNW.X + seBx, targetSE.Y);
         }
     }
+    
+    private void InvalidateOverlay()
+    {
+        _overlayDirty = true;
+    }
 
     private void ForceRedraw()
     {
-        InvalidateVisual();
+        InvalidateOverlay();
+        _renderHooks.Redraw();
     }
-
+    
     public override void Render(DrawingContext dc)
     {
         base.Render(dc);
 
-        dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, Bounds.Width, Bounds.Height));
+        dc.DrawRectangle(Brushes.Transparent, null, Bounds);
+    }
 
+    private void PreRender()
+    {
+        if (_overlayDirty)
+        {
+            _overlayDirty = false;
+            RebuildOverlay();
+        }
+    }
+
+    private void RebuildOverlay()
+    {
+        using var entriesHandle = _renderedEntries.TryWrite();
+
+        if (!entriesHandle.IsValid)
+        {
+            return;
+        }
+
+        var overlay = entriesHandle.Buffer;
+
+        overlay.Reset();
+        
         foreach (var resolver in _sheetResolver.Selection)
         {
             var screenBounds = _viewport.ToRect(resolver.GetOutlineBounds());
+            
             var element = resolver.Element;
+            var isGroup = element is ElementGroup;
 
-            Pen pen = (element is ElementGroup) ? _groupPen : _elementPen;
-            Brush? fill = null;
+            var isFilled = _dragState.DraggedElement == element ||
+                           _rotateDragState.DraggedElement == element ||
+                           _resizeDragState.DraggedElement == element;
 
-            if (_dragState.DraggedElement == element ||
-                _rotateDragState.DraggedElement == element ||
-                _resizeDragState.DraggedElement == element)
+            overlay.Entries.Add(new OverlayEntry
             {
-                fill = (element is ElementGroup) ? _groupFill : _elementFill;
+                Bounds = resolver.GetOutlineBounds(),
+                IsGroup = isGroup,
+                IsFilled = isFilled
+            });
+        }
+    }
+
+    private void RenderOverlayGeometry(SKCanvas canvas, GRContext? context, SKMatrix viewportMatrix)
+    {
+        using var entriesHandle = _renderedEntries.TryRead();
+        using var paintHandle = _renderedPaint.TryRead();
+
+        if (!entriesHandle.IsValid || !paintHandle.IsValid)
+        {
+            return;
+        }
+
+        var paint = paintHandle.Buffer;
+
+        foreach (var entry in entriesHandle.Buffer.Entries)
+        {
+            var pen = entry.IsGroup ? paint.GroupPen : paint.ElementPen;
+            var bounds = entry.Bounds.Millimeters.ToSKRect();
+
+            bounds = viewportMatrix.MapRect(bounds);
+            
+            if (entry.IsFilled)
+            {
+                var fill = entry.IsGroup ? paint.GroupFill : paint.ElementFill;
+
+                canvas.DrawRect(bounds, fill);
             }
             
-            dc.DrawRectangle(fill, pen, screenBounds);
+            canvas.DrawRect(bounds, pen);
+            canvas.DrawRect(ResizeHandleRect(bounds), pen);
 
-            dc.DrawRectangle(null,
-                             pen,
-                             ResizeHandleRect(screenBounds));
+            var rotateHandleRect = RotateHandleRect(bounds);
 
-            var rotateHandleRect = RotateHandleRect(screenBounds);
-
-            dc.DrawEllipse(null,
-                           pen,
-                           new Point(rotateHandleRect.Left + rotateHandleRect.Width / 2,
-                                     rotateHandleRect.Top + rotateHandleRect.Height / 2),
-                           rotateHandleRect.Width / 2, rotateHandleRect.Height / 2);
+            canvas.DrawOval(rotateHandleRect.MidX,
+                            rotateHandleRect.MidY,
+                            rotateHandleRect.Width / 2,
+                            rotateHandleRect.Height / 2,
+                            pen);
         }
+    }
+
+    private SKRect ResizeHandleRect(SKRect screenBounds)
+    {
+        return new SKRect(screenBounds.Right,
+                         screenBounds.Bottom,
+                         screenBounds.Right + (float)_resizeHandleSize,
+                         screenBounds.Bottom + (float)_resizeHandleSize);
+    }
+
+    private SKRect RotateHandleRect(SKRect screenBounds)
+    {
+        return new SKRect(screenBounds.Right,
+                         screenBounds.Top - (float)_resizeHandleSize,
+                         screenBounds.Right + (float)_resizeHandleSize,
+                         screenBounds.Top);
     }
 
     private Rect RotateHandleRect(Rect screenBounds)

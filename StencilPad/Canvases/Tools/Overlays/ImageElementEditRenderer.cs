@@ -1,5 +1,6 @@
 using System.ComponentModel;
-using Avalonia.Media;
+using Avalonia.Skia;
+using SkiaSharp;
 using StencilPad.Models;
 using StencilPad.Spatial;
 
@@ -22,18 +23,19 @@ public class ImageElementToolOverlayRenderer : IToolOverlayRenderer
         }
     }
     
-    private static Pen OutlinePen;
-
-    static ImageElementToolOverlayRenderer()
+    private static SKPaint OutlinePaint = new SKPaint
     {
-        OutlinePen = new Pen(new SolidColorBrush(Color.FromArgb(128, 0, 0, 0)), 0.2)
-        {
-            DashStyle = DashStyle.Dot
-        };
-    }
+        Color = new SKColor(0, 0, 0, 128),
+        StrokeWidth = 0.2f,
+        IsStroke = true,
+        PathEffect = SKPathEffect.CreateDash(new float[] { 2, 2 }, 0)
+    };
     
     private readonly ImageElement _imageElement;
-    
+
+    private SKRect _outline;
+    private object _outlineLock;
+
     public event Action? RendererDirty;
 
     private ImageElementToolOverlayRenderer(ImageElement imageElement)
@@ -42,6 +44,9 @@ public class ImageElementToolOverlayRenderer : IToolOverlayRenderer
         _imageElement.GeometryChanged += OnGeometryChanged;
         _imageElement.TransformChanged += OnTransformChanged;
         _imageElement.PropertyChanged += OnPropertyChanged;
+
+        _outline = SKRect.Empty;
+        _outlineLock = new();
     }
 
     public void Dispose()
@@ -51,19 +56,35 @@ public class ImageElementToolOverlayRenderer : IToolOverlayRenderer
         _imageElement.PropertyChanged -= OnPropertyChanged;
     }
 
-    public void Render(DrawingContext dc)
+    public void PreRender()
     {
         var bounds = UnitBounds.FromMinMax(_imageElement.Min, _imageElement.Max);
+        var matrix = _imageElement.Transform.CreateMatrix();
+        var outline = bounds.Millimeters.ToSKRect();
         
-        if (bounds.Size == Unit2D.Zero)
+        outline = matrix.MapRect(outline);
+
+        lock (_outlineLock)
+        {
+            _outline = outline;
+        }
+    }
+
+    public void Render(SKCanvas canvas, GRContext? context)
+    {
+        SKRect outline;
+
+        lock (_outlineLock)
+        {
+            outline = _outline;
+        }
+
+        if (outline.IsEmpty)
         {
             return;
         }
 
-        var transform = _imageElement.Transform.CreateGroupTransform();
-        
-        using var state = dc.PushTransform(transform.Value);
-        dc.DrawRectangle(Brushes.Transparent, OutlinePen, bounds.Millimeters);
+        canvas.DrawRect(outline, OutlinePaint);
     }
 
     private void OnTransformChanged(ISheetElement _)

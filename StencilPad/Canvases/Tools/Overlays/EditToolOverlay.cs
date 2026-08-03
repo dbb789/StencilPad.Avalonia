@@ -2,21 +2,63 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Skia;
 using Avalonia.VisualTree;
+using SkiaSharp;
 using StencilPad.Canvases.Common;
 using StencilPad.Canvases.Tools.Actions;
 using StencilPad.Canvases.Tools.Common;
 using StencilPad.Canvases.Tools.Widgets;
+using StencilPad.Rendering;
 using StencilPad.Common;
 using StencilPad.Models;
 using StencilPad.Spatial;
 
 namespace StencilPad.Canvases.Tools.Overlays;
 
-public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
+public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
 {
-    // Limit pointer move event handling to 60hz so we don't clog up the UI thread.
-    private const long MouseMoveEventThrottleMs = 16;
+    private class RenderedEntries : IDisposable
+    {
+        public List<SKPoint> MoveHandlePoints = new();
+        public List<SKPoint> AdjustHandlePoints = new();
+        public List<SKPoint> MoveHandleSelectedPoints = new();
+        public List<SKPoint> AdjustHandleSelectedPoints = new();
+        public SKPoint? LockLineStart;
+        public SKPoint? LockLineEnd;
+        
+        public void Reset()
+        {
+            MoveHandlePoints.Clear();
+            AdjustHandlePoints.Clear();
+            MoveHandleSelectedPoints.Clear();
+            AdjustHandleSelectedPoints.Clear();
+            LockLineStart = null;
+            LockLineEnd = null;
+        }
+        
+        public void Dispose()
+        {
+            Reset();
+        }
+    }
+    
+    private class RenderedPaint : IDisposable
+    {
+        public SKPaint SelectedPen = new();
+        public SKPaint AxisLockPen = new();
+        public SKPaint MoveBrush = new();
+        public SKPaint AdjustBrush = new();
+        public double HandleSize;
+        
+        public void Dispose()
+        {
+            SelectedPen.Dispose();
+            AxisLockPen.Dispose();
+            MoveBrush.Dispose();
+            AdjustBrush.Dispose();
+        }
+    }
     
     private record struct HandleEntry(ISheetElement Element, Handle Handle);
     
@@ -31,6 +73,7 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
     private readonly Sheet _sheet;
     private readonly ISettings _settings;
     private readonly IViewport _viewport;
+    private readonly IRenderHooks _renderHooks;
     private readonly IHandleMap _handleMap;
     private readonly IUnitSnap _unitSnap;
     private readonly IUnitSnapOverlay _unitSnapOverlay;
@@ -39,27 +82,27 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
     private List<IHandleMapEntry> _queryResults;
     private DragState<IHandleMapEntry> _dragState;
     private LockAxisState _lockAxisState;
-    private long _lastMouseMoveEvent;
     private IPointer? _capturedPointer;
-    
     private double _handleSize;
-    private Brush _moveBrush = null!;
-    private Brush _adjustBrush = null!;
-    private Pen _selectedPen = null!;
-    private Pen _axisLockPen = null!;
+    
+    private readonly ToolOverlayRenderer _toolOverlay;
+    private readonly TripleBuffer<RenderedEntries> _renderedEntries;
+    private readonly TripleBuffer<RenderedPaint> _renderedPaint;
+    private bool _overlayDirty;
     
     public EditToolOverlay(Sheet sheet,
                            ISettings settings,
                            IViewport viewport,
+                           IRenderHooks renderHooks,
                            IHandleMap handleMap,
                            IUnitSnap unitSnap,
                            IUnitSnapOverlay unitSnapOverlay,
                            SheetElementEditActionSet actionSet)
-        : base(viewport, sheet, true)
     {
         _sheet = sheet;
         _settings = settings;
         _viewport = viewport;
+        _renderHooks = renderHooks;
         _handleMap = handleMap;
         _unitSnap = unitSnap;
         _unitSnapOverlay = unitSnapOverlay;
@@ -69,6 +112,10 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
         _dragState = new();
         _lockAxisState = new();
         
+        _renderedEntries = new();
+        _renderedPaint = new();
+        _overlayDirty = true;
+
         _viewport.ViewportChanged += ForceRedraw;
         _handleMap.SheetSelectionChanged += ForceRedraw;
         _handleMap.HandleAdded += OnHandleAdded;
@@ -77,18 +124,19 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
         _handleMap.HandleSelectionChanged += ForceRedraw;
 
         BuildPens();
-        
-        RegisterOverlay(PolygonToolOverlayRenderer.Factory);
-        RegisterOverlay(TextElementToolOverlayRenderer.Factory);
-        RegisterOverlay(ImageElementToolOverlayRenderer.Factory);
-
         BuildInputBindings(_actionSet);
-        
-        // NOTE: See SelectionToolOverlay's constructor for why this uses
-        // ContextMenu.Opening (fires before the popup is shown) rather than
-        // Control.ContextRequested (Avalonia's built-in ContextMenu opening
-        // handler subscribes to ContextRequested first and would open the
-        // menu before our own handler got a chance to populate it).
+
+        _toolOverlay = new ToolOverlayRenderer(
+            sheet,
+            renderHooks,
+            true,
+            [ PolygonToolOverlayRenderer.Factory,
+              TextElementToolOverlayRenderer.Factory,
+              ImageElementToolOverlayRenderer.Factory]);
+
+        _renderHooks.PreRenderHook += PreRender;
+        _renderHooks.OverlayRenderHook += RenderOverlayGeometry;
+
         ContextMenu = new ContextMenu();
         ContextMenu.Opening += (_, e) =>
         {
@@ -101,11 +149,15 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
         _settings.Changed += SettingsChanged;
     }
 
-    public override void Dispose()
+    public void Dispose()
     {
         _settings.Changed -= SettingsChanged;
-                
         _viewport.ViewportChanged -= ForceRedraw;
+
+        _toolOverlay.Dispose();
+        
+        _renderHooks.PreRenderHook -= PreRender;
+        _renderHooks.OverlayRenderHook -= RenderOverlayGeometry;
 
         _handleMap.SheetSelectionChanged -= ForceRedraw;
         _handleMap.HandleAdded -= OnHandleAdded;
@@ -113,7 +165,8 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
         _handleMap.HandleMoved -= OnHandleMoved;
         _handleMap.HandleSelectionChanged -= ForceRedraw;
 
-        base.Dispose();
+        _renderedEntries.Dispose();
+        _renderedPaint.Dispose();
     }
 
     public void DeleteSelection()
@@ -135,16 +188,39 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
         var adjustHandleColor = _settings.AdjustHandleColor;
         var selectionColor = _settings.SelectionColor;
         var gridLineColor = _settings.GridLineColor;
-        
-        _moveBrush = new SolidColorBrush(ColorUtil.WithAlpha(moveHandleColor, 128));
-
-        _adjustBrush = new SolidColorBrush(ColorUtil.WithAlpha(adjustHandleColor, 128));
-
-        _selectedPen = new Pen(new SolidColorBrush(ColorUtil.WithAlpha(selectionColor, 255)), 2);
-
-        _axisLockPen = new Pen(new SolidColorBrush(ColorUtil.WithAlpha(gridLineColor, 128)), 2);
 
         _handleSize = _settings.HandleSizePx;
+        
+        using var paintHandle = _renderedPaint.TryWrite();
+
+        if (paintHandle.IsValid)
+        {
+            var paint = paintHandle.Buffer;
+
+            paint.MoveBrush.Style = SKPaintStyle.Fill;
+            paint.MoveBrush.Color = ColorUtil.WithAlpha(moveHandleColor, 128).ToSKColor();
+            paint.MoveBrush.IsAntialias = true;
+            paint.MoveBrush.IsDither = true;
+
+            paint.AdjustBrush.Style = SKPaintStyle.Fill;
+            paint.AdjustBrush.Color = ColorUtil.WithAlpha(adjustHandleColor, 128).ToSKColor();
+            paint.AdjustBrush.IsAntialias = true;
+            paint.AdjustBrush.IsDither = true;
+
+            paint.SelectedPen.Style = SKPaintStyle.Stroke;
+            paint.SelectedPen.Color = ColorUtil.WithAlpha(selectionColor, 255).ToSKColor();
+            paint.SelectedPen.StrokeWidth = 2.0f;
+            paint.SelectedPen.IsAntialias = true;
+            paint.SelectedPen.IsDither = true;
+            
+            paint.AxisLockPen.Style = SKPaintStyle.Stroke;
+            paint.AxisLockPen.Color = ColorUtil.WithAlpha(gridLineColor, 128).ToSKColor();
+            paint.AxisLockPen.StrokeWidth = 2.0f;
+            paint.AxisLockPen.IsAntialias = true;
+            paint.AxisLockPen.IsDither = true;
+
+            paint.HandleSize = _handleSize;
+        }
     }
     
     private void SettingsChanged()
@@ -155,7 +231,7 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
 
     private void BuildInputBindings(SheetElementEditActionSet actionSet)
     {
-        var builder = new InputBindingsBuilder(_sheet, ActionInvoked, KeyBindings);
+        var builder = new InputBindingsBuilder(_sheet, InvokeAction, KeyBindings);
 
         builder.Add(Key.P, KeyModifiers.Control, actionSet.CornerProperties);
         builder.Add(Key.I, KeyModifiers.Control, actionSet.InsertPoint);
@@ -163,6 +239,11 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
         builder.Add(Key.C, KeyModifiers.Control | KeyModifiers.Shift, actionSet.ClosePath);
         builder.Add(Key.S, KeyModifiers.Control | KeyModifiers.Shift, actionSet.SetAsStraight);
         builder.Add(Key.U, KeyModifiers.Control | KeyModifiers.Shift, actionSet.SetAsCurve);
+    }
+
+    private void InvokeAction(ISheetElementAction action)
+    {
+        ActionInvoked?.Invoke(action);
     }
     
     private bool BuildContextMenu(SheetElementEditActionSet actionSet)
@@ -204,6 +285,7 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
     {
         if (e.GetCurrentPoint(this).Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonPressed)
         {
+            base.OnPointerPressed(e);
             return;
         }
 
@@ -232,8 +314,9 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
-        if (e.InitialPressMouseButton != MouseButton.Left)
+        if (e.GetCurrentPoint(this).Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonReleased)
         {
+            base.OnPointerReleased(e);
             return;
         }
 
@@ -262,22 +345,13 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
 
     protected override void OnPointerMoved(PointerEventArgs e)
     {
-        var now = Environment.TickCount;
-        
-        if (_lastMouseMoveEvent > (now - MouseMoveEventThrottleMs))
-        {
-            return;
-        }
-        
-        _lastMouseMoveEvent = now;
-        
-        var mousePosition = e.GetPosition(this.GetVisualParent());
-
         if (!_dragState.DragStarted)
         {
+            base.OnPointerMoved(e);
             return;
         }
-        
+
+        var mousePosition = e.GetPosition(this.GetVisualParent());
         var dragResult = _dragState.OnDragMove(_viewport,
                                                mousePosition);
 
@@ -341,43 +415,73 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
         return true;
     }
 
-    protected override void RenderOverlayContent(DrawingContext dc)
+    private void InvalidateOverlay()
     {
+        _overlayDirty = true;
+    }
+
+    protected void ForceRedraw()
+    {
+        InvalidateOverlay();
+        _renderHooks.Redraw();
+    }
+    
+    private void PreRender()
+    {
+        if (_overlayDirty)
+        {
+            _overlayDirty = false;
+            RebuildOverlay();
+        }
+    }
+
+    private void RebuildOverlay()
+    {
+        using var entriesHandle = _renderedEntries.TryWrite();
+
+        if (!entriesHandle.IsValid)
+        {
+            return;
+        }
+
+        var overlay = entriesHandle.Buffer;
+
+        overlay.Reset();
         
-        dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, Bounds.Width, Bounds.Height));
-
-        RenderOverlay(dc);
-
         _queryResults.Clear();
         _handleMap.QueryHandles(UnitBounds.FromCenterSize(Unit2D.Zero, _viewport.Size),
                                 _queryResults);
-        
+
         foreach (var entry in _queryResults)
         {
             if (!entry.Editing)
             {
                 continue;
             }
-            
-            var point = _viewport.ToPoint(entry.Position);
-            var pen = entry.Selected ? _selectedPen : null;
-           
+
+            var point = entry.Position.Millimeters;
+
             if (entry.Handle.Type == HandleType.Move)
             {
-                dc.DrawRectangle(_moveBrush,
-                                 pen,
-                                 new Rect(point.X - (_handleSize / 2),
-                                          point.Y - (_handleSize / 2),
-                                          _handleSize,
-                                          _handleSize));
+                if (entry.Selected)
+                {
+                    overlay.MoveHandleSelectedPoints.Add(point.ToSKPoint());
+                }
+                else
+                {
+                    overlay.MoveHandlePoints.Add(point.ToSKPoint());
+                }
             }
             else
             {
-                dc.DrawEllipse(_adjustBrush,
-                               pen,
-                               point,
-                               _handleSize / 2,
-                               _handleSize / 2);
+                if (entry.Selected)
+                {
+                    overlay.AdjustHandleSelectedPoints.Add(point.ToSKPoint());
+                }
+                else
+                {
+                    overlay.AdjustHandlePoints.Add(point.ToSKPoint());
+                }
             }
         }
 
@@ -385,20 +489,93 @@ public class EditToolOverlay : ToolOverlay, IUnitSnapContext, IDisposable
         {
             if (_lockAxisState.LockedAxis == UnitAxis.X)
             {
-                var lockPoint = _viewport.ToPoint(new Unit2D(Unit.Zero, _lockAxisState.LockPosition.Value));
-                
-                dc.DrawLine(_axisLockPen,
-                            new Point(0, lockPoint.Y),
-                            new Point(Bounds.Width, lockPoint.Y));
+                var lockPoint = new Unit2D(Unit.Zero, _lockAxisState.LockPosition.Value).Millimeters;
+
+                var sheetX = _sheet.Format.Size.X.Millimeters;
+                var sheetXMin = -sheetX / 2;
+                var sheetXMax = sheetX / 2;
+
+                overlay.LockLineStart = new SKPoint((float)sheetXMin, (float)lockPoint.Y);
+                overlay.LockLineEnd = new SKPoint((float)sheetXMax, (float)lockPoint.Y);
             }
             else
             {
-                var lockPoint = _viewport.ToPoint(new Unit2D(_lockAxisState.LockPosition.Value, Unit.Zero));
+                var lockPoint = new Unit2D(_lockAxisState.LockPosition.Value, Unit.Zero).Millimeters;
 
-                dc.DrawLine(_axisLockPen,
-                            new Point(lockPoint.X, 0),
-                            new Point(lockPoint.X, Bounds.Height));
+                var sheetY = _sheet.Format.Size.Y.Millimeters;
+                var sheetYMin = -sheetY / 2;
+                var sheetYMax = sheetY / 2;
+                
+                overlay.LockLineStart = new SKPoint((float)lockPoint.X, (float)sheetYMin);
+                overlay.LockLineEnd = new SKPoint((float)lockPoint.X, (float)sheetYMax);
             }
         }
+
+    }
+
+    private void RenderOverlayGeometry(SKCanvas canvas, GRContext? context, SKMatrix viewportMatrix)
+    {
+        using var entriesHandle = _renderedEntries.TryRead();
+        using var paintHandle = _renderedPaint.TryRead();
+
+        if (!entriesHandle.IsValid || !paintHandle.IsValid)
+        {
+            return;
+        }
+
+        var overlay = entriesHandle.Buffer;
+        var paint = paintHandle.Buffer;
+
+        foreach (var handlePoint in overlay.MoveHandlePoints)
+        {
+            var point = viewportMatrix.MapPoint(handlePoint);
+            var rect = new SKRect(point.X - (float)(paint.HandleSize / 2),
+                                  point.Y - (float)(paint.HandleSize / 2),
+                                  point.X + (float)(paint.HandleSize / 2),
+                                  point.Y + (float)(paint.HandleSize / 2));
+
+            canvas.DrawRect(rect, paint.MoveBrush);
+        }
+
+        foreach (var handlePoint in overlay.AdjustHandlePoints)
+        {
+            var point = viewportMatrix.MapPoint(handlePoint);
+            
+            canvas.DrawCircle(point, (float)(paint.HandleSize / 2), paint.AdjustBrush);
+        }
+        
+        foreach (var handlePoint in overlay.MoveHandleSelectedPoints)
+        {
+            var point = viewportMatrix.MapPoint(handlePoint);
+            var rect = new SKRect(point.X - (float)(paint.HandleSize / 2),
+                                  point.Y - (float)(paint.HandleSize / 2),
+                                  point.X + (float)(paint.HandleSize / 2),
+                                  point.Y + (float)(paint.HandleSize / 2));
+            
+            canvas.DrawRect(rect, paint.MoveBrush);
+            canvas.DrawRect(rect, paint.SelectedPen);
+        }
+        
+        foreach (var handlePoint in overlay.AdjustHandleSelectedPoints)
+        {
+            var point = viewportMatrix.MapPoint(handlePoint);
+
+            canvas.DrawCircle(point, (float)(paint.HandleSize / 2), paint.AdjustBrush);
+            canvas.DrawCircle(point, (float)(paint.HandleSize / 2), paint.SelectedPen);
+        }
+
+        if (overlay.LockLineStart is not null && overlay.LockLineEnd is not null)
+        {
+            canvas.DrawLine(viewportMatrix.MapPoint(overlay.LockLineStart.Value),
+                            viewportMatrix.MapPoint(overlay.LockLineEnd.Value),
+                            paint.AxisLockPen);
+        }
+    }
+
+    public override void Render(DrawingContext dc)
+    {
+        base.Render(dc);
+
+        dc.DrawRectangle(Brushes.Transparent, null, Bounds);
     }
 }

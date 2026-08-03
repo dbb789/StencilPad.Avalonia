@@ -1,6 +1,4 @@
-using System.IO;
-using Avalonia.Media;
-using Avalonia.Media.Imaging;
+using SkiaSharp;
 using StencilPad.Models.Resolvers;
 using StencilPad.Spatial;
 
@@ -8,46 +6,66 @@ namespace StencilPad.Rendering;
 
 public class ImageRenderer : IImageWalker, IWalkerRenderer
 {
-    private static readonly Transform FlipY;
-
-    static ImageRenderer()
+    private class RenderedImage : IDisposable
     {
-        FlipY = new ScaleTransform(1, -1);
+        public SKImage? Image;
+
+        public void Dispose()
+        {
+            Image?.Dispose();
+            Image = null;
+        }
     }
     
+    private class RenderedProperties : IDisposable
+    {
+        public UnitBounds Bounds = UnitBounds.Empty;
+        public SKPaint Paint = new();
+
+        public void Dispose()
+        {
+            Paint?.Dispose();
+            Paint = null!;
+        }
+    }
+
     private UnitBounds? _bounds;
-    private Bitmap? _bitmap;
     private double _opacity = 1.0;
 
+    private TripleBuffer<RenderedImage> _renderedImage;
+    private TripleBuffer<RenderedProperties> _renderedProperties;
+    
     public event Action? RendererDirty;
     
     public ImageRenderer()
     {
-        _bounds = null;
-        _bitmap = null;
+        _renderedImage = new();
+        _renderedProperties = new();
     }
 
     public void Dispose()
     {
-        // ...
+        _renderedImage.Dispose();
+        _renderedProperties.Dispose();
     }
 
     public void SetBounds(UnitBounds? bounds)
     {
         _bounds = bounds;
+        
         InvokeRendererDirty();
     }
     
     public void SetImageData(byte[] imageData)
     {
-        if (imageData.Length == 0)
+        using var imageHandle = _renderedImage.TryWrite();
+
+        if (!imageHandle.IsValid)
         {
-            _bitmap = null;
-            InvokeRendererDirty();
             return;
         }
         
-        _bitmap = new Bitmap(new MemoryStream(imageData));
+        imageHandle.Buffer.Image = ((imageData.Length > 0) ? SKImage.FromEncodedData(imageData) : null);
 
         InvokeRendererDirty();
     }
@@ -59,32 +77,89 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
         InvokeRendererDirty();
     }
     
-    public void Render(DrawingContext dc)
+    private SKImage? _image;
+    private SKImage? _renderImage;
+    private object _renderImageLock = new();
+
+    public void PreRender()
     {
-        if (_bitmap is null || _bounds is null)
-        {
-            return;
-        }
+        // Nothing to do here - the image is already prepared in SetImageData.
+    }
 
-        var flippedBounds = UnitBounds.FromCenterSize(new Unit2D(_bounds.Value.Center.X, -_bounds.Value.Center.Y),
-                                                      _bounds.Value.Size);
-
-        var rect = flippedBounds.Millimeters;
-
-        if (rect.Width <= 0 || rect.Height <= 0)
+    public void Render(SKCanvas canvas, GRContext? context)
+    {
+        using var imageHandle = _renderedImage.TryRead();
+        
+        if (!imageHandle.IsValid)
         {
             return;
         }
         
-        // Account for WPF's inverted Y-axis by flipping the Y-axis for image rendering.
-        using var flipState = dc.PushTransform(FlipY.Value);
-        using var opacityState = dc.PushOpacity(_opacity);
+        var image = imageHandle.Buffer;
+        SKImage? renderImage = null;
 
-        dc.DrawImage(_bitmap, rect);
+        // Lock should be unnecessary here as we shouldn't ever be rendering the
+        // same object concurrently - this is really just for safety.
+        lock (_renderImageLock)
+        {
+            if (image.Image is null)
+            {
+                _renderImage?.Dispose();
+                return;
+            }
+
+            if (_image != image.Image)
+            {
+                _image = image.Image;
+                _renderImage?.Dispose();
+                _renderImage = (context is not null) ?
+                    _image.ToTextureImage(context) : _image.ToRasterImage();
+            }
+
+            renderImage = _renderImage;
+        }
+
+        if (renderImage is null)
+        {
+            return;
+        }
+        
+        using var propertiesHandle = _renderedProperties.TryRead();
+        
+        if (!propertiesHandle.IsValid)
+        {
+            return;
+        }
+        
+        var properties = propertiesHandle.Buffer;
+        
+        var bounds = properties.Bounds;
+        var rect = new SKRect((float)bounds.SW.X.Millimeters,
+                              -(float)bounds.NE.Y.Millimeters,
+                              (float)bounds.NE.X.Millimeters,
+                              -(float)bounds.SW.Y.Millimeters);
+        
+        canvas.Save();
+        canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, SKMatrix.CreateScale(1, -1)));
+        canvas.DrawImage(renderImage, rect, properties.Paint);
+        canvas.Restore();
     }
-    
+
     private void InvokeRendererDirty()
     {
+        using var propertiesHandle = _renderedProperties.TryWrite();
+
+        if (!propertiesHandle.IsValid)
+        {
+            return;
+        }
+        
+        var properties = propertiesHandle.Buffer;
+
+        properties.Bounds = _bounds ?? UnitBounds.Empty;
+        properties.Paint.Color = new SKColor(255, 255, 255, (byte)(Math.Clamp(_opacity, 0, 1) * 255));
+        properties.Paint.IsAntialias = true;
+        
         RendererDirty?.Invoke();
     }
 }

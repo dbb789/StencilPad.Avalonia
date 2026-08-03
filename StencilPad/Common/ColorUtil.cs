@@ -1,5 +1,6 @@
 using System.Globalization;
 using Avalonia.Media;
+using SkiaSharp;
 
 namespace StencilPad.Common;
 
@@ -122,5 +123,15 @@ public static class ColorUtil
     public static Color WithAlpha(Color color, byte alpha)
     {
         return Color.FromArgb(alpha, color.R, color.G, color.B);
+    }
+
+    public static SKColor WithAlpha(SKColor color, byte alpha)
+    {
+        return new SKColor(color.Red, color.Green, color.Blue, alpha);
+    }
+
+    public static SKColor ToSKColor(Color color)
+    {
+        return new SKColor(color.R, color.G, color.B, color.A);
     }
 }

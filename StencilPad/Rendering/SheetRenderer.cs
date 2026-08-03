@@ -1,4 +1,5 @@
-using Avalonia.Media;
+using Avalonia.Rendering.SceneGraph;
+using SkiaSharp;
 using Microsoft.Extensions.Logging;
 using StencilPad.Collections;
 using StencilPad.Common;
@@ -6,7 +7,7 @@ using StencilPad.Models.Resolvers;
 
 namespace StencilPad.Rendering;
 
-public class SheetRenderer : IDisposable
+public class SheetRenderer : IViewportRenderer, IDisposable, IRenderHooks
 {
     public class Factory(ILogger<SheetRenderer> Logger,
                          ISettings Settings,
@@ -17,15 +18,19 @@ public class SheetRenderer : IDisposable
             return new(Logger, resolver, Settings, ResourceSet);
         }
     }
-    
+
     private readonly ILogger<SheetRenderer> _logger;
     private readonly SheetResolver _resolver;
     private readonly ISettings _settings;
     private readonly IResourceSet _resourceSet;
-    private readonly OrderedDictionary<ISheetElementResolver, ModelRenderer> _renderers;
-    
+    private readonly ConcurrentOrderedDictionary<ISheetElementResolver, ModelRenderer> _renderers;
+
     public event Action? RendererDirty;
 
+    public event Action? PreRenderHook;
+    public event Action<SKCanvas, GRContext?>? ViewportRenderHook;
+    public event Action<SKCanvas, GRContext?, SKMatrix>? OverlayRenderHook;
+    
     private SheetRenderer(ILogger<SheetRenderer> logger,
                           SheetResolver resolver,
                           ISettings settings,
@@ -57,14 +62,40 @@ public class SheetRenderer : IDisposable
         _resolver.ElementsChanged -= OnElementsChanged;
     }
 
-    public void Render(DrawingContext dc)
+    public ICustomDrawOperation CreateDrawOperation(SKMatrix viewportMatrix)
     {
-        foreach (var (_, renderer) in _renderers)
-        {
-            renderer.Render(dc);
-        }
+        PreRender();
+        
+        return new ViewportRendererDrawOperation(this, viewportMatrix);
     }
 
+    private void PreRender()
+    {
+        foreach (var renderer in _renderers)
+        {
+            renderer.PreRender();
+        }
+
+        PreRenderHook?.Invoke();
+    }
+    
+    public void Render(SKCanvas canvas, GRContext? context, SKMatrix viewportMatrix)
+    {
+        canvas.Save();
+        canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, viewportMatrix));
+        
+        foreach (var renderer in _renderers)
+        {
+            renderer.Render(canvas, context);
+        }
+        
+        ViewportRenderHook?.Invoke(canvas, context);
+        
+        canvas.Restore();
+
+        OverlayRenderHook?.Invoke(canvas, context, viewportMatrix);
+    }
+    
     private void OnElementsChanged(ObservableListChangedArgs<ISheetElementResolver> e)
     {
         switch (e.Action)
@@ -87,39 +118,35 @@ public class SheetRenderer : IDisposable
     {
         var renderer = new ModelRenderer(_resourceSet);
 
-        renderer.RendererDirty += InvokeRendererDirty;
+        renderer.RendererDirty += Redraw;
         resolver.Attach(renderer);
         _renderers.Insert(index, resolver, renderer);
         
-        InvokeRendererDirty();
+        Redraw();
     }
 
     private void OnElementRemoved(ISheetElementResolver resolver)
-    {
-        if (!_renderers.TryGetValue(resolver, out var renderer))
+    {   
+        if (!_renderers.TryGetRemove(resolver, out var renderer))
         {
             _logger.LogError("Could not find renderer for resolver {ResolverType}.", resolver.GetType().Name);
             return;
         }
 
-        renderer.RendererDirty -= InvokeRendererDirty;
+        renderer.RendererDirty -= Redraw;
         renderer.Dispose();
-        _renderers.Remove(resolver);
         
-        InvokeRendererDirty();
+        Redraw();
     }
 
     private void OnElementMoved(int oldIndex, int newIndex)
     {
-        var kvp = _renderers.GetAt(oldIndex);
+        _renderers.Move(oldIndex, newIndex);
         
-        _renderers.RemoveAt(oldIndex);
-        _renderers.Insert(newIndex, kvp.Key, kvp.Value);
-
-        InvokeRendererDirty();
+        Redraw();
     }
     
-    private void InvokeRendererDirty()
+    public void Redraw()
     {
         RendererDirty?.Invoke();
     }

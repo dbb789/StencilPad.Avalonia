@@ -1,6 +1,4 @@
-using System.Globalization;
-using Avalonia;
-using Avalonia.Media;
+using SkiaSharp;
 using StencilPad.Models;
 using StencilPad.Models.Resolvers;
 using StencilPad.Spatial;
@@ -9,27 +7,50 @@ namespace StencilPad.Rendering;
 
 public class TextRenderer : ITextWalker, IWalkerRenderer
 {
-    private static readonly FontFamily FallbackFont = new("Arial");
-    private static readonly Transform FlipY;
-    
-    static TextRenderer()
+    private static readonly string FallbackFont = "Arial";
+    private static readonly string [] NewlineSplit = new[] { "\r\n", "\r", "\n" };
+
+    private class RenderedText : IDisposable
     {
-        FlipY = new ScaleTransform(1, -1);
+        public SKMatrix Matrix = SKMatrix.CreateIdentity();
+        public SKPoint Point = new SKPoint(0, 0);
+        public SKFont Font = new();
+        public SKTextAlign Align = SKTextAlign.Left;
+        public SKPaint Paint = new();
+        public string [] Lines = Array.Empty<string>();
+
+        public void Reset()
+        {
+            Matrix = SKMatrix.CreateIdentity();
+            Point = new SKPoint(0, 0);
+            Align = SKTextAlign.Left;
+            Paint.Reset();
+            Lines = Array.Empty<string>();
+        }
+        
+        public void Dispose()
+        {
+            Font.Dispose();
+            Paint.Dispose();
+            Lines = Array.Empty<string>();
+        }
     }
-    
-    private Transform? _transform;
+
+    private SKMatrix _matrix;
     private TextStyle _style;
     private UnitBounds? _bounds;
     private string _text;
-    private FormattedText? _formattedText;
+    private bool _textDirty;
+    
+    private TripleBuffer<RenderedText> _renderedText;
 
     public event Action? RendererDirty;
     
     public TextRenderer()
     {
-        _transform = null;
         _style = new TextStyle();
         _text = "";
+        _renderedText = new();
     }
 
     public void Dispose()
@@ -39,122 +60,116 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
 
     public void SetTransform(UnitTransform transform)
     {
-        _transform = transform.CreateGroupTransform();
-        InvokeRendererDirty();
+        _matrix = SKMatrix.Concat(transform.CreateMatrix(),
+                                  SKMatrix.CreateScale(1, -1));
+        
+        MarkTextDirty();
     }
 
     public void SetStyle(TextStyle style)
     {
         _style = style;
-        RebuildFormattedText();
-        InvokeRendererDirty();
+        MarkTextDirty();
     }
 
     public void SetBounds(UnitBounds? bounds)
     {
         _bounds = bounds;
-        RebuildFormattedText();
-        InvokeRendererDirty();
+        MarkTextDirty();
     }
     
     public void SetText(string text)
     {
         _text = text;
-        RebuildFormattedText();
-        InvokeRendererDirty();
+        MarkTextDirty();
+    }
+
+    public void PreRender()
+    {
+        if (_textDirty)
+        {
+            _textDirty = false;
+            RebuildText();
+        }
     }
     
-    public void Render(DrawingContext dc)
+    public void Render(SKCanvas canvas, GRContext? context)
     {
-        if (_formattedText is null || string.IsNullOrEmpty(_text))
+        using var textHandle = _renderedText.TryRead();
+
+        if (!textHandle.IsValid)
         {
             return;
         }
 
-        using var transformState = _transform is not null ? dc.PushTransform(_transform.Value) : default;
+        var text = textHandle.Buffer;
+        var point = text.Point;
+        
+        canvas.Save();
+        canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, text.Matrix));
 
-        // Account for WPF's inverted Y-axis by flipping the Y-axis for text rendering.
-        using var flipState = dc.PushTransform(FlipY.Value);
+        foreach (var line in text.Lines)
+        {
+            point.Y += text.Font.Size;
+            canvas.DrawText(line, point, text.Align, text.Font, text.Paint);
+        }
+
+        canvas.Restore();
+    }
+
+    private void MarkTextDirty()
+    {
+        _textDirty = true;
+        RendererDirty?.Invoke();
+    }
+    
+    private void RebuildText()
+    {
+        var point = new SKPoint(0, 0);
 
         if (_bounds is not null)
         {
-            var flippedBounds = UnitBounds.FromCenterSize(new Unit2D(_bounds.Value.Center.X, -_bounds.Value.Center.Y),
-                                                          _bounds.Value.Size);
-            var clipRect = flippedBounds.Millimeters;
-            var height = _formattedText.Height;
-
-            Point textPos;
-
-            switch (_style.Justification)
-            {
-            case Justification.Center:
-                textPos = new Point((clipRect.Left + clipRect.Right) / 2, clipRect.Top);
-                break;
-            case Justification.Right:
-                textPos = new Point(clipRect.Right, clipRect.Top);
-                break;
-            case Justification.Left:
-            default:
-                textPos = new Point(clipRect.Left, clipRect.Top);
-                break;
-            }
-
-            using var clipState = dc.PushClip(clipRect);
-            dc.DrawText(_formattedText, textPos);
+            point = new SKPoint((float)_bounds.Value.NW.X.Millimeters,
+                                (float)-_bounds.Value.NW.Y.Millimeters);
         }
-        else
+                
+        var font = new SKFont(SKTypeface.FromFamilyName(_style.Font ?? FallbackFont),
+                              (float)Unit.FromFontSizePoints(_style.Size).Millimeters);
+
+        var align = _style.Justification switch
         {
-            dc.DrawText(_formattedText, new Point(0, 0));
-        }
-    }
-    
-    private void RebuildFormattedText()
-    {
-        if (string.IsNullOrEmpty(_text))
+            Justification.Left => SKTextAlign.Left,
+            Justification.Center => SKTextAlign.Center,
+            Justification.Right => SKTextAlign.Right,
+            _ => SKTextAlign.Left
+        };
+        
+        var paint = new SKPaint
         {
-            _formattedText = null;
+            Color = new SKColor(_style.Color.R,
+                                _style.Color.G,
+                                _style.Color.B,
+                                _style.Color.A),
+                                
+            IsAntialias = true,
+            IsDither = true
+        };
+
+        var lines = _text.Split(NewlineSplit, StringSplitOptions.None);
+
+        using var textHandle = _renderedText.TryWrite();
+
+        if (!textHandle.IsValid)
+        {
             return;
         }
-
-        var fontFamily = ResolveFont(_style.Font);
-
-        _formattedText = new FormattedText(
-            _text,
-            CultureInfo.InvariantCulture,
-            FlowDirection.LeftToRight,
-            new Typeface(fontFamily, FontStyle.Normal, FontWeight.Normal, FontStretch.Normal),
-            Unit.FromFontSizePoints(_style.Size).Millimeters,
-            new SolidColorBrush(_style.Color))
-        {
-            Trimming = TextTrimming.None,
-            TextAlignment = GetTextAlignment(_style.Justification)
-        };
-    }
-
-    private static FontFamily ResolveFont(string fontName)
-    {
-        if (FontManager.Current.SystemFonts.Any(
-                f => string.Equals(f.Name, fontName, StringComparison.OrdinalIgnoreCase)))
-        {
-            return new FontFamily(fontName);
-        }
-
-        return FallbackFont;
-    }
-
-    private static TextAlignment GetTextAlignment(Justification justification)
-    {
-        return justification switch
-        {
-            Justification.Left => TextAlignment.Left,
-            Justification.Center => TextAlignment.Center,
-            Justification.Right => TextAlignment.Right,
-            _ => TextAlignment.Left
-        };
-    }
-    
-    private void InvokeRendererDirty()
-    {
-        RendererDirty?.Invoke();
+        
+        textHandle.Buffer.Reset();
+        textHandle.Buffer.Matrix = _matrix;
+        textHandle.Buffer.Point = point;
+        textHandle.Buffer.Font = font;
+        textHandle.Buffer.Align = align;
+        textHandle.Buffer.Paint = paint;
+        textHandle.Buffer.Lines = lines;
     }
 }

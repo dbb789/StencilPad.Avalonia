@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Avalonia.Media;
+using SkiaSharp;
 using StencilPad.Models;
 using StencilPad.Rendering;
 using StencilPad.Schemas;
@@ -66,13 +67,13 @@ public class ResourceService : IResourceService
 
     private void Load(GeometryResourceId id, string filename, Unit2D? size)
     {
-        Geometry? geometry = null;
+        SKPath? path = null;
         Shape? shape = null;
         Unit2D geometrySize = Unit2D.Zero;
         
         try
         {
-            (geometry, shape, geometrySize) = LoadGeometry(filename);
+            (path, shape, geometrySize) = LoadGeometry(filename);
         }
         catch (Exception e)
         {
@@ -80,9 +81,9 @@ public class ResourceService : IResourceService
             return;
         }
         
-        if (geometry != null)
+        if (path is not null)
         {
-            _geometryMap[id] = new GeometryResource(geometry, shape ?? new Shape(), size ?? geometrySize);
+            _geometryMap[id] = new GeometryResource(path, shape ?? new Shape(), size ?? geometrySize);
         }
         else
         {
@@ -116,7 +117,7 @@ public class ResourceService : IResourceService
     }
 
     // NOTE: Throws a variety of exceptions on failure.
-    private (Geometry, Shape?, Unit2D) LoadGeometry(string filename)
+    private (SKPath, Shape?, Unit2D) LoadGeometry(string filename)
     {
         var schema = SchemaUtil.LoadProject(filename);
 
@@ -130,32 +131,34 @@ public class ResourceService : IResourceService
 
         Shape? shape = null;
         UnitBounds? bounds = null;
+
+        var path = new SKPath();
+
+        shape = sheet.Elements.FirstOrDefault(e => e is Shape) as Shape;
         
-        using (var ctx = geometry.Open())
+        if (shape is not null)
         {
-            ctx.SetFillRule(FillRule.EvenOdd);
+            var walker = new SKPathGeometryWalker();
+            var builder = new SKPath.OpBuilder();
 
-            shape = sheet.Elements.FirstOrDefault(e => e is Shape) as Shape;
-
-            if (shape is not null)
+            foreach (var polygon in shape.PolygonSet)
             {
-                var walker = new StreamGeometryWalker
-                {
-                    Context = ctx
-                };
+                var subPath = new SKPath();
                 
-                foreach (var polygon in shape.PolygonSet)
-                {
-                    polygon.Transform(shape.Transform);
-                    bounds = UnitBounds.Union(bounds, polygon.CalculateBounds());
-                    
-                    polygon.Resolver.Walk(walker);
-                }
+                polygon.Transform(shape.Transform);
+                bounds = UnitBounds.Union(bounds, polygon.CalculateBounds());
 
-                shape.Transform = UnitTransform.Identity;
+                walker.Path = subPath;
+                polygon.Resolver.Walk(walker);
+
+                builder.Add(subPath, SKPathOp.Xor);
             }
+
+            builder.Resolve(path);
+            
+            shape.Transform = UnitTransform.Identity;
         }
 
-        return (geometry, shape, bounds?.Size ?? Unit2D.Zero);
+        return (path, shape, bounds?.Size ?? Unit2D.Zero);
     }
 }

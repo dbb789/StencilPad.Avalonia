@@ -1,5 +1,7 @@
-using Avalonia.Media;
+using SkiaSharp;
+using StencilPad.Collections;
 using StencilPad.Models;
+using StencilPad.Rendering;
 
 namespace StencilPad.Canvases.Tools.Overlays;
 
@@ -9,19 +11,20 @@ namespace StencilPad.Canvases.Tools.Overlays;
 public class GroupToolOverlayRenderer : IToolOverlayRenderer
 {
     private readonly ElementGroup _group;
-    private readonly List<IToolOverlayRendererFactory> _factories;
-    private readonly Dictionary<ISheetElement, IToolOverlayRenderer> _renderers;
-    private Transform _transform;
+    
+    private readonly ConcurrentList<IToolOverlayRendererFactory> _factories;
+    private readonly ConcurrentOrderedDictionary<ISheetElement, IToolOverlayRenderer> _renderers;
+    private readonly ConcurrentSKMatrix _matrix;
     
     public event Action? RendererDirty;
     
     public GroupToolOverlayRenderer(ElementGroup group,
-                                    List<IToolOverlayRendererFactory> factories)
+                                    IEnumerable<IToolOverlayRendererFactory> factories)
     {
         _group = group;
         _factories = new(factories);
         _renderers = new();
-        _transform = _group.Transform.CreateGroupTransform();
+        _matrix = new(_group.Transform.CreateMatrix());
         
         _group.ChildrenChanged += BuildRenderers;
         _group.TransformChanged += TransformChanged;
@@ -36,47 +39,31 @@ public class GroupToolOverlayRenderer : IToolOverlayRenderer
         _group.ChildrenChanged -= BuildRenderers;
         _group.TransformChanged -= TransformChanged;
     }
-    
-    public void Render(DrawingContext dc)
-    {
-        using var state = dc.PushTransform(_transform.Value);
 
-        foreach (var renderer in _renderers.Values)
+    public void PreRender()
+    {
+        foreach (var renderer in _renderers)
         {
-            renderer.Render(dc);
+            renderer.PreRender();
         }
     }
-    
-    public void RegisterOverlay(IToolOverlayRendererFactory factory)
+
+    public void Render(SKCanvas canvas, GRContext? context)
     {
-        _factories.Add(factory);
-
-        foreach (var element in _group.Children)
+        canvas.Save();
+        canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, _matrix.Value));
+        
+        foreach (var renderer in _renderers)
         {
-            if (!_renderers.ContainsKey(element))
-            {
-                var renderer = factory.CreateOverlay(element);
-
-                if (renderer is not null)
-                {
-                    renderer.RendererDirty += InvokeRendererDirty;
-                    _renderers.Add(element, renderer);
-                }
-            }
+            renderer.Render(canvas, context);
         }
-
-        foreach (var renderer in _renderers.Values)
-        {
-            if (renderer is GroupToolOverlayRenderer groupRenderer)
-            {
-                groupRenderer.RegisterOverlay(factory);
-            }
-        }
+        
+        canvas.Restore();
     }
     
     private void TransformChanged(ISheetElement element)
     {
-        _transform = _group.Transform.CreateGroupTransform();
+        _matrix.Value = _group.Transform.CreateMatrix();
         
         InvokeRendererDirty();
     }
@@ -84,13 +71,13 @@ public class GroupToolOverlayRenderer : IToolOverlayRenderer
     private void BuildRenderers()
     {
         ClearRenderers();
-
+        
         foreach (var child in _group.Children)
         {
             foreach (var factory in _factories)
             {
                 var renderer = factory.CreateOverlay(child);
-
+                
                 if (renderer is not null)
                 {
                     renderer.RendererDirty += InvokeRendererDirty;
@@ -105,13 +92,11 @@ public class GroupToolOverlayRenderer : IToolOverlayRenderer
 
     private void ClearRenderers()
     {
-        foreach (var renderer in _renderers.Values)
+        foreach (var (_, renderer) in _renderers.GetClear())
         {
             renderer.RendererDirty -= InvokeRendererDirty;
             renderer.Dispose();
         }
-        
-        _renderers.Clear();
     }
 
     private void InvokeRendererDirty()

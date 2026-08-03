@@ -60,13 +60,14 @@ public class PngExporter
         using var bitmap = new RenderTargetBitmap(new PixelSize(widthPx, heightPx),
                                                   new Vector(BaseDpi * scale, BaseDpi * scale));
 
-        using (var dc = bitmap.CreateDrawingContext())
+        /*using (var dc = bitmap.CreateDrawingContext())
         {
             using var state = dc.PushTransform(transform.Value);
             renderer.Render(dc);
-        }
+        }*/
 
         using var stream = File.OpenWrite(path);
-        bitmap.Save(stream);
+
+        bitmap.Save(stream, PngBitmapEncoderOptions.Default);
     }
 }

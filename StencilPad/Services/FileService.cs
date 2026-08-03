@@ -1,4 +1,3 @@
-using System.IO;
 using Avalonia.Platform.Storage;
 using StencilPad.Models;
 using StencilPad.Schemas;
@@ -32,13 +31,7 @@ public class FileService : IFileService
         });
 
         var file = files.FirstOrDefault();
-
-        if (file is null)
-        {
-            return null;
-        }
-
-        var path = file.TryGetLocalPath();
+        var path = file?.TryGetLocalPath();
 
         if (path is null)
         {

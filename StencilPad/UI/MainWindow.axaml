@@ -1,4 +1,4 @@
-﻿<Window xmlns="https://github.com/avaloniaui"
+<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="StencilPad.UI.MainWindow"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -15,8 +15,8 @@
     <Window.KeyBindings>
         <KeyBinding Command="{Binding SelectedTab.SelectAllCommand}" Gesture="Ctrl+A"/>
         <KeyBinding Command="{Binding SelectedTab.ClearSelectionCommand}" Gesture="Ctrl+A"/>
-        <KeyBinding Command="{Binding SelectedTab.CutCommand}"    Gesture="Ctrl+X"/>
-        <KeyBinding Command="{Binding SelectedTab.CopyCommand}"  Gesture="Ctrl+C"/>
+        <KeyBinding Command="{Binding SelectedTab.CutCommand}" Gesture="Ctrl+X"/>
+        <KeyBinding Command="{Binding SelectedTab.CopyCommand}" Gesture="Ctrl+C"/>
         <KeyBinding Command="{Binding SelectedTab.PasteCommand}" Gesture="Ctrl+V"/>
         <KeyBinding Command="{Binding SelectedTab.DeleteCommand}" Gesture="Delete"/>
         <KeyBinding Command="{Binding AddSheetCommand}" Gesture="Ctrl+T"/>

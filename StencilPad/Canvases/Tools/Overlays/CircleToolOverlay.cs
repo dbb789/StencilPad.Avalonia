@@ -49,7 +49,7 @@ public class CircleToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEle
         _renderer = new ModelRenderer(resourceService);
 
         _resolver?.Attach(_renderer);
-        _renderer.RendererDirty += InvalidateVisual;
+        _renderer.RendererDirty += RendererDirty;
         
         _viewport.ViewportChanged += InvalidateVisual;
     }
@@ -58,15 +58,25 @@ public class CircleToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEle
     {
         _hintService.ClearHint();
 
-        _renderer.RendererDirty -= InvalidateVisual;
+        _renderer.RendererDirty -= RendererDirty;
         _renderer.Dispose();
         _resolver?.Detach();
 
         _viewport.ViewportChanged -= InvalidateVisual;
     }
-    
+
+    private void RendererDirty()
+    {
+        Dispatcher.Invoke(InvalidateVisual);
+    }
+
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
+        if (e.GetCurrentPoint(this).Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonPressed)
+        {
+            return;
+        }
+
         if (e.ClickCount == 1)
         {
             if (_initialPoint is null)
@@ -186,7 +196,6 @@ public class CircleToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEle
 
     public override void Render(DrawingContext dc)
     {
-        
         dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, Bounds.Width, Bounds.Height));
 
         if (_polygon.Vertices.Count == 0)
@@ -194,9 +203,7 @@ public class CircleToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEle
             return;
         }
 
-        using var state = dc.PushTransform(_viewport.MillimetersToPixelsTransform.Value);
-
-        _renderer.Render(dc);
+        dc.Custom(_renderer.CreateDrawOperation(_viewport.MillimetersToPixelsMatrix));
     }
 
     private Unit2D CurrentSnappedMouseOverPosition(Point mousePosition)

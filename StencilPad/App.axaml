@@ -9,5 +9,70 @@
   
     <Application.Styles>
         <FluentTheme DensityStyle="Compact"/>
+
+        <Style Selector="TabControl">
+            <Setter Property="Padding" Value="0"/>
+        </Style>
+
+        <Style Selector="TabControl[TabStripPlacement=Bottom] /template/ ItemsPresenter#PART_ItemsPresenter">
+            <Setter Property="Margin" Value="0,-1,0,0"/>
+        </Style>
+
+        <Style Selector="TabControl TabItem">
+            <Setter Property="Background" Value="#F0F0F0"/>
+            <Setter Property="BorderBrush" Value="#ACACAC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="Margin" Value="0,0,-1,0"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+
+        <Style Selector="TabControl TabItem:pointerover">
+            <Setter Property="Background" Value="#E8E8E8"/>
+        </Style>
+
+        <Style Selector="TabControl TabItem:selected">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+        </Style>
+        
+        <Style Selector="TabControl[TabStripPlacement=Top] TabItem">
+            <Setter Property="CornerRadius" Value="2,2,0,0"/>
+        </Style>
+        
+        <Style Selector="TabControl[TabStripPlacement=Bottom] TabItem">
+            <Setter Property="CornerRadius" Value="0,0,2,2"/>
+        </Style>
+
+        <Style Selector="TabControl[TabStripPlacement=Top] TabItem:selected">
+            <Setter Property="BorderThickness" Value="1,1,1,0"/>
+        </Style>
+
+        <Style Selector="TabControl[TabStripPlacement=Bottom] TabItem:selected">
+            <Setter Property="BorderThickness" Value="1,0,1,1"/>
+        </Style>
+
+        <Style Selector="TabControl TabItem:selected /template/ Border#PART_SelectedPipe">
+            <Setter Property="IsVisible" Value="False"/>
+        </Style>
+
+        <Style Selector="TabControl TabItem TextBlock">
+            <Setter Property="Foreground" Value="#1E1E1E"/>
+        </Style>
+
+        <Style Selector="TabControl /template/ Border#PART_ContentPanel">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#ACACAC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="0"/>
+        </Style>
+        
+        <Style Selector="TabControl /template/ ContentPresenter#PART_SelectedContentHost">
+            <Setter Property="BorderBrush" Value="#ACACAC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        
     </Application.Styles>
 </Application>

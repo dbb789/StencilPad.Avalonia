@@ -1,196 +1,251 @@
-using Avalonia.Media;
 using StencilPad.Models.Resolvers;
 using StencilPad.Spatial;
+using SkiaSharp;
 
 namespace StencilPad.Rendering;
 
 public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
 {
-    private class Entry
+    private class RenderedGeometry : IDisposable
     {
-        public GeometrySet GeometrySet;
+        public SKPath FillPath = new();
+        public SKPath OutlinePath = new();
+        public SKPath OverlayPath = new();
 
-        ////////////////////
+        public void Reset()
+        {
+            FillPath.Reset();
+            OutlinePath.Reset();
+            OverlayPath.Reset();
+        }
+
+        public void Dispose()
+        {
+            FillPath.Dispose();            
+            OutlinePath.Dispose();            
+            OverlayPath.Dispose();
+        }
+    }
+    
+    private class RenderedPaint : IDisposable
+    {
+        public SKPaint FillPaint = new();
+        public SKPaint StrokePaint = new();
+
+        public void Reset()
+        {
+            FillPaint.Reset();
+            StrokePaint.Reset();
+        }
         
-        public Geometry? Geometry;
-        public List<(Geometry, Transform)> Overlays { get; } = [];
-        
-        public bool GeometryDirty;
+        public void Dispose()
+        {
+            FillPaint.Dispose();
+            StrokePaint.Dispose();
+        }
     }
 
     private readonly IResourceSet _resourceSet;
-    private readonly Dictionary<int, Entry> _entryMap;
+    private readonly Dictionary<int, GeometrySet> _geometrySetMap;
     private ClampedGeometryWalker? _clampedGeometryWalker;
-    private StreamGeometryWalker? _streamGeometryWalker;
-    
-    private GeometryGroup? _baseGeometry;
-    private bool _geometryDirty;
-    private Pen? _pen;
-    private Brush? _brush;
+    private SKPathGeometryWalker? _pathGeometryWalker;
 
+    private TripleBuffer<RenderedGeometry> _renderedGeometry;
+    private TripleBuffer<RenderedPaint> _renderedPaint;
+    private bool _geometryDirty;
+    
     public event Action? RendererDirty;
     
     public StyledGeometryRenderer(IResourceSet resourceSet)
     {
         _resourceSet = resourceSet;
-        _entryMap = new();
-        _geometryDirty = true;
+        _geometrySetMap = new();
+        _renderedGeometry = new();
+        _renderedPaint = new();
     }
 
     public void Dispose()
     {
-        // ...
+        _geometrySetMap.Clear();
+        
+        _renderedGeometry.Dispose();
+        _renderedPaint.Dispose();
     }
 
-    public void Render(DrawingContext dc)
+    public void PreRender()
     {
-        if (_pen is null || _brush is null)
+        if (_geometryDirty)
+        {
+            _geometryDirty = false;
+            RebuildGeometry();
+        }
+    }
+
+    public void Render(SKCanvas canvas, GRContext? context)
+    {
+        using var geometryHandle = _renderedGeometry.TryRead();
+        using var paintHandle = _renderedPaint.TryRead();
+
+        if (!geometryHandle.IsValid || !paintHandle.IsValid)
         {
             return;
         }
-
-        var geometry = GetGeometryGroup();
         
-        dc.DrawGeometry(_brush, _pen, geometry);
+        var geometry = geometryHandle.Buffer;
+        var paint = paintHandle.Buffer;
         
-        foreach (var (_, entry) in _entryMap)
-        {
-            foreach (var (overlayGeometry, transform) in entry.Overlays)
-            {
-                using var state = dc.PushTransform(transform.Value);
-                dc.DrawGeometry(_brush, _pen, overlayGeometry);
-            }
-        }
+        DrawPath(canvas, geometry.FillPath, paint.FillPaint);
+        DrawPath(canvas, geometry.FillPath, paint.StrokePaint);
+        DrawPath(canvas, geometry.OutlinePath, paint.StrokePaint);
+        DrawPath(canvas, geometry.OverlayPath, paint.FillPaint);
+        DrawPath(canvas, geometry.OverlayPath, paint.StrokePaint);
     }
     
     public void SetStyle(GeometryStyle style)
     {
-        _pen = CreatePen(style);
-        _brush = CreateBrush(style);
+        using var paintHandle = _renderedPaint.TryWrite();
+
+        if (!paintHandle.IsValid)
+        {
+            return;
+        }
+
+        CreateFillPaint(style, paintHandle.Buffer.FillPaint);
+        CreateStrokePaint(style, paintHandle.Buffer.StrokePaint);
 
         InvokeRendererDirty();
     }
     
     public void Create(int id, GeometrySet geometry)
     {
-        _entryMap[id] = new Entry
-        {
-            GeometrySet = geometry,
-            Geometry = null,
-            GeometryDirty = true,
-        };
+        _geometrySetMap[id] = geometry;
 
-        _geometryDirty = true;
-        
+        MarkGeometryDirty();
         InvokeRendererDirty();
     }
 
     public void Update(int id, GeometrySet geometry)
     {
-        if (!_entryMap.TryGetValue(id, out var entry))
-        {
-            return;
-        }
-        
-        entry.GeometrySet = geometry;
-        entry.GeometryDirty = true;
+        _geometrySetMap[id] = geometry;
 
-        _geometryDirty = true;
-
+        MarkGeometryDirty();
         InvokeRendererDirty();
     }
 
     public void Destroy(int id)
     {
-        _entryMap.Remove(id);
-        _geometryDirty = true;
+        _geometrySetMap.Remove(id);
 
+        MarkGeometryDirty();
         InvokeRendererDirty();
     }
 
-    private Geometry GetGeometryGroup()
+    private void RebuildGeometry()
     {
-        if (!_geometryDirty && _baseGeometry is not null)
+        using var geometryHandle = _renderedGeometry.TryWrite();
+
+        if (!geometryHandle.IsValid)
         {
-            return _baseGeometry;
+            return;
         }
         
-        _geometryDirty = false;
-            
-        _baseGeometry = new GeometryGroup
-        {
-            FillRule = FillRule.EvenOdd
-        };
+        var geometry = geometryHandle.Buffer;
 
-        foreach (var (_, entry) in _entryMap)
-        {
-            _baseGeometry.Children.Add(GetGeometry(entry));
-        }
-
-        return _baseGeometry;
-    }
-
-    private Geometry GetGeometry(Entry entry)
-    {
-        if (!entry.GeometryDirty && entry.Geometry is not null)
-        {
-            return entry.Geometry;
-        }
-
-        entry.GeometryDirty = false;
+        geometry.Reset();
         
-        var geometry = new StreamGeometry();
+        SKPath.OpBuilder? fillBuilder = null;
 
-        using (var ctx = geometry.Open())
+        foreach (var (_, geometrySet) in _geometrySetMap)
         {
-            ctx.SetFillRule(FillRule.EvenOdd);
+            var (path, closed) = CreatePath(geometrySet);
 
-            _streamGeometryWalker ??= new StreamGeometryWalker();
-            _streamGeometryWalker.Context = ctx;
-            
-            if (entry.GeometrySet.StartPoint is not null ||
-                entry.GeometrySet.EndPoint is not null)
+            if (closed)
             {
-                _clampedGeometryWalker ??= new ClampedGeometryWalker(_streamGeometryWalker);
-                _clampedGeometryWalker.SetStartEnd(entry.GeometrySet.StartPoint,
-                                                   entry.GeometrySet.EndPoint);
-
-                entry.GeometrySet.Resolver.Walk(_clampedGeometryWalker);
+                fillBuilder ??= new();
+                fillBuilder.Add(path, SKPathOp.Xor);
             }
             else
             {
-                entry.GeometrySet.Resolver.Walk(_streamGeometryWalker);
+                geometry.OutlinePath.AddPath(path);
             }
+
+            foreach (var (resource, transform) in geometrySet.Overlays)
+            {
+                geometry.OverlayPath.AddPath(resource.Path, transform.CreateMatrix());
+            }
+            
+            path.Dispose();
         }
 
-        entry.Geometry = geometry;
-        entry.Overlays.Clear();
-        
-        foreach (var (resource, overlayTransform) in entry.GeometrySet.Overlays)
+        if (fillBuilder is not null)
         {
-            entry.Overlays.Add((resource.Geometry, overlayTransform.CreateGroupTransform()));
+            fillBuilder.Resolve(geometry.FillPath);
+            fillBuilder.Dispose();
+        }
+    }
+
+    private (SKPath, bool) CreatePath(GeometrySet geometrySet)
+    {
+        var path = new SKPath();
+
+        _pathGeometryWalker ??= new();
+        _pathGeometryWalker.Path = path;
+        
+        if (geometrySet.StartPoint is not null ||
+            geometrySet.EndPoint is not null)
+        {
+            _clampedGeometryWalker ??= new ClampedGeometryWalker(_pathGeometryWalker);
+            _clampedGeometryWalker.SetStartEnd(geometrySet.StartPoint,
+                                               geometrySet.EndPoint);
+            
+            geometrySet.Resolver.Walk(_clampedGeometryWalker);
+        }
+        else
+        {
+            geometrySet.Resolver.Walk(_pathGeometryWalker);
         }
 
-        return geometry;
+        return (path, _pathGeometryWalker.Closed);
     }
 
-    private Pen CreatePen(GeometryStyle style)
+    private void CreateStrokePaint(GeometryStyle style, SKPaint paint)
     {
-        var pen = new Pen(new SolidColorBrush(style.LineColor),
-                          style.LineWidth.Millimeters);
-
-        pen.LineCap = PenLineCap.Flat;
-        pen.LineJoin = PenLineJoin.Miter;
-        pen.DashStyle = _resourceSet.Get(style.LineStyle);
-        
-        return pen;
+        paint.Style = SKPaintStyle.Stroke;
+        paint.Color = new SKColor(style.LineColor.R,
+                                  style.LineColor.G,
+                                  style.LineColor.B,
+                                  style.LineColor.A);
+        paint.StrokeWidth = (float)style.LineWidth.Millimeters;
+        paint.IsAntialias = true;
+        paint.IsDither = true;
     }
 
-    private Brush CreateBrush(GeometryStyle style)
+    private void CreateFillPaint(GeometryStyle style, SKPaint paint)
     {
-        return new SolidColorBrush(style.FillColor);
+        paint.Style = SKPaintStyle.Fill;
+        paint.Color = new SKColor(style.FillColor.R,
+                                  style.FillColor.G,
+                                  style.FillColor.B,
+                                  style.FillColor.A);
+        paint.IsAntialias = true;
+        paint.IsDither = true;
     }
 
+    private void DrawPath(SKCanvas canvas, SKPath path, SKPaint paint)
+    {
+        if (paint.Color.Alpha == 0 || path.IsEmpty)
+        {
+            return;
+        }
+
+        canvas.DrawPath(path, paint);
+    }
+
+    private void MarkGeometryDirty()
+    {
+        _geometryDirty = true;
+    }
+    
     private void InvokeRendererDirty()
     {
         RendererDirty?.Invoke();

@@ -1,14 +1,11 @@
 using Avalonia;
+using StencilPad.Common;
 using StencilPad.Spatial;
 
 namespace StencilPad.Canvases.Common;
 
 public class DragState<T>
 {
-    // NOTE: Avalonia has no SystemParameters equivalent for drag thresholds;
-    // WPF's defaults for both axes are 4 device-independent pixels.
-    private const double MinimumDragDistance = 4.0;
-
     public readonly struct DragResult
     {
         public T DraggedElement { get; }
@@ -71,12 +68,12 @@ public class DragState<T>
         }
 
         bool isDragBeginning = false;
-        var dragDelta = mousePosition - _initialMousePosition.Value;
 
+        var dragDelta = mousePosition - _initialMousePosition.Value;
+        
         if (!_isDragging)
         {
-            if (Math.Abs(dragDelta.X) > MinimumDragDistance ||
-                Math.Abs(dragDelta.Y) > MinimumDragDistance)
+            if (DragUtil.DragThresholdExceeded(dragDelta))
             {
                 _isDragging = true;
                 isDragBeginning = true;

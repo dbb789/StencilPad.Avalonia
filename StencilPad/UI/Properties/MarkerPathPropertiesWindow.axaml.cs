@@ -69,7 +69,7 @@ public partial class MarkerPathPropertiesWindow : Window
 
         var marker = resourceService.Get(resourceId);
 
-        group.Children.Add(marker.Geometry);
+        //group.Children.Add(marker.Geometry);
 
         var transformGroup = new TransformGroup();
         // NOTE: The WPF preview used Freezable media objects; Avalonia doesn't,
