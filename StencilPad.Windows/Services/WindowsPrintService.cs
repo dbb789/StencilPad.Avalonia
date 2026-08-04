@@ -36,15 +36,16 @@ public class WindowsPrintService : IPrintService
                 
                 using var document = SKDocument.CreateXps(tempPath);
 
-                float width = (float)(sheet.Format.Size.X.Millimeters * PointsPerInch / MmPerInch);
-                float height = (float)(sheet.Format.Size.Y.Millimeters * PointsPerInch / MmPerInch);
-                
-                using var canvas = document.BeginPage(width, height);
+                var format = sheet.Format;
+                float width = (float)(format.Size.X.Millimeters * PointsPerInch / MmPerInch);
+                float height = (float)(format.Size.Y.Millimeters * PointsPerInch / MmPerInch);
 
+                using var canvas = document.BeginPage(width, height);
                 {
                     float scale = (float)(PointsPerInch / MmPerInch);
-                    var matrix = SKMatrix.Concat(SKMatrix.CreateTranslation(width / 2, height / 2),
-                                                 SKMatrix.CreateScale(scale, -scale));
+
+                    var matrix = SKMatrix.CreateTranslation(width / 2, height / 2);
+                    matrix = SKMatrix.Concat(matrix, SKMatrix.CreateScale(scale, -scale));
                     
                     canvas.Save();
                     canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, matrix));
