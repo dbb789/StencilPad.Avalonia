@@ -37,6 +37,11 @@ public class WindowsPrintService : IPrintService
                 using var document = SKDocument.CreateXps(tempPath);
 
                 var format = sheet.Format;
+
+                var sheetIsLandscape = format.Orientation == SheetOrientation.Landscape;
+                var pageIsLandscape = printDialog.PrintableAreaWidth > printDialog.PrintableAreaHeight;
+                var rotate = sheetIsLandscape != pageIsLandscape;
+                
                 float width = (float)(format.Size.X.Millimeters * PointsPerInch / MmPerInch);
                 float height = (float)(format.Size.Y.Millimeters * PointsPerInch / MmPerInch);
 
@@ -45,8 +50,9 @@ public class WindowsPrintService : IPrintService
                     float scale = (float)(PointsPerInch / MmPerInch);
 
                     var matrix = SKMatrix.CreateTranslation(width / 2, height / 2);
+
                     matrix = SKMatrix.Concat(matrix, SKMatrix.CreateScale(scale, -scale));
-                    
+
                     canvas.Save();
                     canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, matrix));
                     
