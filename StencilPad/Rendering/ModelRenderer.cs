@@ -8,10 +8,25 @@ namespace StencilPad.Rendering;
 
 public class ModelRenderer : IModelWalker, IWalkerRenderer
 {
+    private class RenderedMatrix : IDisposable
+    {
+        public SKMatrix Matrix = SKMatrix.Identity;
+
+        public void Reset()
+        {
+            Matrix = SKMatrix.Identity;
+        }
+
+        public void Dispose()
+        {
+            Reset();
+        }
+    }
+    
     private readonly IResourceSet _resourceSet;
 
     private readonly ConcurrentList<IWalkerRenderer> _renderers;
-    private readonly ConcurrentSKMatrix _matrix;
+    private readonly RenderBuffer<RenderedMatrix> _renderedMatrix;
 
     public event Action? RendererDirty;
 
@@ -19,7 +34,7 @@ public class ModelRenderer : IModelWalker, IWalkerRenderer
     {
         _resourceSet = resourceSet;
         _renderers = new();
-        _matrix = new();
+        _renderedMatrix = new();
     }
 
     public void Dispose()
@@ -67,7 +82,14 @@ public class ModelRenderer : IModelWalker, IWalkerRenderer
     
     public void SetTransform(UnitTransform transform)
     {
-        _matrix.Value = transform.CreateMatrix();
+        using var renderedMatrix = _renderedMatrix.TryWrite();
+
+        if (!renderedMatrix.IsValid)
+        {
+            return;
+        }
+        
+        renderedMatrix.Buffer.Matrix = transform.CreateMatrix();
         
         InvokeRendererDirty();
     }
@@ -89,8 +111,15 @@ public class ModelRenderer : IModelWalker, IWalkerRenderer
     
     public void Render(SKCanvas canvas, GRContext? context)
     {
-        canvas.Save();
-        canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, _matrix.Value));
+        using var renderedMatrix = _renderedMatrix.TryRead();
+
+        if (!renderedMatrix.IsValid)
+        {
+            return;
+        }
+        
+        canvas.Save();        
+        canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, renderedMatrix.Buffer.Matrix));
 
         foreach (var renderer in _renderers)
         {

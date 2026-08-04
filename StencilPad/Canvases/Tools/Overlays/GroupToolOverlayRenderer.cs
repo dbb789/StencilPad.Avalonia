@@ -10,12 +10,27 @@ namespace StencilPad.Canvases.Tools.Overlays;
 // registered overlays down through the group hierarchy transparently.
 public class GroupToolOverlayRenderer : IToolOverlayRenderer
 {
+    private class RenderedMatrix : IDisposable
+    {
+        public SKMatrix Matrix = SKMatrix.Identity;
+
+        public void Reset()
+        {
+            Matrix = SKMatrix.Identity;
+        }
+
+        public void Dispose()
+        {
+            Reset();
+        }
+    }
+    
     private readonly ElementGroup _group;
     
     private readonly ConcurrentList<IToolOverlayRendererFactory> _factories;
     private readonly ConcurrentOrderedDictionary<ISheetElement, IToolOverlayRenderer> _renderers;
-    private readonly ConcurrentSKMatrix _matrix;
-    
+    private readonly RenderBuffer<RenderedMatrix> _renderedMatrix;
+
     public event Action? RendererDirty;
     
     public GroupToolOverlayRenderer(ElementGroup group,
@@ -24,12 +39,19 @@ public class GroupToolOverlayRenderer : IToolOverlayRenderer
         _group = group;
         _factories = new(factories);
         _renderers = new();
-        _matrix = new(_group.Transform.CreateMatrix());
+        _renderedMatrix = new();
         
         _group.ChildrenChanged += BuildRenderers;
         _group.TransformChanged += TransformChanged;
         
         BuildRenderers();
+
+        using var renderedMatrix = _renderedMatrix.TryWrite();
+
+        if (renderedMatrix.IsValid)
+        {
+            renderedMatrix.Buffer.Matrix = _group.Transform.CreateMatrix();
+        }
     }
 
     public void Dispose()
@@ -50,8 +72,15 @@ public class GroupToolOverlayRenderer : IToolOverlayRenderer
 
     public void Render(SKCanvas canvas, GRContext? context)
     {
+        using var renderedMatrix = _renderedMatrix.TryRead();
+
+        if (!renderedMatrix.IsValid)
+        {
+            return;
+        }
+        
         canvas.Save();
-        canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, _matrix.Value));
+        canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, renderedMatrix.Buffer.Matrix));
         
         foreach (var renderer in _renderers)
         {
@@ -63,8 +92,13 @@ public class GroupToolOverlayRenderer : IToolOverlayRenderer
     
     private void TransformChanged(ISheetElement element)
     {
-        _matrix.Value = _group.Transform.CreateMatrix();
-        
+        using var renderedMatrix = _renderedMatrix.TryWrite();
+
+        if (renderedMatrix.IsValid)
+        {
+            renderedMatrix.Buffer.Matrix = _group.Transform.CreateMatrix();
+        }
+
         InvokeRendererDirty();
     }
 

@@ -2,17 +2,17 @@ using StencilPad.Collections;
 
 namespace StencilPad.Rendering;
 
-public class TripleBuffer<T> : IDisposable where T : class, IDisposable, new()
+public class RenderBuffer<T> : IDisposable where T : class, IDisposable, new()
 {
     public ref struct WriteContext : IDisposable
     {
         public T Buffer => _buffer;
         public bool IsValid => _parent is not null;
         
-        private TripleBuffer<T>? _parent;
+        private RenderBuffer<T>? _parent;
         private T _buffer;
 
-        public WriteContext(TripleBuffer<T>? parent, T buffer)
+        public WriteContext(RenderBuffer<T>? parent, T buffer)
         {
             _parent = parent;
             _buffer = buffer;
@@ -30,10 +30,10 @@ public class TripleBuffer<T> : IDisposable where T : class, IDisposable, new()
         public T Buffer => _buffer;
         public bool IsValid => _parent is not null;
 
-        private TripleBuffer<T>? _parent;
+        private RenderBuffer<T>? _parent;
         private T _buffer;
 
-        public ReadContext(TripleBuffer<T>? parent, T buffer)
+        public ReadContext(RenderBuffer<T>? parent, T buffer)
         {
             _parent = parent;
             _buffer = buffer;
@@ -60,7 +60,7 @@ public class TripleBuffer<T> : IDisposable where T : class, IDisposable, new()
     
     private AtomicBool _disposed;
 
-    public TripleBuffer()
+    public RenderBuffer()
     {
         _write = new T();
         _pending = new T();

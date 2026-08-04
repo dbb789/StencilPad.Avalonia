@@ -92,7 +92,7 @@ public class SheetRenderer : IViewportRenderer, IDisposable, IRenderHooks
         ViewportRenderHook?.Invoke(canvas, context);
         
         canvas.Restore();
-
+        
         OverlayRenderHook?.Invoke(canvas, context, viewportMatrix);
     }
     
