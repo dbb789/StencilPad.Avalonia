@@ -9,7 +9,6 @@
   
     <Application.Styles>
         <FluentTheme DensityStyle="Compact"/>
-
         <Style Selector="TabControl">
             <Setter Property="Padding" Value="0"/>
         </Style>
