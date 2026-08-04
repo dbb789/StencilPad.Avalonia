@@ -15,70 +15,67 @@ using StencilPad.UI;
 using StencilPad.UI.Dialogs;
 using StencilPad.ViewModels;
 
-namespace StencilPad
+namespace StencilPad;
+
+public partial class App : Application
 {
-    public partial class App : Application
+    public override void Initialize()
     {
-        public static IServiceProvider ServiceProvider { get; private set; } = null!;
+        AvaloniaXamlLoader.Load(this);
+    }
 
-        public override void Initialize()
+    public override void OnFrameworkInitializationCompleted()
+    {
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            AvaloniaXamlLoader.Load(this);
-        }
+            var services = new ServiceCollection();
 
-        public override void OnFrameworkInitializationCompleted()
-        {
-            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            ConfigureServices(services);
+
+            AppServices.Provider = services.BuildServiceProvider();
+
+            var appController = AppServices.Provider.GetRequiredService<AppController>();
+
+            appController.Initialize();
+
+            if (desktop.Args is { Length: > 0 } args)
             {
-                var services = new ServiceCollection();
-
-                ConfigureServices(services);
-
-                ServiceProvider = services.BuildServiceProvider();
-
-                var appController = ServiceProvider.GetRequiredService<AppController>();
-
-                appController.Initialize();
-
-                if (desktop.Args is { Length: > 0 } args)
-                {
-                    appController.OpenFile(args[0]);
-                }
+                appController.OpenFile(args[0]);
             }
-
-            base.OnFrameworkInitializationCompleted();
         }
 
-        private static void ConfigureServices(IServiceCollection services)
+        base.OnFrameworkInitializationCompleted();
+    }
+
+    private static void ConfigureServices(IServiceCollection services)
+    {
+        services.AddSingleton<Project>();
+        services.AddSingleton<MainWindowViewModel>();
+        services.AddSingleton<MainWindow>();
+        services.AddSingleton<IAvaloniaDialogParent>(x => x.GetService<MainWindow>()!);
+        services.AddSingleton<IDialogService, AvaloniaDialogService>();
+        services.AddSingleton<IModelPropertiesService, AvaloniaModelPropertiesService>();
+        services.AddSingleton<IAppConfigService, AppConfigService>();
+        services.AddSingleton<IClipboardService, ClipboardService>();
+        services.AddSingleton<IFileService, FileService>();
+        services.AddSingleton<PngExporter>();
+        services.AddSingleton<SvgExporter>();
+        services.AddSingleton<IImportExportService, ImportExportService>();
+        services.AddSingleton<IPrintService, NullPrintService>();
+        services.AddSingleton<IResourceService, ResourceService>();
+        services.AddSingleton<IResourceSet>(x => x.GetService<IResourceService>()!);
+        services.AddSingleton<ISettings, SettingsService>();
+        services.AddSingleton<IOperationService, OperationService>();
+        services.AddSingleton<HandleMap.Factory>();
+        services.AddSingleton<SheetResolver.Factory>();
+        services.AddSingleton<SheetRenderer.Factory>();
+        services.AddSingleton<SheetTabController.Factory>();
+        services.AddSingleton<MainWindowController>();
+        services.AddSingleton<AppController>();
+
+        services.AddLogging(builder =>
         {
-            services.AddSingleton<Project>();
-            services.AddSingleton<MainWindowViewModel>();
-            services.AddSingleton<MainWindow>();
-            services.AddSingleton<IAvaloniaDialogParent>(x => x.GetService<MainWindow>()!);
-            services.AddSingleton<IDialogService, AvaloniaDialogService>();
-            services.AddSingleton<IModelPropertiesService, AvaloniaModelPropertiesService>();
-            services.AddSingleton<IAppConfigService, AppConfigService>();
-            services.AddSingleton<IClipboardService, ClipboardService>();
-            services.AddSingleton<IFileService, FileService>();
-            services.AddSingleton<PngExporter>();
-            services.AddSingleton<SvgExporter>();
-            services.AddSingleton<IImportExportService, ImportExportService>();
-            services.AddSingleton<IPrintService, NullPrintService>();
-            services.AddSingleton<IResourceService, ResourceService>();
-            services.AddSingleton<IResourceSet>(x => x.GetService<IResourceService>()!);
-            services.AddSingleton<ISettings, SettingsService>();
-            services.AddSingleton<IOperationService, OperationService>();
-            services.AddSingleton<HandleMap.Factory>();
-            services.AddSingleton<SheetResolver.Factory>();
-            services.AddSingleton<SheetRenderer.Factory>();
-            services.AddSingleton<SheetTabController.Factory>();
-            services.AddSingleton<MainWindowController>();
-            services.AddSingleton<AppController>();
-
-            services.AddLogging(builder =>
-            {
-                builder.AddDebug();
-            });
-        }
+            builder.AddDebug();
+        });
     }
 }

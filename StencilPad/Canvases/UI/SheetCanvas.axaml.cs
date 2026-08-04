@@ -97,10 +97,10 @@ namespace StencilPad.Canvases.UI
         }
 
         public SheetCanvas()
-            : this(App.ServiceProvider.GetRequiredService<ISettings>(),
-                   App.ServiceProvider.GetRequiredService<HandleMap.Factory>(),
-                   App.ServiceProvider.GetRequiredService<SheetResolver.Factory>(),
-                   App.ServiceProvider.GetRequiredService<SheetRenderer.Factory>())
+            : this(AppServices.Provider.GetRequiredService<ISettings>(),
+                   AppServices.Provider.GetRequiredService<HandleMap.Factory>(),
+                   AppServices.Provider.GetRequiredService<SheetResolver.Factory>(),
+                   AppServices.Provider.GetRequiredService<SheetRenderer.Factory>())
         {
             // Slightly nasty to do things this way but it avoids a ton of
             // component plumbing just to get the SheetRenderer into the
