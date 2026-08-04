@@ -1,12 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
-    <RootNamespace>StencilPad</RootNamespace>
-    <AssemblyName>StencilPad</AssemblyName>
-    <AssemblyTitle>StencilPad</AssemblyTitle>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>StencilPad.Desktop</RootNamespace>
+    <AssemblyName>StencilPad.Desktop</AssemblyName>
+    <AssemblyTitle>StencilPad.Desktop</AssemblyTitle>
+    <ApplicationIcon>..\StencilPad\Resources\StencilPad.ico</ApplicationIcon>
+    <PackageIcon>StencilPad.png</PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,20 +30,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <AvaloniaResource Include="Resources\Icons\*.png" />
-    <Content Include="Resources\Geometry\Index.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\StencilPad.ico" />
-    <Content Include="Resources\Geometry\*.spad">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    <ProjectReference Include="..\StencilPad\StencilPad.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Resources\StencilPad.png">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-  </ItemGroup>  
+    <ProjectReference Include="..\StencilPad.Windows\StencilPad.Windows.csproj" />
+  </ItemGroup>
 </Project>

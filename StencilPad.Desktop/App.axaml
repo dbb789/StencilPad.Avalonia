@@ -1,6 +1,6 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="StencilPad.App"
+             x:Class="StencilPad.Desktop.App"
              xmlns:local="using:StencilPad"
              RequestedThemeVariant="Default">
 

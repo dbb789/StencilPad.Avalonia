@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
+    <RootNamespace>StencilPad.Windows</RootNamespace>
+    <AssemblyName>StencilPad.Windows</AssemblyName>
+    <AssemblyTitle>StencilPad.Windows</AssemblyTitle>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\StencilPad\StencilPad.csproj" />
+  </ItemGroup>
+</Project>

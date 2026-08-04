@@ -1,0 +1,89 @@
+﻿using System.IO;
+using System.Printing;
+using System.Windows.Controls;
+using System.Windows.Xps.Packaging;
+using SkiaSharp;
+using StencilPad.Models;
+using StencilPad.Models.Resolvers;
+using StencilPad.Rendering;
+using StencilPad.Services;
+
+namespace StencilPad.Windows.Services;
+
+public class WindowsPrintService : IPrintService
+{
+    private readonly IResourceSet _resourceSet;
+    private readonly SheetResolver.Factory _sheetResolverFactory;
+
+    public WindowsPrintService(IResourceSet resourceSet,
+                               SheetResolver.Factory sheetResolverFactory)
+    {
+        _resourceSet = resourceSet;
+        _sheetResolverFactory = sheetResolverFactory;
+    }
+    
+    public Task<bool> PrintAsync(string documentName, Sheet sheet)
+    {
+        var printDialog = new PrintDialog();
+
+        if (printDialog.ShowDialog() == true)
+        {
+            var tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.xps");
+
+            {
+                const double MmPerInch = 25.4;
+                const double PointsPerInch = 72.0;
+                
+                using var document = SKDocument.CreateXps(tempPath);
+
+                float width = (float)(sheet.Format.Size.X.Millimeters * PointsPerInch / MmPerInch);
+                float height = (float)(sheet.Format.Size.Y.Millimeters * PointsPerInch / MmPerInch);
+                
+                using var canvas = document.BeginPage(width, height);
+
+                {
+                    float scale = (float)(PointsPerInch / MmPerInch);
+                    var matrix = SKMatrix.Concat(SKMatrix.CreateTranslation(width / 2, height / 2),
+                                                 SKMatrix.CreateScale(scale, -scale));
+                    
+                    canvas.Save();
+                    canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, matrix));
+                    
+                    using var resolver = _sheetResolverFactory.Create(sheet);
+
+                    foreach (var elementResolver in resolver.Elements)
+                    {
+                        using var renderer = new ModelRenderer(_resourceSet);
+
+                        elementResolver.Attach(renderer);
+                        renderer.PreRender();
+                        renderer.Render(canvas, null);
+                    }
+
+                    canvas.Restore();
+                }
+                
+                document.EndPage();
+                document.Close();
+            }
+                
+            using var xpsDoc = new XpsDocument(tempPath, FileAccess.Read);
+         
+            var fixedDocSeq = xpsDoc.GetFixedDocumentSequence();
+
+            if (fixedDocSeq is null)
+            {
+                return Task.FromResult(false);
+            }
+
+            var writer = PrintQueue.CreateXpsDocumentWriter(printDialog.PrintQueue);
+
+            writer.Write(fixedDocSeq, printDialog.PrintTicket);
+        }
+    
+        // Implement the printing logic for Windows here
+        // For example, you can use the System.Drawing.Printing namespace or any other printing library
+        // This is a placeholder implementation that always returns true
+        return Task.FromResult(true);
+    }
+}

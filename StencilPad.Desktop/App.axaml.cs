@@ -15,7 +15,9 @@ using StencilPad.UI;
 using StencilPad.UI.Dialogs;
 using StencilPad.ViewModels;
 
-namespace StencilPad;
+using StencilPad.Windows.Services;
+
+namespace StencilPad.Desktop;
 
 public partial class App : Application
 {
@@ -61,7 +63,6 @@ public partial class App : Application
         services.AddSingleton<PngExporter>();
         services.AddSingleton<SvgExporter>();
         services.AddSingleton<IImportExportService, ImportExportService>();
-        services.AddSingleton<IPrintService, NullPrintService>();
         services.AddSingleton<IResourceService, ResourceService>();
         services.AddSingleton<IResourceSet>(x => x.GetService<IResourceService>()!);
         services.AddSingleton<ISettings, SettingsService>();
@@ -73,6 +74,8 @@ public partial class App : Application
         services.AddSingleton<MainWindowController>();
         services.AddSingleton<AppController>();
 
+        services.AddSingleton<IPrintService, WindowsPrintService>();
+        
         services.AddLogging(builder =>
         {
             builder.AddDebug();
