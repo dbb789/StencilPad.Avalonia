@@ -12,7 +12,6 @@
     <local:BaseUnitField x:Name="ValueField"
                          Grid.Column="0"
                          VerticalContentAlignment="Center"
-                         Padding="2"
                          Value="{Binding Value, ElementName=Root, Mode=TwoWay}"
                          UnitType="{Binding UnitType, ElementName=Root, Mode=TwoWay}"
                          UnitSettings="{Binding UnitSettings, ElementName=Root}"
