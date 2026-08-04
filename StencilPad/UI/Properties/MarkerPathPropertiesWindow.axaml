@@ -8,7 +8,7 @@
         SizeToContent="WidthAndHeight"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
-        MinWidth="300">
+        MinWidth="380">
     <Grid Margin="12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -16,7 +16,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TabControl Grid.Row="0" Height="400">
+        <TabControl Grid.Row="0" Height="420">
             <TabItem Header="Marker Settings">
                 <Grid Margin="8" MinWidth="200" MinHeight="200">
                     <Grid.ColumnDefinitions>
