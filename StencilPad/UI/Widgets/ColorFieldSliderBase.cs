@@ -29,10 +29,10 @@ public abstract class ColorFieldSliderBase : UserControl
     private Canvas? _dragCanvas;
     private Rectangle? _marker;
     private TextBox? _entryBox;
-    private bool _updatingBox;
     private bool _dragging;
     private IPointer? _capturedPointer;
-
+    private string _currentText = "";
+    
     public event Action? DragBegin;
     public event Action? DragEnd;
     public event EventHandler? ValueChanged;
@@ -47,12 +47,15 @@ public abstract class ColorFieldSliderBase : UserControl
 
         _entryBox = new TextBox
         {
+            Text = "",
             Width = 40,
             VerticalContentAlignment = VerticalAlignment.Center,
             TextAlignment = Avalonia.Media.TextAlignment.Right,
             Padding = new Thickness(2, 1, 2, 1),
             Margin = new Thickness(4, 0, 0, 0)
         };
+
+        _currentText = "";
         _entryBox.TextChanged += EntryBox_TextChanged;
 
         var panel = new DockPanel();
@@ -90,11 +93,16 @@ public abstract class ColorFieldSliderBase : UserControl
 
     private void EntryBox_TextChanged(object? sender, TextChangedEventArgs e)
     {
-        if (_updatingBox || _entryBox is null)
+        if ( _entryBox is null)
         {
             return;
         }
 
+        if (_entryBox.Text == _currentText)
+        {
+            return;
+        }
+        
         if (!double.TryParse(_entryBox.Text, out var parsed))
         {
             return;
@@ -111,9 +119,8 @@ public abstract class ColorFieldSliderBase : UserControl
             return;
         }
 
-        _updatingBox = true;
         _entryBox.Text = ((int)Math.Round(Value * DisplayScale)).ToString();
-        _updatingBox = false;
+        _currentText = _entryBox.Text;
     }
 
     private void DragCanvas_PointerPressed(object? sender, PointerPressedEventArgs e)

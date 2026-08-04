@@ -41,8 +41,6 @@ public partial class ColorField : UserControl
     {
         InitializeComponent();
 
-        // NOTE: Transparency previews use a flat grey backing instead of the
-        // original WPF checkerboard in this prototype port.
         AttachDragHandlers(HueSlider);
         AttachDragHandlers(SaturationSlider);
         AttachDragHandlers(BrightnessSlider);
