@@ -8,4 +8,5 @@ public interface IImportExportService
     Task ImportImageAsync(Sheet sheet, IViewport viewport);
     Task ExportSvgAsync(Sheet sheet);
     Task ExportPngAsync(Sheet sheet);
+    Task ExportPdfAsync(Sheet sheet);
 }

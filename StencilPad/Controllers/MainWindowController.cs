@@ -72,6 +72,7 @@ public class MainWindowController
         _viewModel.ImportImageCommand = new RelayCommand(ImportImageAsync);
         _viewModel.ExportSvgCommand = new AsyncRelayCommand(ExportSvg);
         _viewModel.ExportPngCommand = new AsyncRelayCommand(ExportPng);
+        _viewModel.ExportPdfCommand = new AsyncRelayCommand(ExportPdf);
         _viewModel.SheetTabReordered = ReorderSheet;
         
         _undoStack.SaveStateChanged += UpdateTitle;
@@ -455,6 +456,18 @@ public class MainWindowController
         }
         
         await _importExportService.ExportPngAsync(sheet);
+    }
+    
+    private async Task ExportPdf()
+    {
+        var sheet = SelectedSheet();
+
+        if (sheet is null)
+        {
+            return;
+        }
+        
+        await _importExportService.ExportPdfAsync(sheet);
     }
 
     private Sheet? SelectedSheet()

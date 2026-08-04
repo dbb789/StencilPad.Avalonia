@@ -62,6 +62,7 @@ public partial class App : Application
         services.AddSingleton<IFileService, FileService>();
         services.AddSingleton<PngExporter>();
         services.AddSingleton<SvgExporter>();
+        services.AddSingleton<PdfExporter>();
         services.AddSingleton<IImportExportService, ImportExportService>();
         services.AddSingleton<IResourceService, ResourceService>();
         services.AddSingleton<IResourceSet>(x => x.GetService<IResourceService>()!);

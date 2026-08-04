@@ -45,6 +45,7 @@ public class MainWindowViewModel : ViewModelBase
     public IRelayCommand ImportImageCommand { get; set; } = null!;
     public IRelayCommand ExportSvgCommand { get; set; } = null!;
     public IRelayCommand ExportPngCommand { get; set; } = null!;
+    public IRelayCommand ExportPdfCommand { get; set; } = null!;
     public Action<int, int>? SheetTabReordered = null;
 
     public MainWindowViewModel()

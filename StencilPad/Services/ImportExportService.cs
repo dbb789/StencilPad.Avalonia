@@ -19,6 +19,11 @@ public class ImportExportService : IImportExportService
         Patterns = ["*.png"]
     };
     
+    private static readonly FilePickerFileType PdfFileType = new("PDF")
+    {
+        Patterns = ["*.pdf"]
+    };
+
     private static readonly FilePickerFileType ImageFileType = new("Image")
     {
         Patterns = ["*.png", "*.jpg", "*.jpeg"]
@@ -29,18 +34,21 @@ public class ImportExportService : IImportExportService
     private readonly IOperationService _operationService;
     private readonly PngExporter _pngExporter;
     private readonly SvgExporter _svgExporter;
+    private readonly PdfExporter _pdfExporter;
 
     public ImportExportService(IAvaloniaDialogParent parent,
                                IDialogService dialogService,
                                IOperationService operationService,
                                PngExporter pngExporter,
-                               SvgExporter svgExporter)
+                               SvgExporter svgExporter,
+                               PdfExporter pdfExporter)
     {
         _owner = parent.Window;
         _dialogService = dialogService;
         _operationService = operationService;
         _pngExporter = pngExporter;
         _svgExporter = svgExporter;
+        _pdfExporter = pdfExporter;
     }
     
     public async Task ImportImageAsync(Sheet sheet, IViewport viewport)
@@ -107,6 +115,24 @@ public class ImportExportService : IImportExportService
         if (path is not null)
         {
             _pngExporter.Export(sheet, path);
+        }
+    }
+    
+    public async Task ExportPdfAsync(Sheet sheet)
+    {
+        var file = await _owner.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Export PDF",
+            SuggestedFileName = sheet.Name,
+            DefaultExtension = "pdf",
+            FileTypeChoices = [PdfFileType]
+        });
+
+        var path = file?.TryGetLocalPath();
+
+        if (path is not null)
+        {
+            _pdfExporter.Export(sheet, path);
         }
     }
 
