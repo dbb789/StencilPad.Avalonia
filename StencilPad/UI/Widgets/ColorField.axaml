@@ -37,7 +37,7 @@
       <StackPanel x:Name="HsvPanel">
         <DockPanel>
           <TextBlock DockPanel.Dock="Left" Text="H" Width="16" VerticalAlignment="Center" />
-          <widgets:ColorFieldHueSlider x:Name="HueSlider" />
+          <widgets:ColorFieldHueSlider x:Name="HueSlider"/>
         </DockPanel>
         <Border Height="6" />
         <DockPanel>
