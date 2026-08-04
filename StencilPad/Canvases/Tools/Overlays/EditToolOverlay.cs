@@ -86,8 +86,8 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
     private double _handleSize;
     
     private readonly ToolOverlayRenderer _toolOverlay;
-    private readonly TripleBuffer<RenderedEntries> _renderedEntries;
-    private readonly TripleBuffer<RenderedPaint> _renderedPaint;
+    private readonly RenderBuffer<RenderedEntries> _renderedEntries;
+    private readonly RenderBuffer<RenderedPaint> _renderedPaint;
     private bool _overlayDirty;
     
     public EditToolOverlay(Sheet sheet,

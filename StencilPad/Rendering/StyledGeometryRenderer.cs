@@ -50,8 +50,8 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
     private ClampedGeometryWalker? _clampedGeometryWalker;
     private SKPathGeometryWalker? _pathGeometryWalker;
 
-    private TripleBuffer<RenderedGeometry> _renderedGeometry;
-    private TripleBuffer<RenderedPaint> _renderedPaint;
+    private RenderBuffer<RenderedGeometry> _renderedGeometry;
+    private RenderBuffer<RenderedPaint> _renderedPaint;
     private bool _geometryDirty;
     
     public event Action? RendererDirty;

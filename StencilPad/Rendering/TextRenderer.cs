@@ -42,7 +42,7 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
     private string _text;
     private bool _textDirty;
     
-    private TripleBuffer<RenderedText> _renderedText;
+    private RenderBuffer<RenderedText> _renderedText;
 
     public event Action? RendererDirty;
     

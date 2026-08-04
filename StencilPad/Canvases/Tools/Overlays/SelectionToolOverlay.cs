@@ -90,8 +90,8 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
     private double _rotateHandleRadius;
     private IPointer? _capturedPointer;
     
-    private TripleBuffer<RenderedEntries> _renderedEntries;
-    private TripleBuffer<RenderedPaint> _renderedPaint;
+    private RenderBuffer<RenderedEntries> _renderedEntries;
+    private RenderBuffer<RenderedPaint> _renderedPaint;
     private bool _overlayDirty;
 
     public event Action? SelectionDragStarted;

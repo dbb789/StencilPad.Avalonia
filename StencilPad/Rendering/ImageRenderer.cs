@@ -32,8 +32,8 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
     private UnitBounds? _bounds;
     private double _opacity = 1.0;
 
-    private TripleBuffer<RenderedImage> _renderedImage;
-    private TripleBuffer<RenderedProperties> _renderedProperties;
+    private RenderBuffer<RenderedImage> _renderedImage;
+    private RenderBuffer<RenderedProperties> _renderedProperties;
     
     public event Action? RendererDirty;
     

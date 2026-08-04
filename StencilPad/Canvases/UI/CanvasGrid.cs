@@ -78,11 +78,11 @@ public class CanvasGrid : ContentControl, IUnitSnap
     {
         public Rect Bounds => new Rect(0, 0, 0, 0);
 
-        private readonly TripleBuffer<RenderedGeometry> _renderedGeometry;
-        private readonly TripleBuffer<RenderedPaint> _renderedPaint;
+        private readonly RenderBuffer<RenderedGeometry> _renderedGeometry;
+        private readonly RenderBuffer<RenderedPaint> _renderedPaint;
 
-        public GridDrawOperation(TripleBuffer<RenderedGeometry> renderedGeometry,
-                                 TripleBuffer<RenderedPaint> renderedPaint)
+        public GridDrawOperation(RenderBuffer<RenderedGeometry> renderedGeometry,
+                                 RenderBuffer<RenderedPaint> renderedPaint)
         {
             _renderedGeometry = renderedGeometry;
             _renderedPaint = renderedPaint;
@@ -154,8 +154,8 @@ public class CanvasGrid : ContentControl, IUnitSnap
 
     private readonly Pen _pageOutlinePen;
 
-    private TripleBuffer<RenderedGeometry> _renderedGeometry;
-    private TripleBuffer<RenderedPaint> _renderedPaint;
+    private RenderBuffer<RenderedGeometry> _renderedGeometry;
+    private RenderBuffer<RenderedPaint> _renderedPaint;
     private readonly GridDrawOperation _gridDrawOperation;
     private bool _geometryDirty;
     private bool _paintDirty;
