@@ -47,7 +47,7 @@ public class HandleMap : IHandleMap, IUnitSnap
         _logger = logger;
         _settings = settings;
         
-        var maxBounds = UnitBounds.FromCenterSize(Unit2D.Zero, SheetFormat.MaxSize);
+        var maxBounds = UnitBounds.FromCenterSize(Unit2D.Zero, SheetFormat.MaxSize * 2);
         var initialBounds = UnitBounds.FromCenterSize(Unit2D.Zero,
                                                       Unit2D.FromMillimeters(400, 400));
 
