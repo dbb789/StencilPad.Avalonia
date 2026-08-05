@@ -43,6 +43,8 @@ public class TextToolOverlay : Canvas, IDisposable
             renderHooks,
             true,
             [TextElementToolOverlayRenderer.Factory]);
+
+        Background = Brushes.Transparent;
     }
 
     public void Dispose()
@@ -54,7 +56,7 @@ public class TextToolOverlay : Canvas, IDisposable
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
-    {
+    {       
         if (e.GetCurrentPoint(this).Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonPressed)
         {
             return;

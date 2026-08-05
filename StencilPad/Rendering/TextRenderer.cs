@@ -51,6 +51,7 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
         _style = new TextStyle();
         _text = "";
         _renderedText = new();
+        _matrix = SKMatrix.CreateScale(1, -1);
     }
 
     public void Dispose()
@@ -62,7 +63,6 @@ public class TextRenderer : ITextWalker, IWalkerRenderer
     {
         _matrix = SKMatrix.Concat(transform.CreateMatrix(),
                                   SKMatrix.CreateScale(1, -1));
-        
         MarkTextDirty();
     }
 
