@@ -17,8 +17,7 @@ public class RectToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEleme
     public override TSheetElement Element => _element;
 
     private readonly IViewport _viewport;
-    private readonly IUnitSnap _unitSnap;
-    private readonly IUnitSnapContext _unitSnapContext;
+    private readonly IUnitSnapOverlay _unitSnapOverlay;
     private readonly ISettings _settings;
     private readonly IHintService _hintService;
     private readonly TSheetElement _element;
@@ -30,14 +29,13 @@ public class RectToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEleme
     private Unit2D _currentSnappedMousePosition;
 
     public RectToolOverlay(IViewport viewport,
-                           IUnitSnap unitSnap,
+                           IUnitSnapOverlay unitSnapOverlay,
                            ISettings settings,
                            IHintService hintService,
                            IResourceService resourceService)
     {
         _viewport = viewport;
-        _unitSnap = unitSnap;
-        _unitSnapContext = new DefaultUnitSnapContext(viewport);
+        _unitSnapOverlay = unitSnapOverlay;
         _settings = settings;
         _hintService = hintService;
         _element = new();
@@ -138,7 +136,7 @@ public class RectToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEleme
     private Unit2D CurrentSnappedMouseOverPosition(Point mousePosition)
     {
         var unitPosition = _viewport.FromPoint(mousePosition);
-        var snapPosition = _unitSnap.UnitSnap(unitPosition, _unitSnapContext);
+        var snapPosition = _unitSnapOverlay.UnitSnap(unitPosition);
         
         return snapPosition ?? unitPosition;
     }

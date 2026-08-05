@@ -144,7 +144,7 @@ namespace StencilPad.Canvases.UI
 
             CanvasRoot.Children.Add(_canvasGrid);
             CanvasRoot.Children.Add(_rubberBandRenderPanel);
-
+            
             _viewport.ViewportChanged += UpdateCanvasSize;
             
             _unitSnap.Add(_canvasGrid);

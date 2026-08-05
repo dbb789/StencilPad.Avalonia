@@ -6,21 +6,21 @@ using StencilPad.Services;
 
 namespace StencilPad.Canvases.Tools.Controllers;
 
-public class CircleTool : PolygonTool<CircleToolOverlay<Shape>, Shape>
+public class EllipseTool : PolygonTool<EllipseToolOverlay<Shape>, Shape>
 {
     public class Factory(Sheet Sheet,
                          OverlayContainer OverlayContainer,
                          ISettings Settings,
                          IUnitSnapOverlay UnitSnapOverlay,
                          IOperationService OperationService,
-                         Factory<CircleToolOverlay<Shape>> OverlayFactory) : IToolFactory
+                         Factory<EllipseToolOverlay<Shape>> OverlayFactory) : IToolFactory
     {
         public string IconResource => "CircleTool";
-        public string Tooltip => "Rectangles";
+        public string Tooltip => "Ellipse";
 
         public ITool Create(IToolButton button)
         {
-            return new CircleTool(Sheet,
+            return new EllipseTool(Sheet,
                                   OverlayContainer,
                                   Settings,
                                   UnitSnapOverlay,
@@ -29,12 +29,12 @@ public class CircleTool : PolygonTool<CircleToolOverlay<Shape>, Shape>
         }
     }
 
-    private CircleTool(Sheet sheet,
+    private EllipseTool(Sheet sheet,
                        OverlayContainer overlayContainer,
                        ISettings settings,
                        IUnitSnapOverlay unitSnapOverlay,
                        IOperationService operationService,
-                       Factory<CircleToolOverlay<Shape>> overlayFactory)
+                       Factory<EllipseToolOverlay<Shape>> overlayFactory)
         : base(sheet,
                overlayContainer,
                settings,

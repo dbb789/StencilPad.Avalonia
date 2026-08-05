@@ -16,7 +16,7 @@ public class ToolSet
                    StraightLineTool.Factory straightLineToolFactory,
                    CurvedLineTool.Factory curvedLineToolFactory,
                    RectTool.Factory rectToolFactory,
-                   CircleTool.Factory circleToolFactory,
+                   EllipseTool.Factory circleToolFactory,
                    MarkerPathTool.Factory markerPathToolFactory,
                    RulerTool.Factory rulerToolFactory,
                    TextTool.Factory textToolFactory)
@@ -41,7 +41,7 @@ public class ToolSet
         services.AddSingleton<StraightLineTool.Factory>();
         services.AddSingleton<CurvedLineTool.Factory>();
         services.AddSingleton<RectTool.Factory>();
-        services.AddSingleton<CircleTool.Factory>();
+        services.AddSingleton<EllipseTool.Factory>();
         services.AddSingleton<MarkerPathTool.Factory>();
         services.AddSingleton<RulerTool.Factory>();
         services.AddSingleton<TextTool.Factory>();
@@ -51,7 +51,7 @@ public class ToolSet
         FactoryUtil.AddFactory<LineToolOverlay<Shape>>(services);
         FactoryUtil.AddFactory<LineToolOverlay<MarkerPath>>(services);
         FactoryUtil.AddFactory<RectToolOverlay<Shape>>(services);
-        FactoryUtil.AddFactory<CircleToolOverlay<Shape>>(services);
+        FactoryUtil.AddFactory<EllipseToolOverlay<Shape>>(services);
         FactoryUtil.AddFactory<RulerToolOverlay>(services);
         FactoryUtil.AddFactory<TextToolOverlay>(services);
         

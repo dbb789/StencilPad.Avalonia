@@ -11,8 +11,6 @@ public class UnitSnapOverlay : ContentControl, IUnitSnapOverlay
 {
     private static readonly Pen IndicatorPen;
 
-    public Unit2D? LastSnapPoint => _lastSnapPoint;
-
     private readonly IViewport _viewport;
     private readonly IUnitSnap _unitSnap;
     private readonly IUnitSnapContext _defaultContext;
@@ -52,14 +50,8 @@ public class UnitSnapOverlay : ContentControl, IUnitSnapOverlay
         InvalidateVisual();        
     }
 
-    private void HandlePointerMoved(object? sender, PointerEventArgs e)
+    public Unit2D? UnitSnap(Unit2D mousePos)
     {
-        if (!_isActive)
-        {
-            return;
-        }
-
-        var mousePos = _viewport.FromPoint(e.GetPosition(this));
         var snapped = _unitSnap.UnitSnap(mousePos, _context ?? _defaultContext);
 
         if (_lastSnapPoint != snapped)
@@ -67,6 +59,18 @@ public class UnitSnapOverlay : ContentControl, IUnitSnapOverlay
             _lastSnapPoint = snapped;
             InvalidateVisual();
         }
+
+        return snapped;
+    }
+    
+    private void HandlePointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (!_isActive)
+        {
+            return;
+        }
+
+        UnitSnap(_viewport.FromPoint(e.GetPosition(this)));
     }
     
     public override void Render(DrawingContext dc)

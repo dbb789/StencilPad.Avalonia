@@ -12,14 +12,13 @@ using StencilPad.Services;
 
 namespace StencilPad.Canvases.Tools.Overlays;
 
-public class CircleToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetElement>
+public class EllipseToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetElement>
     where TSheetElement : IPolygonSheetElement, new()
 {
     public override TSheetElement Element => _element;
 
     private readonly IViewport _viewport;
-    private readonly IUnitSnap _unitSnap;
-    private readonly IUnitSnapContext _unitSnapContext;
+    private readonly IUnitSnapOverlay _unitSnapOverlay;
     private readonly ISettings _settings;
     private readonly IHintService _hintService;
     private readonly TSheetElement _element;
@@ -30,15 +29,14 @@ public class CircleToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEle
     private Unit2D? _initialPoint;
     private Unit2D _currentSnappedMousePosition;
 
-    public CircleToolOverlay(IViewport viewport,
-                             IUnitSnap unitSnap,
-                             ISettings settings,
-                             IHintService hintService,
-                             IResourceService resourceService)
+    public EllipseToolOverlay(IViewport viewport,
+                              IUnitSnapOverlay unitSnapOverlay,
+                              ISettings settings,
+                              IHintService hintService,
+                              IResourceService resourceService)
     {
         _viewport = viewport;
-        _unitSnap = unitSnap;
-        _unitSnapContext = new DefaultUnitSnapContext(viewport);
+        _unitSnapOverlay = unitSnapOverlay;
         _settings = settings;
         _hintService = hintService;
         _element = new();
@@ -209,7 +207,7 @@ public class CircleToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEle
     private Unit2D CurrentSnappedMouseOverPosition(Point mousePosition)
     {
         var unitPosition = _viewport.FromPoint(mousePosition);
-        var snapPosition = _unitSnap.UnitSnap(unitPosition, _unitSnapContext);
+        var snapPosition = _unitSnapOverlay.UnitSnap(unitPosition);
         
         return snapPosition ?? unitPosition;
     }

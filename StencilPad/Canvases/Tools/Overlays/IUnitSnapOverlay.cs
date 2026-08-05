@@ -5,8 +5,8 @@ namespace StencilPad.Canvases.Tools.Overlays;
 
 public interface IUnitSnapOverlay
 {
-    Unit2D? LastSnapPoint { get; }
-
     void Begin(IUnitSnapContext? context = null);
     void End();
+
+    Unit2D? UnitSnap(Unit2D point);
 }

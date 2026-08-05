@@ -75,7 +75,6 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
     private readonly IViewport _viewport;
     private readonly IRenderHooks _renderHooks;
     private readonly IHandleMap _handleMap;
-    private readonly IUnitSnap _unitSnap;
     private readonly IUnitSnapOverlay _unitSnapOverlay;
     private readonly SheetElementEditActionSet _actionSet;
     
@@ -95,7 +94,6 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
                            IViewport viewport,
                            IRenderHooks renderHooks,
                            IHandleMap handleMap,
-                           IUnitSnap unitSnap,
                            IUnitSnapOverlay unitSnapOverlay,
                            SheetElementEditActionSet actionSet)
     {
@@ -104,7 +102,6 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
         _viewport = viewport;
         _renderHooks = renderHooks;
         _handleMap = handleMap;
-        _unitSnap = unitSnap;
         _unitSnapOverlay = unitSnapOverlay;
         _actionSet = actionSet;
         
@@ -351,7 +348,7 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
             return;
         }
 
-        var mousePosition = e.GetPosition(this.GetVisualParent());
+        var mousePosition = e.GetPosition(this);
         var dragResult = _dragState.OnDragMove(_viewport,
                                                mousePosition);
 
@@ -368,7 +365,7 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
             _unitSnapOverlay.Begin(this);
         }
 
-        var snappedTarget = _unitSnap.UnitSnap(dragResult.Value.TargetElementPosition, this);
+        var snappedTarget = _unitSnapOverlay.UnitSnap(dragResult.Value.TargetElementPosition);
         var targetPosition = snappedTarget ?? dragResult.Value.TargetElementPosition;
         
         targetPosition = _lockAxisState.OnDragMove(ModifierUtil.IsLockToAxis(e),

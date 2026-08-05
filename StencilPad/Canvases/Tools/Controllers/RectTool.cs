@@ -16,7 +16,7 @@ public class RectTool : PolygonTool<RectToolOverlay<Shape>, Shape>
                          Factory<RectToolOverlay<Shape>> OverlayFactory) : IToolFactory
     {
         public string IconResource => "RectTool";
-        public string Tooltip => "Rectangles";
+        public string Tooltip => "Rectangle";
 
         public ITool Create(IToolButton button)
         {

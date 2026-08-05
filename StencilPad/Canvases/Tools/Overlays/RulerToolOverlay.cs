@@ -16,8 +16,7 @@ namespace StencilPad.Canvases.Tools.Overlays;
 public class RulerToolOverlay : Control, IDisposable
 {
     private readonly IViewport _viewport;
-    private readonly IUnitSnap _unitSnap;
-    private readonly IUnitSnapContext _unitSnapContext;
+    private readonly IUnitSnapOverlay _unitSnapOverlay;
     private readonly Ruler _ruler;
     private readonly RulerResolver _resolver;
     private readonly ModelRenderer _renderer;
@@ -29,13 +28,12 @@ public class RulerToolOverlay : Control, IDisposable
     public event Action<Unit2D, Unit2D>? OnRulerPlaced;
 
     public RulerToolOverlay(IViewport viewport,
-                            IUnitSnap unitSnap,
+                            IUnitSnapOverlay unitSnapOverlay,
                             ISettings settings,
                             IResourceService resourceService)
     {
         _viewport = viewport;
-        _unitSnap = unitSnap;
-        _unitSnapContext = new DefaultUnitSnapContext(viewport);
+        _unitSnapOverlay = unitSnapOverlay;
         _ruler = new Ruler { Color = Color.FromArgb(128, 0, 0, 0) };
         _resolver = new RulerResolver(_ruler, settings, resourceService);
         _renderer = new ModelRenderer(resourceService);
@@ -135,7 +133,7 @@ public class RulerToolOverlay : Control, IDisposable
                                                    PointerEventArgs args)
     {
         var unitPosition = _viewport.FromPoint(mousePosition);
-        var snapPosition = _unitSnap.UnitSnap(unitPosition, _unitSnapContext);
+        var snapPosition = _unitSnapOverlay.UnitSnap(unitPosition);
         
         if (snapPosition.HasValue)
         {
