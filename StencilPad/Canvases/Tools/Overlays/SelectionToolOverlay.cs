@@ -305,20 +305,16 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
             paint.ElementPen.Style = SKPaintStyle.Stroke;
             paint.ElementPen.Color = ColorUtil.WithAlpha(selectionColor, 128).ToSKColor();
             paint.ElementPen.StrokeWidth = 2;
-            paint.ElementPen.BlendMode = SKBlendMode.HardLight;
 
             paint.ElementFill.Style = SKPaintStyle.Fill;
             paint.ElementFill.Color = ColorUtil.WithAlpha(selectionColor, 32).ToSKColor();
-            paint.ElementFill.BlendMode = SKBlendMode.HardLight;
             
             paint.GroupPen.Style = SKPaintStyle.Stroke;
             paint.GroupPen.Color = ColorUtil.WithAlpha(groupSelectionColor, 128).ToSKColor();
             paint.GroupPen.StrokeWidth = 2;
-            paint.GroupPen.BlendMode = SKBlendMode.HardLight;
 
             paint.GroupFill.Style = SKPaintStyle.Fill;
             paint.GroupFill.Color = ColorUtil.WithAlpha(groupSelectionColor, 32).ToSKColor();
-            paint.GroupFill.BlendMode = SKBlendMode.HardLight;
         }
 
         _resizeHandleSize = _settings.HandleSizePx;

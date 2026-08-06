@@ -53,7 +53,7 @@ public class PolygonToolOverlayRenderer : IToolOverlayRenderer
     private static readonly SKPaint ControlStemPaint = new SKPaint
     {
         Color = new SKColor(0, 200, 0, 128),
-        StrokeWidth = 0.2f,
+        StrokeWidth = 2,
         Style = SKPaintStyle.Stroke,
         IsAntialias = true,
         IsDither = true
@@ -147,7 +147,7 @@ public class PolygonToolOverlayRenderer : IToolOverlayRenderer
         }
     }
 
-    public void Render(SKCanvas canvas, GRContext? context)
+    public void Render(SKCanvas canvas, GRContext? context, SKMatrix transformMatrix)
     {
         using var geometryHandle = _renderedGeometry.TryRead();
 
@@ -157,21 +157,26 @@ public class PolygonToolOverlayRenderer : IToolOverlayRenderer
         }
 
         var geometry = geometryHandle.Buffer;
-
-        canvas.Save();
-        canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, geometry.Matrix));
-
+        var matrix = SKMatrix.Concat(transformMatrix, geometry.Matrix);
+        
         if (!geometry.EdgeOverlayPath.IsEmpty)
         {
-            canvas.DrawPath(geometry.EdgeOverlayPath, EdgeOverlayPaint);
+            // FIXME: Allocation here.
+            using var edgeOverlayPath = new SKPath(geometry.EdgeOverlayPath);
+
+            edgeOverlayPath.Transform(matrix);
+        
+            canvas.DrawPath(edgeOverlayPath, EdgeOverlayPaint);
         }
 
         if (!geometry.ControlStemPath.IsEmpty)
         {
-            canvas.DrawPath(geometry.ControlStemPath, ControlStemPaint);
-        }
+            using var controlStemPath = new SKPath(geometry.ControlStemPath);
 
-        canvas.Restore();
+            controlStemPath.Transform(matrix);
+            
+            canvas.DrawPath(controlStemPath, ControlStemPaint);
+        }
     }
 
     private void RebuildGeometry()

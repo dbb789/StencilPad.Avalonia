@@ -3,7 +3,7 @@ using StencilPad.Spatial;
 
 namespace StencilPad.Canvases.Tools.Overlays;
 
-public class TextElementToolOverlayRenderer : ElementOutlineOverlayRenderer<TextElement>
+public class ImageElementToolOverlayRenderer : ElementOutlineOverlayRenderer<ImageElement>
 {
     public static readonly IToolOverlayRendererFactory Factory = new FactoryImpl();
     
@@ -11,22 +11,22 @@ public class TextElementToolOverlayRenderer : ElementOutlineOverlayRenderer<Text
     {
         public IToolOverlayRenderer? CreateOverlay(ISheetElement element)
         {
-            if (element is TextElement textElement)
+            if (element is ImageElement imageElement)
             {
-                return new TextElementToolOverlayRenderer(textElement);
+                return new ImageElementToolOverlayRenderer(imageElement);
             }
 
             return null;
         }
     }
-    
-    private TextElementToolOverlayRenderer(TextElement element)
+
+    private ImageElementToolOverlayRenderer(ImageElement element)
         : base(element)
     {
         // ...
     }
     
-    protected override UnitBounds GetBounds(TextElement element)
+    protected override UnitBounds GetBounds(ImageElement element)
     {
         return UnitBounds.FromMinMax(element.Min, element.Max);
     }

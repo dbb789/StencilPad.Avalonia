@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using StencilPad.Spatial;
 
 namespace StencilPad.Models;
@@ -7,7 +8,8 @@ public interface ISheetElement : IHandleSource<ISheetElement>
     Guid Id { get; }
 
     UnitTransform Transform { get; set; }
-    
+
+    event PropertyChangedEventHandler? PropertyChanged;
     event Action<ISheetElement>? TransformChanged;
     event Action<ISheetElement>? GeometryChanged;
 

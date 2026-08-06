@@ -70,7 +70,7 @@ public class GroupToolOverlayRenderer : IToolOverlayRenderer
         }
     }
 
-    public void Render(SKCanvas canvas, GRContext? context)
+    public void Render(SKCanvas canvas, GRContext? context, SKMatrix transformMatrix)
     {
         using var renderedMatrix = _renderedMatrix.TryRead();
 
@@ -79,15 +79,13 @@ public class GroupToolOverlayRenderer : IToolOverlayRenderer
             return;
         }
         
-        canvas.Save();
-        canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, renderedMatrix.Buffer.Matrix));
+
+        transformMatrix = SKMatrix.Concat(transformMatrix, renderedMatrix.Buffer.Matrix);
         
         foreach (var renderer in _renderers)
         {
-            renderer.Render(canvas, context);
+            renderer.Render(canvas, context, transformMatrix);
         }
-        
-        canvas.Restore();
     }
     
     private void TransformChanged(ISheetElement element)

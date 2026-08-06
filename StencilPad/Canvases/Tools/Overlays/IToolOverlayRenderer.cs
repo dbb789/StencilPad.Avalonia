@@ -7,5 +7,5 @@ public interface IToolOverlayRenderer : IDisposable
     event Action? RendererDirty;
 
     void PreRender();
-    void Render(SKCanvas canvas, GRContext? context);
+    void Render(SKCanvas canvas, GRContext? context, SKMatrix transformMatrix);
 }

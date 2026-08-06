@@ -33,7 +33,7 @@ public class ToolOverlayRenderer
         }
 
         _renderHooks.PreRenderHook += PreRender;
-        _renderHooks.ViewportRenderHook += RenderOverlay;
+        _renderHooks.OverlayRenderHook += RenderOverlay;
         
         GetList().ListChanged += ElementsChanged;        
     }
@@ -43,7 +43,7 @@ public class ToolOverlayRenderer
         GetList().ListChanged -= ElementsChanged;
         
         _renderHooks.PreRenderHook -= PreRender;
-        _renderHooks.ViewportRenderHook -= RenderOverlay;
+        _renderHooks.OverlayRenderHook -= RenderOverlay;
 
         foreach (var (_, renderer) in _renderers.GetClear())
         {
@@ -70,11 +70,11 @@ public class ToolOverlayRenderer
         }
     }
     
-    private void RenderOverlay(SKCanvas canvas, GRContext? context)
+    private void RenderOverlay(SKCanvas canvas, GRContext? context, SKMatrix viewportMatrix)
     {
         foreach (var renderer in _renderers)
         {
-            renderer.Render(canvas, context);
+            renderer.Render(canvas, context, viewportMatrix);
         }
     }
     

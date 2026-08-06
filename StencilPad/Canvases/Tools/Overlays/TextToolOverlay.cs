@@ -41,7 +41,7 @@ public class TextToolOverlay : Canvas, IDisposable
         _toolOverlay = new ToolOverlayRenderer(
             sheet,
             renderHooks,
-            true,
+            false,
             [TextElementToolOverlayRenderer.Factory]);
 
         Background = Brushes.Transparent;
