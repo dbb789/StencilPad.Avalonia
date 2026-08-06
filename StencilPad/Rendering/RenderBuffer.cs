@@ -22,6 +22,7 @@ public class RenderBuffer<T> : IDisposable where T : class, IDisposable, new()
         {
             _parent?.ExitWriteScope();
             _parent = null;
+            _buffer = null!;
         }
     }
     
@@ -58,7 +59,7 @@ public class RenderBuffer<T> : IDisposable where T : class, IDisposable, new()
     private bool _reading;
     private bool _pendingDirty;
     
-    private AtomicBool _disposed;
+    private readonly AtomicBool _disposed;
 
     public RenderBuffer()
     {

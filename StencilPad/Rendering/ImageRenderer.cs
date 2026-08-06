@@ -28,25 +28,41 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
             Paint = null!;
         }
     }
+    
+    private class CachedImage : IDisposable
+    {
+        public GRContext? SourceContext;
+        public SKImage? SourceImage;
+        public SKImage? TargetImage;
+
+        public void Dispose()
+        {
+            TargetImage?.Dispose();
+            TargetImage = null;
+        }
+    }
 
     private UnitBounds? _bounds;
     private double _opacity = 1.0;
 
     private RenderBuffer<RenderedImage> _renderedImage;
     private RenderBuffer<RenderedProperties> _renderedProperties;
-    
+    private RenderCache<CachedImage> _cachedImage;
+
     public event Action? RendererDirty;
     
     public ImageRenderer()
     {
         _renderedImage = new();
         _renderedProperties = new();
+        _cachedImage = new();
     }
 
     public void Dispose()
     {
         _renderedImage.Dispose();
         _renderedProperties.Dispose();
+        _cachedImage.Dispose();
     }
 
     public void SetBounds(UnitBounds? bounds)
@@ -64,7 +80,8 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
         {
             return;
         }
-        
+
+        imageHandle.Buffer.Image?.Dispose();
         imageHandle.Buffer.Image = ((imageData.Length > 0) ? SKImage.FromEncodedData(imageData) : null);
 
         InvokeRendererDirty();
@@ -77,10 +94,6 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
         InvokeRendererDirty();
     }
     
-    private SKImage? _image;
-    private SKImage? _renderImage;
-    private object _renderImageLock = new();
-
     public void PreRender()
     {
         // Nothing to do here - the image is already prepared in SetImageData.
@@ -95,31 +108,37 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
             return;
         }
         
-        var image = imageHandle.Buffer;
-        SKImage? renderImage = null;
+        var image = imageHandle.Buffer.Image;
 
-        // Lock should be unnecessary here as we shouldn't ever be rendering the
-        // same object concurrently - this is really just for safety.
-        lock (_renderImageLock)
+        if (image is null)
         {
-            if (image.Image is null)
-            {
-                _renderImage?.Dispose();
-                return;
-            }
-
-            if (_image != image.Image)
-            {
-                _image = image.Image;
-                _renderImage?.Dispose();
-                _renderImage = (context is not null) ?
-                    _image.ToTextureImage(context) : _image.ToRasterImage();
-            }
-
-            renderImage = _renderImage;
+            return;
         }
 
-        if (renderImage is null)
+        using var cacheHandle = _cachedImage.TryUpdate();
+
+        if (!cacheHandle.IsValid)
+        {
+            return;
+        }
+
+        var cache = cacheHandle.Buffer;
+
+        // NOTE: We're only comparing references here - the underlying source
+        // image may have been disposed so we shouldn't read the content.
+        if (cache.SourceImage != image || cache.SourceContext != context)
+        {
+            cache.SourceImage = image;
+            cache.SourceContext = context;
+            
+            cache.TargetImage?.Dispose();
+            cache.TargetImage = (context is not null) ?
+                image.ToTextureImage(context) : image.ToRasterImage();
+        }
+
+        var targetImage = cacheHandle.Buffer.TargetImage;
+
+        if (targetImage is null)
         {
             return;
         }
@@ -141,7 +160,7 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
         
         canvas.Save();
         canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, SKMatrix.CreateScale(1, -1)));
-        canvas.DrawImage(renderImage, rect, properties.Paint);
+        canvas.DrawImage(targetImage, rect, properties.Paint);
         canvas.Restore();
     }
 

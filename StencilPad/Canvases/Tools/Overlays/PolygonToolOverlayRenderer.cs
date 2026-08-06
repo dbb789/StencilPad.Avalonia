@@ -24,12 +24,14 @@ public class PolygonToolOverlayRenderer : IToolOverlayRenderer
 
     private class RenderedGeometry : IDisposable
     {
+        public Guid GeometryId = Guid.Empty;
         public SKPath EdgeOverlayPath = new();
         public SKPath ControlStemPath = new();
         public SKMatrix Matrix = SKMatrix.Identity;
 
         public void Reset()
         {
+            GeometryId = Guid.NewGuid();
             EdgeOverlayPath.Reset();
             ControlStemPath.Reset();
         }
@@ -41,6 +43,20 @@ public class PolygonToolOverlayRenderer : IToolOverlayRenderer
         }
     }
 
+    private class CachedGeometry : IDisposable
+    {
+        public SKMatrix SourceMatrix;
+        public Guid SourceGeometryId;
+        public SKPath EdgeOverlayPath = new();
+        public SKPath ControlStemPath = new();
+
+        public void Dispose()
+        {
+            EdgeOverlayPath.Dispose();
+            ControlStemPath.Dispose();
+        }
+    }
+    
     private static readonly SKPaint EdgeOverlayPaint = new SKPaint
     {
         Color = new SKColor(0, 0, 255, 128),
@@ -63,6 +79,7 @@ public class PolygonToolOverlayRenderer : IToolOverlayRenderer
     private readonly SKPathGeometryWalker _walker;
 
     private RenderBuffer<RenderedGeometry> _renderedGeometry;
+    private RenderCache<CachedGeometry> _cachedGeometry;
     private bool _geometryDirty;
     
     public event Action? RendererDirty;
@@ -77,6 +94,7 @@ public class PolygonToolOverlayRenderer : IToolOverlayRenderer
         
         _walker = new();
         _renderedGeometry = new();
+        _cachedGeometry = new();
         
         foreach (var polygon in _element.PolygonSet)
         {
@@ -102,6 +120,7 @@ public class PolygonToolOverlayRenderer : IToolOverlayRenderer
         _element.TransformChanged -= TransformChanged;
 
         _renderedGeometry.Dispose();
+        _cachedGeometry.Dispose();
     }
 
     private void PolygonAdded(EditablePolygon polygon)
@@ -158,24 +177,44 @@ public class PolygonToolOverlayRenderer : IToolOverlayRenderer
 
         var geometry = geometryHandle.Buffer;
         var matrix = SKMatrix.Concat(transformMatrix, geometry.Matrix);
-        
+
+        using var cacheHandle = _cachedGeometry.TryUpdate();
+
+        if (!cacheHandle.IsValid)
+        {
+            return;
+        }
+
+        var cache = cacheHandle.Buffer;
+
+        bool cacheDirty = false;
+
+        if (cache.SourceGeometryId != geometry.GeometryId
+            || cache.SourceMatrix != matrix)
+        {
+            cacheDirty = true;
+            cache.SourceGeometryId = geometry.GeometryId;
+            cache.SourceMatrix = matrix;
+        }
+
         if (!geometry.EdgeOverlayPath.IsEmpty)
         {
-            // FIXME: Allocation here.
-            using var edgeOverlayPath = new SKPath(geometry.EdgeOverlayPath);
-
-            edgeOverlayPath.Transform(matrix);
+            if (cacheDirty)
+            {
+                geometry.EdgeOverlayPath.Transform(matrix, cache.EdgeOverlayPath);
+            }
         
-            canvas.DrawPath(edgeOverlayPath, EdgeOverlayPaint);
+            canvas.DrawPath(cache.EdgeOverlayPath, EdgeOverlayPaint);
         }
 
         if (!geometry.ControlStemPath.IsEmpty)
         {
-            using var controlStemPath = new SKPath(geometry.ControlStemPath);
-
-            controlStemPath.Transform(matrix);
+            if (cacheDirty)
+            {
+                geometry.ControlStemPath.Transform(matrix, cache.ControlStemPath);
+            }
             
-            canvas.DrawPath(controlStemPath, ControlStemPaint);
+            canvas.DrawPath(cache.ControlStemPath, ControlStemPaint);
         }
     }
 
