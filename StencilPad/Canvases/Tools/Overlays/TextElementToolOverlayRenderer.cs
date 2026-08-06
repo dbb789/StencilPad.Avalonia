@@ -28,7 +28,7 @@ public class TextElementToolOverlayRenderer : IToolOverlayRenderer
         Color = new SKColor(0, 0, 0, 128),
         StrokeWidth = 0.2f,
         IsStroke = true,
-        PathEffect = SKPathEffect.CreateDash(new float[] { 2, 2 }, 0)
+        PathEffect = SKPathEffect.CreateDash(new float[] { 0.2f, 0.2f }, 0)
     };
 
     private readonly TextElement _textElement;
@@ -87,12 +87,12 @@ public class TextElementToolOverlayRenderer : IToolOverlayRenderer
         canvas.DrawRect(outline, OutlinePaint);
     }
 
-    private void OnTransformChanged(ISheetElement _)
+    private void OnTransformChanged(ISheetElement element)
     {
         InvokeRendererDirty();
     }
 
-    private void GeometryChanged(ISheetElement _)
+    private void GeometryChanged(ISheetElement element)
     {
         InvokeRendererDirty();
     }
