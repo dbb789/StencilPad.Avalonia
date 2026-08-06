@@ -136,7 +136,7 @@ public class ImageRenderer : IImageWalker, IWalkerRenderer
                 image.ToTextureImage(context) : image.ToRasterImage();
         }
 
-        var targetImage = cacheHandle.Buffer.TargetImage;
+        var targetImage = cache.TargetImage;
 
         if (targetImage is null)
         {
