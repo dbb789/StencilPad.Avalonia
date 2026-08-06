@@ -1,6 +1,5 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Media;
 using SkiaSharp;
 using StencilPad.Spatial;
 
@@ -21,11 +20,17 @@ public class VisualViewport : IViewport
             }
 
             _visual = value;
-            // NOTE: Unlike WPF, Avalonia's DIPs are always 1/96in regardless of the monitor's
-            // physical DPI - RenderScaling only affects the backing pixel buffer, not layout
-            // math, so this always resolves to 96 here. Kept for parity with the WPF version
-            // in case per-monitor scaling ever needs to factor into this calculation.
-            _dpi = (_visual != null) ? (TopLevel.GetTopLevel(_visual)?.RenderScaling ?? 1.0) * 96.0 : 96.0;
+
+            // DPI is fixed at 96 for Avalonia, but we can adjust it based on
+            // the render scaling factor of the top-level window.
+            double renderScaling = 1.0;
+
+            if (_visual is not null)
+            {
+                renderScaling = TopLevel.GetTopLevel(_visual)?.RenderScaling ?? 1.0;
+            }
+            
+            _dpi = renderScaling * 96.0;
             
             OnViewportChanged();
         }

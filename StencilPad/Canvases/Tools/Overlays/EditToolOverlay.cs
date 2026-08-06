@@ -299,9 +299,14 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
             return;
         }
 
-        _dragState.OnDragStart(mousePosition,
+        // Special case for dragging handles - in any sane case we want to move
+        // the centre of the handle to the mouse position rather than dragging
+        // the handle from an offset. This ensures that the pointer, the handle,
+        // and the snap indicator are all aligned.
+        _dragState.OnDragStart(_viewport.ToPoint(handle.Position),
                                handle,
                                handle.Position);
+
         _lockAxisState.OnDragStart();
         
         _capturedPointer = e.Pointer;

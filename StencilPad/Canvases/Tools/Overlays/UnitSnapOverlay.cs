@@ -50,6 +50,9 @@ public class UnitSnapOverlay : ContentControl, IUnitSnapOverlay
         InvalidateVisual();        
     }
 
+    // Convenience method which both snaps the point based on the current
+    // context and redraws the indicator so that we don't have any potential
+    // issues with the indicator getting out of sync with the snap point.
     public Unit2D? UnitSnap(Unit2D mousePos)
     {
         var snapped = _unitSnap.UnitSnap(mousePos, _context ?? _defaultContext);
