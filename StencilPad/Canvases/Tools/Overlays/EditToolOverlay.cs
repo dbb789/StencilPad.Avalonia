@@ -512,7 +512,6 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
                 overlay.LockLineEnd = new SKPoint((float)lockPoint.X, (float)sheetYMax);
             }
         }
-
     }
 
     private void RenderOverlayGeometry(SKCanvas canvas, GRContext? context, SKMatrix viewportMatrix)
@@ -531,10 +530,11 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
         foreach (var handlePoint in overlay.MoveHandlePoints)
         {
             var point = viewportMatrix.MapPoint(handlePoint);
-            var rect = new SKRect(point.X - (float)(paint.HandleSize / 2),
-                                  point.Y - (float)(paint.HandleSize / 2),
-                                  point.X + (float)(paint.HandleSize / 2),
-                                  point.Y + (float)(paint.HandleSize / 2));
+            var extents = (float)(paint.HandleSize / 2);
+            var rect = new SKRect(point.X - extents,
+                                  point.Y - extents,
+                                  point.X + extents,
+                                  point.Y + extents);
 
             canvas.DrawRect(rect, paint.MoveBrush);
         }
@@ -549,10 +549,11 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
         foreach (var handlePoint in overlay.MoveHandleSelectedPoints)
         {
             var point = viewportMatrix.MapPoint(handlePoint);
-            var rect = new SKRect(point.X - (float)(paint.HandleSize / 2),
-                                  point.Y - (float)(paint.HandleSize / 2),
-                                  point.X + (float)(paint.HandleSize / 2),
-                                  point.Y + (float)(paint.HandleSize / 2));
+            var extents = (float)(paint.HandleSize / 2);
+            var rect = new SKRect(point.X - extents,
+                                  point.Y - extents,
+                                  point.X + extents,
+                                  point.Y + extents);
             
             canvas.DrawRect(rect, paint.MoveBrush);
             canvas.DrawRect(rect, paint.SelectedPen);
@@ -561,9 +562,10 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
         foreach (var handlePoint in overlay.AdjustHandleSelectedPoints)
         {
             var point = viewportMatrix.MapPoint(handlePoint);
-
-            canvas.DrawCircle(point, (float)(paint.HandleSize / 2), paint.AdjustBrush);
-            canvas.DrawCircle(point, (float)(paint.HandleSize / 2), paint.SelectedPen);
+            var radius = (float)(paint.HandleSize / 2);
+            
+            canvas.DrawCircle(point, radius, paint.AdjustBrush);
+            canvas.DrawCircle(point, radius, paint.SelectedPen);
         }
 
         if (overlay.LockLineStart is not null && overlay.LockLineEnd is not null)
