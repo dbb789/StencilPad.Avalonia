@@ -78,8 +78,8 @@ public class PolygonToolOverlayRenderer : IToolOverlayRenderer
     private readonly IPolygonSheetElement _element;
     private readonly SKPathGeometryWalker _walker;
 
-    private RenderBuffer<RenderedGeometry> _renderedGeometry;
-    private RenderCache<CachedGeometry> _cachedGeometry;
+    private readonly RenderBuffer<RenderedGeometry> _renderedGeometry;
+    private readonly RenderCache<CachedGeometry> _cachedGeometry;
     private bool _geometryDirty;
     
     public event Action? RendererDirty;

@@ -10,7 +10,7 @@ public class ShapeSchema : SheetElementSchema
     public Color FlC { get; set; }
     public Color LnC { get; set; }
     public Unit LnW { get; set; } = new();
-    public int LnS { get; set; } = 0;
+    public Unit[]? LSt { get; set; } = null;
     public int StC { get; set; } = 0;
     public int EdC { get; set; } = 0;
     
@@ -23,7 +23,7 @@ public class ShapeSchema : SheetElementSchema
             FlC = shape.FillColor,
             LnC = shape.LineColor,
             LnW = shape.LineWidth,
-            LnS = shape.LineStyle.ToValue(),
+            LSt = shape.LineStyle.IsSolid ? null : shape.LineStyle.ToArray(),
             StC = shape.StartCap.ToValue(),
             EdC = shape.EndCap.ToValue()
         };
@@ -37,7 +37,7 @@ public class ShapeSchema : SheetElementSchema
             FillColor = FlC,
             LineColor = LnC,
             LineWidth = LnW,
-            LineStyle = LineStyleResourceId.FromValue(LnS),
+            LineStyle = (LSt is not null) ? new LineStyle(LSt) : LineStyle.Solid,
             StartCap = GeometryResourceId.FromValue(StC),
             EndCap = GeometryResourceId.FromValue(EdC)
         };

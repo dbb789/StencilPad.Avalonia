@@ -1,13 +1,14 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
-using Avalonia.Media;
+using SkiaSharp;
+using StencilPad.Models;
 
 namespace StencilPad.UI.Widgets;
 
 public partial class GeometryDropdown : UserControl
 {
-    public sealed record Entry(Geometry Geometry, DashStyle? DashStyle = null);
+    public sealed record Entry(SKPath Path, LineStyle? LineStyle = null);
 
     public static readonly StyledProperty<IList<Entry>?> ItemsProperty =
         AvaloniaProperty.Register<GeometryDropdown, IList<Entry>?>(nameof(Items));
@@ -15,7 +16,7 @@ public partial class GeometryDropdown : UserControl
     public static readonly StyledProperty<int> SelectedIndexProperty =
         AvaloniaProperty.Register<GeometryDropdown, int>(nameof(SelectedIndex), 0,
             defaultBindingMode: BindingMode.TwoWay);
-
+    
     static GeometryDropdown()
     {
         ItemsProperty.Changed.AddClassHandler<GeometryDropdown>((field, _) => field.SyncItems());

@@ -70,23 +70,23 @@ public class ShapePropertiesViewModel : ElementPropertiesViewModel<Shape>
         }
     }
 
-    private int _lineStyleIndex;
-    public int LineStyleIndex
+    private LineStyle _lineStyle;
+    public LineStyle LineStyle
     {
-        get => _lineStyleIndex;
+        get => _lineStyle;
         set
         {
-            _lineStyleIndex = value;
-            SetElementProperty(s => s.LineStyle = _lineStyles[value]);
+            _lineStyle = value;
+            SetElementProperty(s => s.LineStyle = _lineStyle);
             OnPropertyChanged();
         }
     }
     
     public IReadOnlyList<GeometryResourceId> CapIds => _capIds;
-    public IReadOnlyList<LineStyleResourceId> LineStyleIds => _lineStyles;
+    public IReadOnlyList<LineStyle> LineStyles => _lineStyles;
 
     private List<GeometryResourceId> _capIds;
-    private List<LineStyleResourceId> _lineStyles;
+    private List<LineStyle> _lineStyles;
     private IDisposable? _dragContext;
     
     public ShapePropertiesViewModel(Sheet sheet,
@@ -99,7 +99,7 @@ public class ShapePropertiesViewModel : ElementPropertiesViewModel<Shape>
         _capIds.AddRange(resourceService.GetGeometryResourceIds(GeometryResourceType.Cap));
 
         _lineStyles = [];
-        _lineStyles.AddRange(resourceService.GetLineStyleResourceIds());
+        _lineStyles.AddRange(resourceService.GetLineStyles());
 
         OnElementsChanged();
     }
@@ -131,7 +131,7 @@ public class ShapePropertiesViewModel : ElementPropertiesViewModel<Shape>
         _endCapIndex = Mode(shape => _capIds.IndexOf(shape.EndCap));
         OnPropertyChanged(nameof(EndCapIndex));
 
-        _lineStyleIndex = Mode(shape => _lineStyles.IndexOf(shape.LineStyle));
-        OnPropertyChanged(nameof(LineStyleIndex));
+        _lineStyle = Mode(shape => shape.LineStyle);
+        OnPropertyChanged(nameof(LineStyle));
     }
 }

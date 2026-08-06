@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Avalonia.Media;
+using SkiaSharp;
 using StencilPad.Common;
 using StencilPad.Models;
 using StencilPad.Services;
@@ -27,7 +27,7 @@ public partial class MarkerPathPropertiesWindow : Window
         DataContext = ViewModel;
 
         var markerTypeItems = ViewModel.MarkerTypeIds.Select(
-            id => new GeometryDropdown.Entry(CreateMarkerGeometry(resourceService, id))).ToList();
+            id => new GeometryDropdown.Entry(GetMarkerPath(resourceService, id))).ToList();
 
         MarkerTypeDropdown.Items = markerTypeItems;
 
@@ -59,26 +59,9 @@ public partial class MarkerPathPropertiesWindow : Window
         Close();
     }
 
-    private Geometry CreateMarkerGeometry(IResourceService resourceService,
-                                          GeometryResourceId resourceId)
+    private SKPath GetMarkerPath(IResourceService resourceService,
+                                 GeometryResourceId resourceId)
     {
-        var group = new GeometryGroup
-        {
-            FillRule = FillRule.EvenOdd
-        };
-
-        var marker = resourceService.Get(resourceId);
-
-        //group.Children.Add(marker.Geometry);
-
-        var transformGroup = new TransformGroup();
-        // NOTE: The WPF preview used Freezable media objects; Avalonia doesn't,
-        // so the prototype keeps a simple translate/scale thumbnail transform.
-        transformGroup.Children.Add(new TranslateTransform(4, marker.Size.X.Millimeters / 2));
-        transformGroup.Children.Add(new ScaleTransform { ScaleX = 5, ScaleY = 5 });
-
-        group.Transform = transformGroup;
-
-        return group;
+        return resourceService.Get(resourceId).Path;
     }
 }

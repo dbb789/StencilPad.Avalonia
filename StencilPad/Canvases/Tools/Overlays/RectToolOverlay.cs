@@ -1,7 +1,6 @@
 using Avalonia;
 using Avalonia.Input;
 using Avalonia.Media;
-using StencilPad.Canvases.Common;
 using StencilPad.Common;
 using StencilPad.Models;
 using StencilPad.Models.Resolvers;

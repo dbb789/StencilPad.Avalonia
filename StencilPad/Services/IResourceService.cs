@@ -6,5 +6,5 @@ namespace StencilPad.Services;
 public interface IResourceService : IResourceSet
 {
     IEnumerable<GeometryResourceId> GetGeometryResourceIds(GeometryResourceType type);
-    IEnumerable<LineStyleResourceId> GetLineStyleResourceIds();
+    IEnumerable<LineStyle> GetLineStyles();
 }

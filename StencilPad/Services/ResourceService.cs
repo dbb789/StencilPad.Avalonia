@@ -12,16 +12,13 @@ public class ResourceService : IResourceService
 {
     private Dictionary<GeometryResourceId, GeometryResource> _geometryMap;
     private Dictionary<GeometryResourceType, List<GeometryResourceId>> _byType;
-    private Dictionary<LineStyleResourceId, DashStyle> _lineStyleMap;
 
     public ResourceService()
     {
         _geometryMap = [];
         _byType = [];
-        _lineStyleMap = [];
         
         LoadGeometry();
-        LoadLineStyles();
     }
 
     public IEnumerable<GeometryResourceId> GetGeometryResourceIds(GeometryResourceType type)
@@ -34,9 +31,9 @@ public class ResourceService : IResourceService
         return Enumerable.Empty<GeometryResourceId>();
     }
 
-    public IEnumerable<LineStyleResourceId> GetLineStyleResourceIds()
+    public IEnumerable<LineStyle> GetLineStyles()
     {
-        return LineStyleResourceLibrary.ResourceList.Select(entry => entry.Item1);
+        return LineStyleResourceLibrary.ResourceList;
     }
 
     private void LoadGeometry()
@@ -55,14 +52,6 @@ public class ResourceService : IResourceService
 
             list.Add(entry.Id);
         }        
-    }
-
-    private void LoadLineStyles()
-    {
-        foreach (var entry in LineStyleResourceLibrary.ResourceList)
-        {
-            _lineStyleMap[entry.Item1] = entry.Item2;
-        }
     }
 
     private void Load(GeometryResourceId id, string filename, Unit2D? size)
@@ -104,16 +93,6 @@ public class ResourceService : IResourceService
         }
 
         return GeometryResource.Empty;
-    }
-
-    public DashStyle Get(LineStyleResourceId id)
-    {
-        if (_lineStyleMap.TryGetValue(id, out var style))
-        {
-            return style;
-        }
-
-        return new DashStyle();
     }
 
     // NOTE: Throws a variety of exceptions on failure.

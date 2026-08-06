@@ -216,6 +216,7 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
                                   style.LineColor.B,
                                   style.LineColor.A);
         paint.StrokeWidth = (float)style.LineWidth.Millimeters;
+        paint.PathEffect = style.LineStyle.IsSolid ? null : SKPathEffect.CreateDash(style.LineStyle.ToDashPattern(), 0);
         paint.IsAntialias = true;
         paint.IsDither = true;
     }

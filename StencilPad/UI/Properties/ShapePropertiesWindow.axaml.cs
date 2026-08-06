@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using SkiaSharp;
 using StencilPad.Common;
 using StencilPad.Models;
 using StencilPad.Services;
@@ -28,17 +29,16 @@ public partial class ShapePropertiesWindow : Window
         DataContext = ViewModel;
 
         var startCapItems = ViewModel.CapIds.Select(
-            id => new GeometryDropdown.Entry(CreateCapGeometry(resourceService, id, true))).ToList();
+            id => new GeometryDropdown.Entry(CreateCapPath(resourceService, id, true))).ToList();
         StartCapDropdown.Items = startCapItems;
 
         var endCapItems = ViewModel.CapIds.Select(
-            id => new GeometryDropdown.Entry(CreateCapGeometry(resourceService, id, false))).ToList();
+            id => new GeometryDropdown.Entry(CreateCapPath(resourceService, id, false))).ToList();
         EndCapDropdown.Items = endCapItems;
 
-        var lineStyleItems = ViewModel.LineStyleIds.Select(
-            id => new GeometryDropdown.Entry(CreateLineStyleGeometry(),
-                                             resourceService.Get(id))).ToList();
-        LineStyleDropdown.Items = lineStyleItems;
+        var lineStyleItems = ViewModel.LineStyles.Select(
+            lineStyle => new GeometryDropdown.Entry(CreateLineStylePath(), lineStyle)).ToList();
+        //LineStyleDropdown.Items = lineStyleItems;
 
         Loaded += (_, _) =>
         {
@@ -68,65 +68,16 @@ public partial class ShapePropertiesWindow : Window
         Close();
     }
 
-    private Geometry CreateCapGeometry(IResourceService resourceService,
-                                       GeometryResourceId resourceId,
-                                       bool startCap)
+    private SKPath CreateCapPath(IResourceService resourceService,
+                                 GeometryResourceId resourceId,
+                                 bool startCap)
     {
-        var cap = resourceService.Get(resourceId);
 
-        var line = new StreamGeometry();
-
-        var offset = cap.Size.Y.Millimeters;
-
-        using (var ctx = line.Open())
-        {
-            ctx.BeginFigure(new Point(0, offset), isFilled: false);
-            ctx.LineTo(new Point(0, 4), isStroked: true);
-            ctx.EndFigure(isClosed: false);
-        }
-
-        var group = new GeometryGroup
-        {
-            FillRule = FillRule.EvenOdd
-        };
-
-        //group.Children.Add(cap.Geometry);
-        group.Children.Add(line);
-
-        var transformGroup = new TransformGroup();
-
-        if (startCap)
-        {
-            transformGroup.Children.Add(new RotateTransform(-90) { CenterX = 0, CenterY = 0 });
-            transformGroup.Children.Add(new TranslateTransform(0, cap.Size.X.Millimeters / 2));
-        }
-        else
-        {
-            transformGroup.Children.Add(new RotateTransform(90) { CenterX = 0, CenterY = 0 });
-            transformGroup.Children.Add(new TranslateTransform(4, cap.Size.X.Millimeters / 2));
-        }
-
-        // NOTE: The dropdown preview uses a fixed transform stack rather than
-        // reproducing WPF's frozen preview objects; this keeps the prototype
-        // thumbnail readable without affecting the actual edited shape data.
-        transformGroup.Children.Add(new ScaleTransform { ScaleX = 4, ScaleY = 4 });
-
-        group.Transform = transformGroup;
-
-        return group;
+        return resourceService.Get(resourceId).Path;
     }
 
-    private Geometry CreateLineStyleGeometry()
+    private SKPath CreateLineStylePath()
     {
-        var line = new StreamGeometry();
-
-        using (var ctx = line.Open())
-        {
-            ctx.BeginFigure(new Point(0, 0), isFilled: false);
-            ctx.LineTo(new Point(80, 0), isStroked: true);
-            ctx.EndFigure(isClosed: false);
-        }
-
-        return line;
+        return new SKPath();
     }
 }

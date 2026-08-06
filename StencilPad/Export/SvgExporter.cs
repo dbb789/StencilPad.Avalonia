@@ -264,11 +264,11 @@ public class SvgExporter
                 new XAttribute("stroke-width",   strokeWidth),
                 new XAttribute("stroke-opacity", Num(_style.LineColor.A / 255.0)));
 
-            if (_style.LineStyle == LineStyleResourceId.Dashes)
-            {
-                var dash = _style.LineWidth.Millimeters;
-                path.Add(new XAttribute("stroke-dasharray", $"{Num(dash * 4)} {Num(dash * 2)}"));
-            }
+            // if (_style.LineStyle == LineStyleResourceId.Dashes)
+            // {
+            //     var dash = _style.LineWidth.Millimeters;
+            //     path.Add(new XAttribute("stroke-dasharray", $"{Num(dash * 4)} {Num(dash * 2)}"));
+            // }
 
             return path;
         }

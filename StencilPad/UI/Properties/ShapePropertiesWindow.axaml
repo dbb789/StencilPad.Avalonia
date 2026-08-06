@@ -48,10 +48,6 @@
                                                   Grid.Column="0"
                                                   SelectedIndex="{Binding StartCapIndex}"/>
 
-                        <widgets:GeometryDropdown x:Name="LineStyleDropdown"
-                                                  Grid.Column="2"
-                                                  SelectedIndex="{Binding LineStyleIndex}"/>
-
                         <widgets:GeometryDropdown x:Name="EndCapDropdown"
                                                   Grid.Column="4"
                                                   SelectedIndex="{Binding EndCapIndex}"/>

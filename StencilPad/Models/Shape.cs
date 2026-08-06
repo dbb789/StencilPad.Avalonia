@@ -51,8 +51,8 @@ public class Shape : SheetElement<Shape>, IPolygonSheetElement
         }
     }
 
-    public LineStyleResourceId _lineStyle = LineStyleResourceId.Solid;
-    public LineStyleResourceId LineStyle
+    public LineStyle _lineStyle = LineStyle.Solid;
+    public LineStyle LineStyle
     {
         get => _lineStyle;
         set
