@@ -9,7 +9,7 @@
               HorizontalAlignment="Stretch">
     <ComboBox.ItemTemplate>
       <DataTemplate>
-        <widgets:GeometryDropdownItem Path="{Binding Path}" Paint="{Binding Paint}" Height="16"/>
+        <widgets:GeometryDropdownItem Path="{Binding Path}" Paint="{Binding Paint}" Height="22"/>
       </DataTemplate>
     </ComboBox.ItemTemplate>
   </ComboBox>

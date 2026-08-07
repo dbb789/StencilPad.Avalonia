@@ -33,25 +33,29 @@ public partial class ShapePropertiesWindow : Window
         _endCapItems = new();
         _lineStyleItems = new();
 
-        CreateDropDownItems(resourceService);
-
-        DataContext = ViewModel;
         
         Loaded += (_, _) =>
         {
-            
+            CreateDropDownItems(resourceService);
+
             FillColorField.DragBegin += ViewModel.DragBegin;
             FillColorField.DragEnd += ViewModel.DragEnd;
             LineColorField.DragBegin += ViewModel.DragBegin;
             LineColorField.DragEnd += ViewModel.DragEnd;
+
+            DataContext = ViewModel;
         };
 
         Unloaded += (_, _) =>
         {
+            DataContext = null;
+            
             FillColorField.DragBegin -= ViewModel.DragBegin;
             FillColorField.DragEnd -= ViewModel.DragEnd;
             LineColorField.DragBegin -= ViewModel.DragBegin;
             LineColorField.DragEnd -= ViewModel.DragEnd;
+            
+            DestroyDropDownItems();
         };
     }
 
