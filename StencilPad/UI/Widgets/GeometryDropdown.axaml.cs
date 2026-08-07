@@ -16,12 +16,6 @@ public partial class GeometryDropdown : UserControl
         AvaloniaProperty.Register<GeometryDropdown, int>(nameof(SelectedIndex), 0,
             defaultBindingMode: BindingMode.TwoWay);
     
-    static GeometryDropdown()
-    {
-        ItemsProperty.Changed.AddClassHandler<GeometryDropdown>((field, _) => field.SyncItems());
-        SelectedIndexProperty.Changed.AddClassHandler<GeometryDropdown>((field, _) => field.SyncSelectedIndex());
-    }
-
     public IList<Entry>? Items
     {
         get => GetValue(ItemsProperty);
@@ -37,22 +31,5 @@ public partial class GeometryDropdown : UserControl
     public GeometryDropdown()
     {
         InitializeComponent();
-        SyncItems();
-        SyncSelectedIndex();
-    }
-
-    private void Dropdown_SelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        SelectedIndex = Dropdown.SelectedIndex;
-    }
-
-    private void SyncItems()
-    {
-        Dropdown.ItemsSource = Items;
-    }
-
-    private void SyncSelectedIndex()
-    {
-        Dropdown.SelectedIndex = SelectedIndex;
     }
 }

@@ -28,15 +28,17 @@ public partial class ShapePropertiesWindow : Window
                                                  settings,
                                                  resourceService,
                                                  operationService);
-        DataContext = ViewModel;
 
         _startCapItems = new();
         _endCapItems = new();
         _lineStyleItems = new();
+
+        CreateDropDownItems(resourceService);
+
+        DataContext = ViewModel;
         
         Loaded += (_, _) =>
         {
-            CreateDropDownItems(resourceService);
             
             FillColorField.DragBegin += ViewModel.DragBegin;
             FillColorField.DragEnd += ViewModel.DragEnd;
@@ -46,8 +48,6 @@ public partial class ShapePropertiesWindow : Window
 
         Unloaded += (_, _) =>
         {
-            DestroyDropDownItems();
-            
             FillColorField.DragBegin -= ViewModel.DragBegin;
             FillColorField.DragEnd -= ViewModel.DragEnd;
             LineColorField.DragBegin -= ViewModel.DragBegin;
@@ -150,7 +150,7 @@ public partial class ShapePropertiesWindow : Window
         
         var path = new SKPath();
 
-        path.AddPoly([new(-8, 0), new(8, 0)], false);
+        path.AddPoly([new(-4, 0), new(4, 0)], false);
         
         return new(path, paint);
     }

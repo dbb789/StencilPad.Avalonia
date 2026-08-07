@@ -31,17 +31,20 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
     {
         public SKPaint FillPaint = new();
         public SKPaint StrokePaint = new();
+        public SKPaint CapStrokePaint = new();
 
         public void Reset()
         {
             FillPaint.Reset();
             StrokePaint.Reset();
+            CapStrokePaint.Reset();
         }
         
         public void Dispose()
         {
             FillPaint.Dispose();
             StrokePaint.Dispose();
+            CapStrokePaint.Dispose();
         }
     }
 
@@ -98,7 +101,7 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
         DrawPath(canvas, geometry.FillPath, paint.StrokePaint);
         DrawPath(canvas, geometry.OutlinePath, paint.StrokePaint);
         DrawPath(canvas, geometry.OverlayPath, paint.FillPaint);
-        DrawPath(canvas, geometry.OverlayPath, paint.StrokePaint);
+        DrawPath(canvas, geometry.OverlayPath, paint.CapStrokePaint);
     }
     
     public void SetStyle(GeometryStyle style)
@@ -112,7 +115,8 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
 
         CreateFillPaint(style, paintHandle.Buffer.FillPaint);
         CreateStrokePaint(style, paintHandle.Buffer.StrokePaint);
-
+        CreateCapStrokePaint(style, paintHandle.Buffer.CapStrokePaint);
+        
         InvokeRendererDirty();
     }
     
@@ -208,7 +212,7 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
         return (path, _pathGeometryWalker.Closed);
     }
 
-    private void CreateStrokePaint(GeometryStyle style, SKPaint paint)
+    private void CreateCapStrokePaint(GeometryStyle style, SKPaint paint)
     {
         paint.Style = SKPaintStyle.Stroke;
         paint.Color = new SKColor(style.LineColor.R,
@@ -216,9 +220,14 @@ public class StyledGeometryRenderer : IStyledGeometryWalker, IWalkerRenderer
                                   style.LineColor.B,
                                   style.LineColor.A);
         paint.StrokeWidth = (float)style.LineWidth.Millimeters;
-        paint.PathEffect = style.LineStyle.IsSolid ? null : SKPathEffect.CreateDash(style.LineStyle.ToDashPattern(), 0);
         paint.IsAntialias = true;
         paint.IsDither = true;
+    }
+    
+    private void CreateStrokePaint(GeometryStyle style, SKPaint paint)
+    {
+        CreateCapStrokePaint(style, paint);
+        paint.PathEffect = style.LineStyle.IsSolid ? null : SKPathEffect.CreateDash(style.LineStyle.ToDashPattern(), 0);
     }
 
     private void CreateFillPaint(GeometryStyle style, SKPaint paint)

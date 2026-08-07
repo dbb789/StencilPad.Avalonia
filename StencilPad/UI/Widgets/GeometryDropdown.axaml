@@ -3,9 +3,10 @@
              xmlns:widgets="using:StencilPad.UI.Widgets"
              x:Class="StencilPad.UI.Widgets.GeometryDropdown"
              x:Name="Root">
-  <ComboBox x:Name="Dropdown"
-            SelectionChanged="Dropdown_SelectionChanged"
-            HorizontalAlignment="Stretch">
+    <ComboBox x:Name="Dropdown"
+              ItemsSource="{Binding Items, ElementName=Root}"
+              SelectedIndex="{Binding SelectedIndex, ElementName=Root, Mode=TwoWay}"
+              HorizontalAlignment="Stretch">
     <ComboBox.ItemTemplate>
       <DataTemplate>
         <widgets:GeometryDropdownItem Path="{Binding Path}" Paint="{Binding Paint}" Height="16"/>

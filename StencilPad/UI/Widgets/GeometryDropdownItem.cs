@@ -73,6 +73,11 @@ public class GeometryDropdownItem : Control
     public static readonly StyledProperty<SKPaint?> PaintProperty =
         AvaloniaProperty.Register<GeometryDropdownItem, SKPaint?>(nameof(Paint));
 
+    static GeometryDropdownItem()
+    {
+        AffectsRender<GeometryDropdownItem>(PathProperty, PaintProperty);
+    }
+    
     public SKPath? Path
     {
         get => GetValue(PathProperty);

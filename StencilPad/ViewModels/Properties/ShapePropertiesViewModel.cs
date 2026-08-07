@@ -70,14 +70,14 @@ public class ShapePropertiesViewModel : ElementPropertiesViewModel<Shape>
         }
     }
 
-    private LineStyle _lineStyle;
-    public LineStyle LineStyle
+    private int _lineStyleIndex;
+    public int LineStyleIndex
     {
-        get => _lineStyle;
+        get => _lineStyleIndex;
         set
         {
-            _lineStyle = value;
-            SetElementProperty(s => s.LineStyle = _lineStyle);
+            _lineStyleIndex = value;
+            SetElementProperty(s => s.LineStyle = GetLineStyle(value));
             OnPropertyChanged();
         }
     }
@@ -131,7 +131,7 @@ public class ShapePropertiesViewModel : ElementPropertiesViewModel<Shape>
         _endCapIndex = Mode(shape => GetCapIndex(shape.EndCap));
         OnPropertyChanged(nameof(EndCapIndex));
 
-        _lineStyle = Mode(shape => shape.LineStyle);
+        _lineStyleIndex = Mode(shape => GetLineStyleIndex(shape.LineStyle));
         OnPropertyChanged(nameof(LineStyle));
     }
 
@@ -155,5 +155,27 @@ public class ShapePropertiesViewModel : ElementPropertiesViewModel<Shape>
         }
 
         return _capIds[index];
+    }
+
+    private int GetLineStyleIndex(LineStyle lineStyle)
+    {
+        var index = _lineStyles.IndexOf(lineStyle);
+        
+        if (index < 0)
+        {
+            index = 0;
+        }
+
+        return index;
+    }
+
+    private LineStyle GetLineStyle(int index)
+    {
+        if (index < 0 || index >= _lineStyles.Count)
+        {
+            return LineStyle.Solid;
+        }
+
+        return _lineStyles[index];
     }
 }
