@@ -48,21 +48,6 @@ public record struct LineStyle
         return result;
     }
     
-    public AvaloniaList<double> AvaloniaDashPattern
-    {
-        get
-        {
-            var result = new AvaloniaList<double>();
-
-            for (int i = 0; i < _count; ++i)
-            {
-                result.Add(_elements[i].Millimeters);
-            }
-            
-            return result;
-        }
-    }
-
     public float [] ToDashPattern()
     {
         var result = new float[_count];

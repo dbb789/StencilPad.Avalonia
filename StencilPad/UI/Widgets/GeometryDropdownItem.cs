@@ -15,15 +15,26 @@ public class GeometryDropdownItem : Control
     private class DrawOperation : ICustomDrawOperation
     {
         public bool HitTest(Point p) => Bounds.Contains(p);
-        public Rect Bounds => _path.Bounds.ToAvaloniaRect();
+        public Rect Bounds => _bounds;
 
         private readonly SKPath _path;
         private readonly SKMatrix _matrix;
+        private readonly SKPaint _paint;
+        private readonly Rect _bounds;
 
-        public DrawOperation(SKPath path, SKMatrix matrix)
+        public DrawOperation(SKPath path, SKMatrix matrix, SKPaint? paint = null)
         {
             _path = new(path);
             _matrix = matrix;
+            _paint = paint ?? new SKPaint()
+            {
+                Style = SKPaintStyle.Stroke,
+                Color = SKColors.Black,
+                StrokeWidth = 0.2f,
+                IsAntialias = true
+            };
+
+            _bounds = matrix.MapRect(path.Bounds).ToAvaloniaRect().Inflate(1);
         }
 
         public void Dispose()
@@ -46,16 +57,7 @@ public class GeometryDropdownItem : Control
 
             canvas.Save();
             canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, _matrix));
-            
-            using var paint = new SKPaint
-            {
-                Style = SKPaintStyle.Stroke,
-                Color = SKColors.Black,
-                StrokeWidth = 0.2f,
-                IsAntialias = true
-            };
-
-            canvas.DrawPath(_path, paint);
+            canvas.DrawPath(_path, _paint);
             canvas.Restore();
         }
 
@@ -68,12 +70,21 @@ public class GeometryDropdownItem : Control
     public static readonly StyledProperty<SKPath?> PathProperty =
         AvaloniaProperty.Register<GeometryDropdownItem, SKPath?>(nameof(Path));
 
+    public static readonly StyledProperty<SKPaint?> PaintProperty =
+        AvaloniaProperty.Register<GeometryDropdownItem, SKPaint?>(nameof(Paint));
+
     public SKPath? Path
     {
         get => GetValue(PathProperty);
         set => SetValue(PathProperty, value);
     }
 
+    public SKPaint? Paint
+    {
+        get => GetValue(PaintProperty);
+        set => SetValue(PaintProperty, value);
+    }
+    
     public override void Render(DrawingContext dc)
     {
         if (Path is null)
@@ -91,6 +102,6 @@ public class GeometryDropdownItem : Control
         
         matrix = matrix.PostConcat(SKMatrix.CreateTranslation(offsetX, offsetY));
 
-        dc.Custom(new DrawOperation(Path, matrix));
+        dc.Custom(new DrawOperation(Path, matrix, Paint));
     }
 }

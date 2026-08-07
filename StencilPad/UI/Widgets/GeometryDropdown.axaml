@@ -4,14 +4,11 @@
              x:Class="StencilPad.UI.Widgets.GeometryDropdown"
              x:Name="Root">
   <ComboBox x:Name="Dropdown"
-            SelectionChanged="Dropdown_SelectionChanged">
+            SelectionChanged="Dropdown_SelectionChanged"
+            HorizontalAlignment="Stretch">
     <ComboBox.ItemTemplate>
       <DataTemplate>
-        <Viewbox Height="16" StretchDirection="DownOnly" Stretch="Uniform">
-          <Grid Width="80" Height="16">
-            <widgets:GeometryDropdownItem Path="{Binding Path}"/>
-          </Grid>
-        </Viewbox>
+        <widgets:GeometryDropdownItem Path="{Binding Path}" Paint="{Binding Paint}" Height="16"/>
       </DataTemplate>
     </ComboBox.ItemTemplate>
   </ComboBox>

@@ -53,7 +53,7 @@ public class ShapePropertiesViewModel : ElementPropertiesViewModel<Shape>
         set
         {
             _startCapIndex = value;
-            SetElementProperty(s => s.StartCap = _capIds[value]);
+            SetElementProperty(s => s.StartCap = GetCap(value));
             OnPropertyChanged();
         }
     }
@@ -65,7 +65,7 @@ public class ShapePropertiesViewModel : ElementPropertiesViewModel<Shape>
         set
         {
             _endCapIndex = value;
-            SetElementProperty(s => s.EndCap = _capIds[value]);
+            SetElementProperty(s => s.EndCap = GetCap(value));
             OnPropertyChanged();
         }
     }
@@ -125,13 +125,35 @@ public class ShapePropertiesViewModel : ElementPropertiesViewModel<Shape>
         _lineWidth = Mode(shape => shape.LineWidth);
         OnPropertyChanged(nameof(LineWidth));
 
-        _startCapIndex = Mode(shape => _capIds.IndexOf(shape.StartCap));
+        _startCapIndex = Mode(shape => GetCapIndex(shape.StartCap));
         OnPropertyChanged(nameof(StartCapIndex));
 
-        _endCapIndex = Mode(shape => _capIds.IndexOf(shape.EndCap));
+        _endCapIndex = Mode(shape => GetCapIndex(shape.EndCap));
         OnPropertyChanged(nameof(EndCapIndex));
 
         _lineStyle = Mode(shape => shape.LineStyle);
         OnPropertyChanged(nameof(LineStyle));
+    }
+
+    private int GetCapIndex(GeometryResourceId capId)
+    {
+        var index = _capIds.IndexOf(capId);
+        
+        if (index < 0)
+        {
+            index = 0;
+        }
+
+        return index;
+    }
+
+    private GeometryResourceId GetCap(int index)
+    {
+        if (index < 0 || index >= _capIds.Count)
+        {
+            return GeometryResourceId.None;
+        }
+
+        return _capIds[index];
     }
 }
