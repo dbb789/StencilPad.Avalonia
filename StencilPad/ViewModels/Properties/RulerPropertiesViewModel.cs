@@ -133,6 +133,7 @@ public class RulerPropertiesViewModel : ElementPropertiesViewModel<Ruler>
             }
             
             OnPropertyChanged();
+            UpdateMinMax();
         }
     }
 
@@ -158,17 +159,7 @@ public class RulerPropertiesViewModel : ElementPropertiesViewModel<Ruler>
 
     protected override void OnElementsChanged()
     {        
-        _minX = All(e => e.Transform.Apply(e.Min).X);
-        OnPropertyChanged(nameof(MinX));
-
-        _minY = All(e => e.Transform.Apply(e.Min).Y);
-        OnPropertyChanged(nameof(MinY));
-
-        _maxX = All(e => e.Transform.Apply(e.Max).X);
-        OnPropertyChanged(nameof(MaxX));
-
-        _maxY = All(e => e.Transform.Apply(e.Max).Y);
-        OnPropertyChanged(nameof(MaxY));
+        UpdateMinMax();
         
         _length = All(e => e.Length);
         OnPropertyChanged(nameof(Length));
@@ -181,5 +172,20 @@ public class RulerPropertiesViewModel : ElementPropertiesViewModel<Ruler>
 
         _fontSize = Mode(e => e.FontSize);
         OnPropertyChanged(nameof(FontSize));
+    }
+
+    private void UpdateMinMax()
+    {
+        _minX = All(e => e.Transform.Apply(e.Min).X);
+        OnPropertyChanged(nameof(MinX));
+
+        _minY = All(e => e.Transform.Apply(e.Min).Y);
+        OnPropertyChanged(nameof(MinY));
+
+        _maxX = All(e => e.Transform.Apply(e.Max).X);
+        OnPropertyChanged(nameof(MaxX));
+
+        _maxY = All(e => e.Transform.Apply(e.Max).Y);
+        OnPropertyChanged(nameof(MaxY));
     }
 }
