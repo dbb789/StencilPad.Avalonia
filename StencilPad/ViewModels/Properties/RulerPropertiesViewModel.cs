@@ -60,6 +60,9 @@ public class RulerPropertiesViewModel : ElementPropertiesViewModel<Ruler>
             }
             
             OnPropertyChanged();
+
+            // FIXME: This is a little bit hacky.
+            UpdateLength();
         }
     }
 
@@ -77,6 +80,7 @@ public class RulerPropertiesViewModel : ElementPropertiesViewModel<Ruler>
             }
             
             OnPropertyChanged();
+            UpdateLength();
         }
     }
     
@@ -94,6 +98,7 @@ public class RulerPropertiesViewModel : ElementPropertiesViewModel<Ruler>
             }
 
             OnPropertyChanged();
+            UpdateLength();
         }
     }
 
@@ -111,6 +116,7 @@ public class RulerPropertiesViewModel : ElementPropertiesViewModel<Ruler>
             }
             
             OnPropertyChanged();
+            UpdateLength();
         }
     }
 
@@ -160,9 +166,7 @@ public class RulerPropertiesViewModel : ElementPropertiesViewModel<Ruler>
     protected override void OnElementsChanged()
     {        
         UpdateMinMax();
-        
-        _length = All(e => e.Length);
-        OnPropertyChanged(nameof(Length));
+        UpdateLength();
 
         _color = Mode(e => e.Color);
         OnPropertyChanged(nameof(Color));
@@ -187,5 +191,11 @@ public class RulerPropertiesViewModel : ElementPropertiesViewModel<Ruler>
 
         _maxY = All(e => e.Transform.Apply(e.Max).Y);
         OnPropertyChanged(nameof(MaxY));
+    }
+
+    private void UpdateLength()
+    {
+        _length = All(e => e.Length);
+        OnPropertyChanged(nameof(Length));
     }
 }
