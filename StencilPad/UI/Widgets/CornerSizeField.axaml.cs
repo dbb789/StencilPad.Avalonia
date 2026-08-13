@@ -64,6 +64,7 @@ public partial class CornerSizeField : UserControl
     {
         InitializeComponent();
         SizeModeComboBox.ItemsSource = SizeModes;
+        ValueField.Minimum = Unit.Zero;
         ValueField.PropertyChanged += ValueField_PropertyChanged;
         SyncControls();
     }
