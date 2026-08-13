@@ -17,7 +17,12 @@ public enum CornerSizeField_Mode
 public class CornerSizeField_Item
 {
     public CornerSizeField_Mode Value { get; set; }
-    public string Description { get; set; } = string.Empty;
+    public string Description { get; set; } = "";
+
+    public override string ToString()
+    {
+        return Description;
+    }
 }
 
 public partial class CornerSizeField : UserControl

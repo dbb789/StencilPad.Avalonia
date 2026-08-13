@@ -104,15 +104,7 @@ public partial class BaseUnitField : UserControl
         UpdateTextValue();
     }
 
-    private void ValueField_KeyDown(object? sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Enter)
-        {
-            ApplyValueField();
-        }
-    }
-    
-    private void OnSpin(object? sender, SpinEventArgs e)
+    private void Spinner_Spin(object? sender, SpinEventArgs e)
     {
         ApplyValueField();
 
@@ -130,11 +122,17 @@ public partial class BaseUnitField : UserControl
 
         e.Handled = true;
     }
+    
+    private void ValueField_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            ApplyValueField();
+        }
+    }
 
     private Unit GetStep()
     {
-        // NOTE: Avalonia has no WPF-style global Keyboard.IsKeyDown polling API.
-        // This prototype always uses the smaller increment for the spinner buttons.
         if (UnitType == UnitType.Millimeters)
         {
             return Unit.FromMillimeters(0.1);

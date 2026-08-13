@@ -16,11 +16,12 @@
 
     </UserControl.Styles>
     
-    <ButtonSpinner Classes="BaseUnitField" Spin="OnSpin"
+    <ButtonSpinner Classes="BaseUnitField" Spin="Spinner_Spin"
                    Margin="0"
                    Padding="0"
                    BorderThickness="0">
         <TextBox x:Name="ValueField"
+                 KeyDown="ValueField_KeyDown"
                  CornerRadius="0"/>
     </ButtonSpinner>
 </UserControl>
