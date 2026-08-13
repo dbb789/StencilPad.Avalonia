@@ -80,6 +80,7 @@ public partial class BaseUnitField : UserControl
     {
         InitializeComponent();
         UpdateTextValue();
+        UpdateValidSpinDirection();
     }
 
     private void OnValueRelatedChanged()
@@ -96,6 +97,31 @@ public partial class BaseUnitField : UserControl
         }
 
         UpdateTextValue();
+        UpdateValidSpinDirection();
+    }
+
+    private void UpdateValidSpinDirection()
+    {
+        var direction = ValidSpinDirections.None;
+
+        if (Value is { } value)
+        {
+            if (value < Maximum)
+            {
+                direction |= ValidSpinDirections.Increase;
+            }
+
+            if (value > Minimum)
+            {
+                direction |= ValidSpinDirections.Decrease;
+            }
+        }
+        else
+        {
+            direction = ValidSpinDirections.Increase | ValidSpinDirections.Decrease;
+        }
+
+        Spinner.ValidSpinDirection = direction;
     }
 
     private void OnUnitSettingsChanged()

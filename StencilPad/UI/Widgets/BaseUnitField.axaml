@@ -16,7 +16,7 @@
 
     </UserControl.Styles>
     
-    <ButtonSpinner Classes="BaseUnitField" Spin="Spinner_Spin"
+    <ButtonSpinner x:Name="Spinner" Classes="BaseUnitField" Spin="Spinner_Spin"
                    Margin="0"
                    Padding="0"
                    BorderThickness="0">
