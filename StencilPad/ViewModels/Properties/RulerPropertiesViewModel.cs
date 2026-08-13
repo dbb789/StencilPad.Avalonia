@@ -56,7 +56,7 @@ public class RulerPropertiesViewModel : ElementPropertiesViewModel<Ruler>
 
             if (_minX is not null)
             {
-                SetElementProperty(e => e.Min = e.Min with { X = _minX.Value });
+                SetElementProperty(e => e.Min = e.Transform.WithTransformedX(e.Min, _minX.Value));
             }
             
             OnPropertyChanged();
@@ -73,7 +73,7 @@ public class RulerPropertiesViewModel : ElementPropertiesViewModel<Ruler>
 
             if (_minY is not null)
             {
-                SetElementProperty(e => e.Min = e.Min with { Y = _minY.Value });
+                SetElementProperty(e => e.Min = e.Transform.WithTransformedY(e.Min, _minY.Value));
             }
             
             OnPropertyChanged();
@@ -90,7 +90,7 @@ public class RulerPropertiesViewModel : ElementPropertiesViewModel<Ruler>
 
             if (_maxX is not null)
             {
-                SetElementProperty(e => e.Max = e.Max with { X = _maxX.Value });
+                SetElementProperty(e => e.Max = e.Transform.WithTransformedX(e.Max, _maxX.Value));
             }
 
             OnPropertyChanged();
@@ -107,7 +107,7 @@ public class RulerPropertiesViewModel : ElementPropertiesViewModel<Ruler>
 
             if (_maxY is not null)
             {
-                SetElementProperty(e => e.Max = e.Max with { Y = _maxY.Value });
+                SetElementProperty(e => e.Max = e.Transform.WithTransformedY(e.Max, _maxY.Value));
             }
             
             OnPropertyChanged();
@@ -158,16 +158,16 @@ public class RulerPropertiesViewModel : ElementPropertiesViewModel<Ruler>
 
     protected override void OnElementsChanged()
     {        
-        _minX = All(e => e.Min.X);
+        _minX = All(e => e.Transform.Apply(e.Min).X);
         OnPropertyChanged(nameof(MinX));
 
-        _minY = All(e => e.Min.Y);
+        _minY = All(e => e.Transform.Apply(e.Min).Y);
         OnPropertyChanged(nameof(MinY));
 
-        _maxX = All(e => e.Max.X);
+        _maxX = All(e => e.Transform.Apply(e.Max).X);
         OnPropertyChanged(nameof(MaxX));
 
-        _maxY = All(e => e.Max.Y);
+        _maxY = All(e => e.Transform.Apply(e.Max).Y);
         OnPropertyChanged(nameof(MaxY));
         
         _length = All(e => e.Length);

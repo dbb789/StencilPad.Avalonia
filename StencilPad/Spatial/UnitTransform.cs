@@ -1,4 +1,3 @@
-using Avalonia.Media;
 using SkiaSharp;
 
 namespace StencilPad.Spatial;
@@ -24,20 +23,6 @@ public readonly record struct UnitTransform
      : this(position, 0m)
     { }
 
-    public Transform CreateGroupTransform()
-    {
-        var group = new TransformGroup();
-        
-        if (Angle != 0m)
-        {
-            group.Children.Add(new RotateTransform((double)Angle));
-        }
-        
-        group.Children.Add(new TranslateTransform(Position.X.Millimeters, Position.Y.Millimeters));
-
-        return group;
-    }
-
     public SKMatrix CreateMatrix()
     {
         var matrix = SKMatrix.CreateTranslation((float)Position.X.Millimeters,
@@ -58,7 +43,7 @@ public readonly record struct UnitTransform
             return point + Position;
         }
 
-        var angleRadians = (double)Angle * (Math.PI / 180.0);
+        var angleRadians = (double)Angle * MathUtil.Deg2Rad;
         var cos = Math.Cos(angleRadians);
         var sin = Math.Sin(angleRadians);
 
@@ -78,7 +63,7 @@ public readonly record struct UnitTransform
             return vector;
         }
 
-        var angleRadians = (double)Angle * (Math.PI / 180.0);
+        var angleRadians = (double)Angle * MathUtil.Deg2Rad;
         var cos = Math.Cos(angleRadians);
         var sin = Math.Sin(angleRadians);
 
@@ -100,7 +85,7 @@ public readonly record struct UnitTransform
             return p;
         }
 
-        var angleRadians = (double)Angle * (Math.PI / 180.0);
+        var angleRadians = (double)Angle * MathUtil.Deg2Rad;
         var cos = Math.Cos(angleRadians);
         var sin = Math.Sin(angleRadians);
 
@@ -121,7 +106,7 @@ public readonly record struct UnitTransform
         }
 
         var invAngle = -Angle;
-        var angleRadians = (double)invAngle * (Math.PI / 180.0);
+        var angleRadians = (double)invAngle * MathUtil.Deg2Rad;
         var cos = Math.Cos(angleRadians);
         var sin = Math.Sin(angleRadians);
 
@@ -132,6 +117,16 @@ public readonly record struct UnitTransform
         var ry = (x * sin) + (y * cos);
 
         return new UnitTransform(new Unit2D(Unit.FromMillimeters(rx), Unit.FromMillimeters(ry)), invAngle);
+    }
+    
+    public Unit2D WithTransformedX(Unit2D point, Unit x)
+    {
+        return InverseApply(Apply(point) with { X = x });
+    }
+    
+    public Unit2D WithTransformedY(Unit2D point, Unit y)
+    {
+        return InverseApply(Apply(point) with { Y = y });
     }
 
     public static UnitTransform operator *(UnitTransform t1, UnitTransform t2)
