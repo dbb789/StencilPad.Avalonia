@@ -1,24 +1,45 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:widgets="using:StencilPad.UI.Widgets"
              x:Class="StencilPad.UI.Widgets.CornerSizeField"
              x:Name="Root">
+  <UserControl.Styles>
+    <!-- Match the spinner-button width/border styling used by BaseUnitField's ButtonSpinner. -->
+    <Style Selector="NumericUpDown.CornerSizeField /template/ ButtonSpinner#PART_Spinner /template/ RepeatButton#PART_IncreaseButton">
+      <Setter Property="MinWidth" Value="24"/>
+    </Style>
+
+    <Style Selector="NumericUpDown.CornerSizeField /template/ ButtonSpinner#PART_Spinner /template/ RepeatButton#PART_DecreaseButton">
+      <Setter Property="MinWidth" Value="24"/>
+    </Style>
+  </UserControl.Styles>
+
   <Grid>
     <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="132" />
+        <ColumnDefinition Width="2" />
       <ColumnDefinition Width="Auto" />
     </Grid.ColumnDefinitions>
 
-    <TextBox x:Name="ValueField"
-             Grid.Column="0"
-             KeyDown="ValueField_KeyDown"
-             LostFocus="ValueField_LostFocus"
-             VerticalContentAlignment="Center"
-             Padding="4,2" />
+    <widgets:BaseUnitField x:Name="ValueField"
+                           Grid.Column="0"
+                           VerticalContentAlignment="Center" />
+
+    <NumericUpDown x:Name="PercentField"
+                   Classes="CornerSizeField"
+                   Grid.Column="0"
+                   CornerRadius="0"
+                   Minimum="0"
+                   Maximum="100"
+                   Increment="1"
+                   FormatString="0.###"
+                   Value="0"
+                   VerticalContentAlignment="Center"
+                   ValueChanged="PercentField_ValueChanged" />
 
     <ComboBox x:Name="SizeModeComboBox"
-              Grid.Column="1"
-              Margin="4,0,0,0"
-              MinWidth="60"
+              Grid.Column="2"
+              Width="72"
               SelectionChanged="SizeModeComboBox_SelectionChanged" />
   </Grid>
 </UserControl>

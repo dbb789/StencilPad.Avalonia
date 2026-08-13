@@ -1,8 +1,6 @@
-using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
-using Avalonia.Input;
 using StencilPad.Spatial;
 
 namespace StencilPad.UI.Widgets;
@@ -35,10 +33,6 @@ public partial class CornerSizeField : UserControl
         AvaloniaProperty.Register<CornerSizeField, CornerSizeField_Mode>(nameof(SizeMode), CornerSizeField_Mode.Millimeters,
             defaultBindingMode: BindingMode.TwoWay);
 
-    public static readonly StyledProperty<string> TextValueProperty =
-        AvaloniaProperty.Register<CornerSizeField, string>(nameof(TextValue), "0",
-            defaultBindingMode: BindingMode.TwoWay);
-
     private static readonly IReadOnlyList<CornerSizeField_Item> SizeModes =
     [
         new() { Value = CornerSizeField_Mode.Millimeters, Description = "mm" },
@@ -50,9 +44,8 @@ public partial class CornerSizeField : UserControl
 
     static CornerSizeField()
     {
-        ValueProperty.Changed.AddClassHandler<CornerSizeField>((field, e) => field.OnValueChanged(e));
-        SizeModeProperty.Changed.AddClassHandler<CornerSizeField>((field, e) => field.OnValueChanged(e));
-        TextValueProperty.Changed.AddClassHandler<CornerSizeField>((field, e) => field.OnValueChanged(e));
+        ValueProperty.Changed.AddClassHandler<CornerSizeField>((field, _) => field.OnValueOrModeChanged());
+        SizeModeProperty.Changed.AddClassHandler<CornerSizeField>((field, _) => field.OnValueOrModeChanged());
     }
 
     public CornerSize Value
@@ -67,30 +60,56 @@ public partial class CornerSizeField : UserControl
         set => SetValue(SizeModeProperty, value);
     }
 
-    public string TextValue
-    {
-        get => GetValue(TextValueProperty);
-        set => SetValue(TextValueProperty, value);
-    }
-
     public CornerSizeField()
     {
         InitializeComponent();
         SizeModeComboBox.ItemsSource = SizeModes;
+        ValueField.PropertyChanged += ValueField_PropertyChanged;
         SyncControls();
     }
 
-    private void ValueField_KeyDown(object? sender, KeyEventArgs e)
+    private void ValueField_PropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
-        if (e.Key == Key.Enter)
+        if (_isUpdating)
         {
-            ApplyTextValue();
+            return;
+        }
+
+        if (e.Property == BaseUnitField.ValueProperty && ValueField.Value is { } unit)
+        {
+            _isUpdating = true;
+
+            try
+            {
+                Value = CornerSize.FromUnit(unit);
+            }
+            finally
+            {
+                _isUpdating = false;
+            }
         }
     }
 
-    private void ValueField_LostFocus(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    private void PercentField_ValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
     {
-        ApplyTextValue();
+        if (_isUpdating)
+        {
+            return;
+        }
+
+        if (e.NewValue is { } percent)
+        {
+            _isUpdating = true;
+
+            try
+            {
+                Value = CornerSize.FromProportion((double)percent / 100.0);
+            }
+            finally
+            {
+                _isUpdating = false;
+            }
+        }
     }
 
     private void SizeModeComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -106,12 +125,7 @@ public partial class CornerSizeField : UserControl
         }
     }
 
-    private void ApplyTextValue()
-    {
-        TextValue = ValueField.Text ?? string.Empty;
-    }
-
-    private void OnValueChanged(AvaloniaPropertyChangedEventArgs e)
+    private void OnValueOrModeChanged()
     {
         if (_isUpdating)
         {
@@ -122,48 +136,6 @@ public partial class CornerSizeField : UserControl
 
         try
         {
-            if (e.Property == ValueProperty || e.Property == SizeModeProperty)
-            {
-                var size = Value;
-
-                if (SizeMode == CornerSizeField_Mode.Proportion)
-                {
-                    if (size.IsProportion)
-                    {
-                        TextValue = (size.Proportion * 100).ToString("0.###", CultureInfo.InvariantCulture);
-                    }
-                }
-                else
-                {
-                    var unitType = SizeMode == CornerSizeField_Mode.Inches ? UnitType.Inches : UnitType.Millimeters;
-
-                    if (size.IsUnit)
-                    {
-                        TextValue = size.Unit.ToType(unitType).ToString("0.###", CultureInfo.InvariantCulture);
-                    }
-                }
-            }
-
-            if (e.Property == TextValueProperty || e.Property == SizeModeProperty)
-            {
-                if (SizeMode == CornerSizeField_Mode.Proportion)
-                {
-                    if (double.TryParse(TextValue, NumberStyles.Any, CultureInfo.InvariantCulture, out var pct))
-                    {
-                        Value = CornerSize.FromProportion(pct / 100.0);
-                    }
-                }
-                else
-                {
-                    var unitType = SizeMode == CornerSizeField_Mode.Inches ? UnitType.Inches : UnitType.Millimeters;
-
-                    if (Unit.TryParse(TextValue, unitType, out var parsedUnit))
-                    {
-                        Value = CornerSize.FromUnit(parsedUnit);
-                    }
-                }
-            }
-
             SyncControls();
         }
         finally
@@ -174,7 +146,28 @@ public partial class CornerSizeField : UserControl
 
     private void SyncControls()
     {
-        ValueField.Text = TextValue;
         SizeModeComboBox.SelectedItem = SizeModes.FirstOrDefault(x => x.Value == SizeMode);
+
+        var isProportion = SizeMode == CornerSizeField_Mode.Proportion;
+
+        ValueField.IsVisible = !isProportion;
+        PercentField.IsVisible = isProportion;
+
+        if (isProportion)
+        {
+            if (Value.IsProportion)
+            {
+                PercentField.Value = (decimal)(Value.Proportion * 100);
+            }
+        }
+        else
+        {
+            ValueField.UnitType = SizeMode == CornerSizeField_Mode.Inches ? UnitType.Inches : UnitType.Millimeters;
+
+            if (Value.IsUnit)
+            {
+                ValueField.Value = Value.Unit;
+            }
+        }
     }
 }
