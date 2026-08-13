@@ -111,25 +111,24 @@ public partial class BaseUnitField : UserControl
             ApplyValueField();
         }
     }
-
-    private void Up_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    
+    private void OnSpin(object? sender, SpinEventArgs e)
     {
         ApplyValueField();
 
+        var step = GetStep();
+
+        if (e.Direction == SpinDirection.Decrease)
+        {
+            step = -step;
+        }
+        
         if (Value is not null)
         {
-            Value = ClampValue(Value.Value + GetStep());
+            Value = ClampValue(Value.Value + step);
         }
-    }
 
-    private void Down_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-    {
-        ApplyValueField();
-
-        if (Value is not null)
-        {
-            Value = ClampValue(Value.Value - GetStep());
-        }
+        e.Handled = true;
     }
 
     private Unit GetStep()
@@ -146,7 +145,7 @@ public partial class BaseUnitField : UserControl
 
     private void ApplyValueField()
     {
-        var currentText = ValueField.Text ?? string.Empty;
+        var currentText = ValueField.Text ?? "";
 
         if (_textValue == currentText)
         {
@@ -172,8 +171,8 @@ public partial class BaseUnitField : UserControl
     {
         if (Value is null)
         {
-            _textValue = string.Empty;
-            ValueField.Text = string.Empty;
+            _textValue = "";
+            ValueField.Text = "";
             return;
         }
 

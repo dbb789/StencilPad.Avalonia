@@ -1,38 +1,26 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:widgets="using:StencilPad.UI.Widgets"
              x:Class="StencilPad.UI.Widgets.BaseUnitField"
              x:Name="Root">
-  <Grid>
-    <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="*" />
-      <ColumnDefinition Width="Auto" />
-    </Grid.ColumnDefinitions>
-    
-    <TextBox x:Name="ValueField"
-             Grid.Column="0"
-             KeyDown="ValueField_KeyDown"
-             VerticalContentAlignment="Center"
-             Padding="2" />
+    <UserControl.Styles>
+        <Style Selector="ButtonSpinner.BaseUnitField /template/ RepeatButton#PART_IncreaseButton">
+            <Setter Property="MinWidth" Value="24"/>
+            <Setter Property="BorderThickness" Value="0,1,1,1"/>
+        </Style>
+        
+        <Style Selector="ButtonSpinner.BaseUnitField /template/ RepeatButton#PART_DecreaseButton">
+            <Setter Property="MinWidth" Value="24"/>
+            <Setter Property="BorderThickness" Value="0,1,1,1"/>
+        </Style>
 
-    <Grid Grid.Column="1" Margin="2,0">
-      <Grid.RowDefinitions>
-        <RowDefinition Height="12" />
-        <RowDefinition Height="12" />
-      </Grid.RowDefinitions>
-      <RepeatButton x:Name="UpButton"
-                    Grid.Row="0"
-                    Width="16"
-                    FontSize="6"
-                    Content="▲"
-                    Click="Up_Click"
-                    Focusable="False" />
-      <RepeatButton x:Name="DownButton"
-                    Grid.Row="1"
-                    Width="16"
-                    FontSize="6"
-                    Content="▼"
-                    Click="Down_Click"
-                    Focusable="False" />
-    </Grid>
-  </Grid>
+    </UserControl.Styles>
+    
+    <ButtonSpinner Classes="BaseUnitField" Spin="OnSpin"
+                   Margin="0"
+                   Padding="0"
+                   BorderThickness="0">
+        <TextBox x:Name="ValueField"
+                 CornerRadius="0"/>
+    </ButtonSpinner>
 </UserControl>
