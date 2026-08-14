@@ -46,6 +46,10 @@
     <DefineConstants>$(DefineConstants);SP_LINUX</DefineConstants>
   </PropertyGroup>
 
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('linux'))">
+    <ProjectReference Include="..\StencilPad.Linux\StencilPad.Linux.csproj" />
+  </ItemGroup>
+
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('osx'))">
     <TargetFrameworks>net10.0</TargetFrameworks>
     <DefineConstants>$(DefineConstants);SP_OSX</DefineConstants>
