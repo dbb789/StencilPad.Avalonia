@@ -5,17 +5,6 @@ using StencilPad.Services;
 
 namespace StencilPad.OSX.Services;
 
-// Uses the native AppKit print pipeline (NSPrintOperation/NSPrintPanel via
-// PDFKit) rather than shelling out to CUPS directly - this gives the same
-// native "Print" sheet (printer picker, copies, page range, paper size,
-// etc.) that macOS apps normally show, at the cost of only being buildable
-// for net10.0-macos.
-//
-// The document itself is still produced by the shared PdfExporter (the
-// same renderer used by File > Export > PDF and by LinuxPrintService), so
-// there's no separate Skia/rendering code to maintain here - PDFKit just
-// needs a PDFDocument to hand to NSPrintOperation, which already knows how
-// to size/rotate pages and talks to CUPS under the hood on our behalf.
 public class OSXPrintService : IPrintService
 {
     private readonly PdfExporter _pdfExporter;
@@ -46,8 +35,14 @@ public class OSXPrintService : IPrintService
                 {
                     throw new InvalidOperationException("PDF document has no pages.");
                 }
-                
-                pdfView.Frame = firstPage.GetBoundsForBox(PdfDisplayBox.Media);
+
+                pdfView.AutoScales = false;
+                pdfView.ScaleFactor = 1.0f;
+                pdfView.PageShadowsEnabled = false;
+                pdfView.BackgroundColor = NSColor.White;
+
+                var pageBounds = firstPage.GetBoundsForBox(PdfDisplayBox.Media);
+                pdfView.Frame = new CGRect(CGPoint.Empty, pageBounds.Size);
 
                 using var printInfo = NSPrintInfo.SharedPrintInfo;
 
