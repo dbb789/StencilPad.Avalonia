@@ -13,12 +13,12 @@
         WindowStartupLocation="CenterScreen">
 
     <Window.KeyBindings>
-        <KeyBinding Command="{Binding SelectedTab.SelectAllCommand}" Gesture="Ctrl+A"/>
-        <KeyBinding Command="{Binding SelectedTab.ClearSelectionCommand}" Gesture="Ctrl+A"/>
-        <KeyBinding Command="{Binding SelectedTab.CutCommand}" Gesture="Ctrl+X"/>
-        <KeyBinding Command="{Binding SelectedTab.CopyCommand}" Gesture="Ctrl+C"/>
-        <KeyBinding Command="{Binding SelectedTab.PasteCommand}" Gesture="Ctrl+V"/>
-        <KeyBinding Command="{Binding SelectedTab.DeleteCommand}" Gesture="Delete"/>
+        <KeyBinding Command="{Binding SelectedTab?.SelectAllCommand}" Gesture="Ctrl+A"/>
+        <KeyBinding Command="{Binding SelectedTab?.ClearSelectionCommand}" Gesture="Ctrl+A"/>
+        <KeyBinding Command="{Binding SelectedTab?.CutCommand}" Gesture="Ctrl+X"/>
+        <KeyBinding Command="{Binding SelectedTab?.CopyCommand}" Gesture="Ctrl+C"/>
+        <KeyBinding Command="{Binding SelectedTab?.PasteCommand}" Gesture="Ctrl+V"/>
+        <KeyBinding Command="{Binding SelectedTab?.DeleteCommand}" Gesture="Delete"/>
         <KeyBinding Command="{Binding AddSheetCommand}" Gesture="Ctrl+T"/>
         <KeyBinding Command="{Binding NewProjectCommand}" Gesture="Ctrl+N"/>
         <KeyBinding Command="{Binding OpenProjectCommand}" Gesture="Ctrl+O"/>
@@ -53,13 +53,13 @@
                 <MenuItem Header="_Undo (Ctrl+Z)" Command="{Binding UndoCommand}"/>
                 <MenuItem Header="_Redo (Ctrl+Y)" Command="{Binding RedoCommand}"/>
                 <Separator/>
-                <MenuItem Header="Cu_t (Ctrl+X)" Command="{Binding SelectedTab.CutCommand}"/>
-                <MenuItem Header="_Copy (Ctrl+C)" Command="{Binding SelectedTab.CopyCommand}"/>
-                <MenuItem Header="_Paste (Ctrl+V)" Command="{Binding SelectedTab.PasteCommand}"/>
-                <MenuItem Header="_Delete (Del)" Command="{Binding SelectedTab.DeleteCommand}"/>
+                <MenuItem Header="Cu_t (Ctrl+X)" Command="{Binding SelectedTab?.CutCommand}"/>
+                <MenuItem Header="_Copy (Ctrl+C)" Command="{Binding SelectedTab?.CopyCommand}"/>
+                <MenuItem Header="_Paste (Ctrl+V)" Command="{Binding SelectedTab?.PasteCommand}"/>
+                <MenuItem Header="_Delete (Del)" Command="{Binding SelectedTab?.DeleteCommand}"/>
                 <Separator/>
-                <MenuItem Header="Select _All (Ctrl+A)" Command="{Binding SelectedTab.SelectAllCommand}"/>
-                <MenuItem Header="Clear Selection" Command="{Binding SelectedTab.ClearSelectionCommand}"/>
+                <MenuItem Header="Select _All (Ctrl+A)" Command="{Binding SelectedTab?.SelectAllCommand}"/>
+                <MenuItem Header="Clear Selection" Command="{Binding SelectedTab?.ClearSelectionCommand}"/>
             </MenuItem>
             
             <MenuItem Header="_Settings">
@@ -84,36 +84,36 @@
             <MenuItem Header="_Layout">
                 <MenuItem Header="Page Size">
                     <MenuItem Header="A5" ToggleType="CheckBox"
-                              IsChecked="{local:EnumBinding SelectedTab.SizeType,
+                              IsChecked="{local:EnumBinding SelectedTab?.SizeType,
                                          TargetValue={x:Static models:SheetSizeType.A5}}"/>
                     <MenuItem Header="A4" ToggleType="CheckBox"
-                              IsChecked="{local:EnumBinding SelectedTab.SizeType,
+                              IsChecked="{local:EnumBinding SelectedTab?.SizeType,
                                          TargetValue={x:Static models:SheetSizeType.A4}}"/>
                     <MenuItem Header="A3" ToggleType="CheckBox"
-                              IsChecked="{local:EnumBinding SelectedTab.SizeType,
+                              IsChecked="{local:EnumBinding SelectedTab?.SizeType,
                                          TargetValue={x:Static models:SheetSizeType.A3}}"/>
                     <MenuItem Header="A2" ToggleType="CheckBox"
-                              IsChecked="{local:EnumBinding SelectedTab.SizeType,
+                              IsChecked="{local:EnumBinding SelectedTab?.SizeType,
                                          TargetValue={x:Static models:SheetSizeType.A2}}"/>
                     <MenuItem Header="A1" ToggleType="CheckBox"
-                              IsChecked="{local:EnumBinding SelectedTab.SizeType,
+                              IsChecked="{local:EnumBinding SelectedTab?.SizeType,
                                          TargetValue={x:Static models:SheetSizeType.A1}}"/>
                     <MenuItem Header="A0" ToggleType="CheckBox"
-                              IsChecked="{local:EnumBinding SelectedTab.SizeType,
+                              IsChecked="{local:EnumBinding SelectedTab?.SizeType,
                                          TargetValue={x:Static models:SheetSizeType.A0}}"/>
                     <MenuItem Header="Legal" ToggleType="CheckBox"
-                              IsChecked="{local:EnumBinding SelectedTab.SizeType,
+                              IsChecked="{local:EnumBinding SelectedTab?.SizeType,
                                          TargetValue={x:Static models:SheetSizeType.Legal}}"/>
                     <MenuItem Header="Letter" ToggleType="CheckBox"
-                              IsChecked="{local:EnumBinding SelectedTab.SizeType,
+                              IsChecked="{local:EnumBinding SelectedTab?.SizeType,
                                          TargetValue={x:Static models:SheetSizeType.Letter}}"/>
                 </MenuItem>
                 <MenuItem Header="Orientation">
                     <MenuItem Header="Portrait" ToggleType="CheckBox"
-                              IsChecked="{local:EnumBinding SelectedTab.Orientation,
+                              IsChecked="{local:EnumBinding SelectedTab?.Orientation,
                                          TargetValue={x:Static models:SheetOrientation.Portrait}}"/>
                     <MenuItem Header="Landscape" ToggleType="CheckBox"
-                              IsChecked="{local:EnumBinding SelectedTab.Orientation,
+                              IsChecked="{local:EnumBinding SelectedTab?.Orientation,
                                          TargetValue={x:Static models:SheetOrientation.Landscape}}"/>
                 </MenuItem>
             </MenuItem>
@@ -121,16 +121,16 @@
         </Menu>
 
         <DockPanel DockPanel.Dock="Bottom" LastChildFill="False">
-            <TextBlock DockPanel.Dock="Left" Text="{Binding SelectedTab.HintText}"/>
+            <TextBlock DockPanel.Dock="Left" Text="{Binding SelectedTab?.HintText}"/>
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                 <Slider Name="RectangleHeight"
                         Width="160" Orientation="Horizontal" HorizontalAlignment="Left"
-                        Value="{Binding SelectedTab.Zoom}" Minimum="0.1" Maximum="5"
+                        Value="{Binding SelectedTab?.Zoom, TargetNullValue=1.0}" Minimum="0.1" Maximum="5"
                         SmallChange="0.1" LargeChange="1"
                         TickPlacement="None"
                         IsSnapToTickEnabled="True"
                         TickFrequency="0.1"/>
-                <TextBlock Text="{Binding SelectedTab.Zoom, StringFormat={}{0:P0}}" VerticalAlignment="Center" Margin="4"/>
+                <TextBlock Text="{Binding SelectedTab?.Zoom, StringFormat={}{0:P0}}" VerticalAlignment="Center" Margin="4"/>
             </StackPanel>
         </DockPanel>
 

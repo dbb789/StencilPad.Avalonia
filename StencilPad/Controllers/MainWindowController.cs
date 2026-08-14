@@ -47,7 +47,7 @@ public class MainWindowController
         _importExportService = importExportService;
         _tabControllerFactory = tabControllerFactory;
         _undoStack = new();
-        
+
         _viewModel.NewProjectCommand = new AsyncRelayCommand(NewProject);
         _viewModel.GridSettingsCommand = new AsyncRelayCommand(GridSettings);
         _viewModel.UnitScaleCommand = new AsyncRelayCommand(UnitScale);

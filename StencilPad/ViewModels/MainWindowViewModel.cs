@@ -9,11 +9,7 @@ public class MainWindowViewModel : ViewModelBase
     public ObservableCollection<SheetTabViewModel> Tabs { get; } = new();
 
     private Project? _project = null;
-    public Project? Project
-    {
-        get => _project;
-        set => SetProperty(ref _project, value);
-    }
+    public Project? Project => _project;
 
     private SheetTabViewModel? _selectedTab;
     public SheetTabViewModel? SelectedTab
@@ -48,7 +44,8 @@ public class MainWindowViewModel : ViewModelBase
     public IRelayCommand ExportPdfCommand { get; set; } = null!;
     public Action<int, int>? SheetTabReordered = null;
 
-    public MainWindowViewModel()
-    { }
-
+    public MainWindowViewModel(Project project)
+    {
+        _project = project;
+    }
 }
