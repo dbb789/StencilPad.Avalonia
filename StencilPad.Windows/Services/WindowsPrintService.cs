@@ -29,7 +29,6 @@ public class WindowsPrintService : IPrintService
         if (printDialog.ShowDialog() == true)
         {
             var tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.xps");
-
             {
                 const double MmPerInch = 25.4;
                 const double PointsPerInch = 72.0;
@@ -88,9 +87,6 @@ public class WindowsPrintService : IPrintService
             writer.Write(fixedDocSeq, printDialog.PrintTicket);
         }
     
-        // Implement the printing logic for Windows here
-        // For example, you can use the System.Drawing.Printing namespace or any other printing library
-        // This is a placeholder implementation that always returns true
         return Task.FromResult(true);
     }
 }
