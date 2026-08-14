@@ -25,29 +25,15 @@ public class OSXPrintService : IPrintService
                 _pdfExporter.Export(sheet, tempPath);
 
                 using var document = new PdfDocument(NSUrl.FromFilename(tempPath));
-                using var pdfView = new PdfView();
-
-                pdfView.Document = document;
-
-                using var firstPage = document.GetPage(0);
-
-                if (firstPage is null)
-                {
-                    throw new InvalidOperationException("PDF document has no pages.");
-                }
-
-                pdfView.AutoScales = false;
-                pdfView.ScaleFactor = 1.0f;
-                pdfView.PageShadowsEnabled = false;
-                pdfView.BackgroundColor = NSColor.White;
-
-                var pageBounds = firstPage.GetBoundsForBox(PdfDisplayBox.Media);
-                pdfView.Frame = new CGRect(CGPoint.Empty, pageBounds.Size);
 
                 using var printInfo = NSPrintInfo.SharedPrintInfo;
+                using var printOperation = document.GetPrintOperation(printInfo, PdfPrintScalingMode.None, true);
 
-                using var printOperation = NSPrintOperation.FromView(pdfView, printInfo);
-
+                if (printOperation is null)
+                {
+                    throw new InvalidOperationException("Failed to create print operation.");
+                }
+                
                 printOperation.ShowsPrintPanel = true;
                 printOperation.ShowsProgressPanel = true;
 
