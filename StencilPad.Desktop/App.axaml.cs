@@ -15,7 +15,9 @@ using StencilPad.UI;
 using StencilPad.UI.Dialogs;
 using StencilPad.ViewModels;
 
+#if SP_WINDOWS
 using StencilPad.Windows.Services;
+#endif
 
 namespace StencilPad.Desktop;
 
@@ -75,8 +77,12 @@ public partial class App : Application
         services.AddSingleton<MainWindowController>();
         services.AddSingleton<AppController>();
 
+#if SP_WINDOWS
         services.AddSingleton<IPrintService, WindowsPrintService>();
-        
+#else
+	services.AddSingleton<IPrintService, NullPrintService>();
+#endif
+
         services.AddLogging(builder =>
         {
             builder.AddDebug();
