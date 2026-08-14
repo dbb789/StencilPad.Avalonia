@@ -44,6 +44,11 @@ public class OSXPrintService : IPrintService
 
             return Task.FromResult(true);
         }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Error printing document: {e.Message}");
+            return Task.FromResult(false);
+        }
         finally
         {
             File.Delete(tempPath);

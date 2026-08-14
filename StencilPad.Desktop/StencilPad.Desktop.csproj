@@ -1,6 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>WinExe</OutputType>
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
@@ -33,6 +32,7 @@
   </ItemGroup>
 
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('windows'))">
+    <OutputType>WinExe</OutputType>
     <TargetFrameworks>net10.0-windows</TargetFrameworks>
     <DefineConstants>$(DefineConstants);SP_WINDOWS</DefineConstants>
   </PropertyGroup>
@@ -42,6 +42,7 @@
   </ItemGroup>
   
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('linux'))">
+    <OutputType>WinExe</OutputType>
     <TargetFrameworks>net10.0</TargetFrameworks>
     <DefineConstants>$(DefineConstants);SP_LINUX</DefineConstants>
   </PropertyGroup>
@@ -51,6 +52,7 @@
   </ItemGroup>
 
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('osx'))">
+    <OutputType>Exe</OutputType>
     <TargetFrameworks>net10.0-macos</TargetFrameworks>
     <DefineConstants>$(DefineConstants);SP_OSX</DefineConstants>
     <InfoPlist>Info.plist</InfoPlist>
