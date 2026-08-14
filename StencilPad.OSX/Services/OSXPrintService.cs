@@ -29,29 +29,32 @@ public class OSXPrintService : IPrintService
     {
         var tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.pdf");
 
-        try
+        NSApplication.SharedApplication.InvokeOnMainThread(() =>
         {
-            _pdfExporter.Export(sheet, tempPath);
+            try
+            {
+                _pdfExporter.Export(sheet, tempPath);
 
-            using var document = new PdfDocument(NSUrl.FromFilename(tempPath));
-            using var pdfView = new PdfView();
-            
-            pdfView.Document = document;
+                using var document = new PdfDocument(NSUrl.FromFilename(tempPath));
+                using var pdfView = new PdfView();
 
-            using var printInfo = NSPrintInfo.SharedPrintInfo;
+                pdfView.Document = document;
 
-            pdfView.Print(printInfo, true, PdfPrintScalingMode.None);
+                using var printInfo = NSPrintInfo.SharedPrintInfo;
 
-            return Task.FromResult(true);
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine($"Error printing document: {e.Message}");
-            return Task.FromResult(false);
-        }
-        finally
-        {
-            File.Delete(tempPath);
-        }
+                pdfView.Print(printInfo, true, PdfPrintScalingMode.None);
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error printing document: {e.Message}");
+            }
+            finally
+            {
+                File.Delete(tempPath);
+            }
+        });
+
+        return Task.FromResult(true);
     }
 }
