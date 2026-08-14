@@ -42,8 +42,12 @@ public class OSXPrintService : IPrintService
 
                 using var printInfo = NSPrintInfo.SharedPrintInfo;
 
-                pdfView.Print(printInfo, true, PdfPrintScalingMode.None);
+                using var printOperation = NSPrintOperation.FromView(pdfView, printInfo);
 
+                printOperation.ShowsPrintPanel = true;
+                printOperation.ShowsProgressPanel = true;
+
+                printOperation.RunOperation();
             }
             catch (Exception e)
             {
