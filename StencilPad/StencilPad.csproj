@@ -30,10 +30,12 @@
     <AvaloniaResource Include="Resources\Icons\*.png" />
     <Content Include="Resources\Geometry\Index.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <PublishFolderType>RootDirectory</PublishFolderType>
     </Content>
     <Content Include="Resources\StencilPad.ico" />
     <Content Include="Resources\Geometry\*.spad">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <PublishFolderType>RootDirectory</PublishFolderType>
     </Content>
   </ItemGroup>
 
