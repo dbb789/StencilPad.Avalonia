@@ -12,8 +12,4 @@
     <ProjectReference Include="..\StencilPad\StencilPad.csproj" />
   </ItemGroup>
 
-  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('osx'))">
-    <DefineConstants>$(DefineConstants);SP_OSX</DefineConstants>
-  </PropertyGroup>
-
 </Project>
