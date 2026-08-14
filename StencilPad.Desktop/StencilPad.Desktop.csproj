@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFrameworks>net10.0;net10.0-windows</TargetFrameworks>
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
@@ -33,11 +32,23 @@
     <ProjectReference Include="..\StencilPad\StencilPad.csproj" />
   </ItemGroup>
 
-  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
-    <ProjectReference Include="..\StencilPad.Windows\StencilPad.Windows.csproj" />
-  </ItemGroup>
-
-  <PropertyGroup Condition="$(MSBuild]::IsOSPlatform('Windows'))">
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('windows'))">
+    <TargetFrameworks>net10.0-windows</TargetFrameworks>
     <DefineConstants>$(DefineConstants);SP_WINDOWS</DefineConstants>
   </PropertyGroup>
+
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('windows'))">
+    <ProjectReference Include="..\StencilPad.Windows\StencilPad.Windows.csproj" />
+  </ItemGroup>
+  
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('linux'))">
+    <TargetFrameworks>net10.0</TargetFrameworks>
+    <DefineConstants>$(DefineConstants);SP_LINUX</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('osx'))">
+    <TargetFrameworks>net10.0</TargetFrameworks>
+    <DefineConstants>$(DefineConstants);SP_OSX</DefineConstants>
+  </PropertyGroup>
+  
 </Project>
