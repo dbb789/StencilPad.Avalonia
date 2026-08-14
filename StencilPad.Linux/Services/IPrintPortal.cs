@@ -6,7 +6,7 @@ namespace StencilPad.Linux.Services;
 // (org.freedesktop.portal.Print). See:
 // https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Print.html
 [DBusInterface("org.freedesktop.portal.Print")]
-internal interface IPrintPortal : IDBusObject
+public interface IPrintPortal : IDBusObject
 {
     Task<ObjectPath> PreparePrintAsync(string parentWindow, string title,
         IDictionary<string, object> settings,
@@ -22,7 +22,7 @@ internal interface IPrintPortal : IDBusObject
 // object path implementing this interface; the actual result of the call
 // arrives asynchronously via the Response signal on that object.
 [DBusInterface("org.freedesktop.portal.Request")]
-internal interface IRequest : IDBusObject
+public interface IRequest : IDBusObject
 {
     Task<IDisposable> WatchResponseAsync(
         Action<(uint response, IDictionary<string, object> results)> handler);
