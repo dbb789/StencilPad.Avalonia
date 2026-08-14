@@ -51,8 +51,12 @@
   </ItemGroup>
 
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('osx'))">
-    <TargetFrameworks>net10.0</TargetFrameworks>
+    <TargetFrameworks>net10.0-macos</TargetFrameworks>
     <DefineConstants>$(DefineConstants);SP_OSX</DefineConstants>
   </PropertyGroup>
+
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('osx'))">
+    <ProjectReference Include="..\StencilPad.OSX\StencilPad.OSX.csproj" />
+  </ItemGroup>
   
 </Project>

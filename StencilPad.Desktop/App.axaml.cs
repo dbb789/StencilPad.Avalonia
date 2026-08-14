@@ -19,6 +19,8 @@ using StencilPad.ViewModels;
 using StencilPad.Windows.Services;
 #elif SP_LINUX
 using StencilPad.Linux.Services;
+#elif SP_OSX
+using StencilPad.OSX.Services;
 #endif
 
 namespace StencilPad.Desktop;
@@ -83,6 +85,8 @@ public partial class App : Application
         services.AddSingleton<IPrintService, WindowsPrintService>();
 #elif SP_LINUX
         services.AddSingleton<IPrintService, LinuxPrintService>();
+#elif SP_OSX
+        services.AddSingleton<IPrintService, OSXPrintService>();
 #else
 	services.AddSingleton<IPrintService, NullPrintService>();
 #endif
