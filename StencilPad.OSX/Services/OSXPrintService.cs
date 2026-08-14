@@ -40,6 +40,15 @@ public class OSXPrintService : IPrintService
 
                 pdfView.Document = document;
 
+                using var firstPage = document.GetPage(0);
+
+                if (firstPage is null)
+                {
+                    throw new InvalidOperationException("PDF document has no pages.");
+                }
+                
+                pdfView.Frame = firstPage.GetBoundsForBox(PdfDisplayBox.Media);
+
                 using var printInfo = NSPrintInfo.SharedPrintInfo;
 
                 using var printOperation = NSPrintOperation.FromView(pdfView, printInfo);
