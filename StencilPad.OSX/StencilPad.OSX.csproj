@@ -6,6 +6,7 @@
     <RootNamespace>StencilPad.OSX</RootNamespace>
     <AssemblyName>StencilPad.OSX</AssemblyName>
     <AssemblyTitle>StencilPad.OSX</AssemblyTitle>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>

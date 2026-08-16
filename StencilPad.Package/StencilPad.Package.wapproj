@@ -38,6 +38,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup>
+    <WapProjPath Condition="'$(WapProjPath)'=='' and Exists('$(MSBuildExtensionsPath)\Microsoft\DesktopBridge\Microsoft.DesktopBridge.props')">$(MSBuildExtensionsPath)\Microsoft\DesktopBridge\</WapProjPath>
+    <WapProjPath Condition="'$(WapProjPath)'=='' and Exists('$(VSInstallDir)\MSBuild\Microsoft\DesktopBridge\Microsoft.DesktopBridge.props')">$(VSInstallDir)\MSBuild\Microsoft\DesktopBridge\</WapProjPath>
+    <WapProjPath Condition="'$(WapProjPath)'=='' and Exists('C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Microsoft\DesktopBridge\Microsoft.DesktopBridge.props')">C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Microsoft\DesktopBridge\</WapProjPath>
     <WapProjPath Condition="'$(WapProjPath)'==''">$(MSBuildExtensionsPath)\Microsoft\DesktopBridge\</WapProjPath>
   </PropertyGroup>
   <Import Project="$(WapProjPath)\Microsoft.DesktopBridge.props" />
@@ -48,7 +51,6 @@
     <DefaultLanguage>en-US</DefaultLanguage>
     <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
     <NoWarn>$(NoWarn);NU1702</NoWarn>
-    <EntryPointProjectUniqueName>..\StencilPad\StencilPad.csproj</EntryPointProjectUniqueName>
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
     <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
     <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
@@ -57,6 +59,7 @@
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
     <PackageCertificateThumbprint>A7AEFF56C76E3820E8B621C4AAE1BC8508ED3100</PackageCertificateThumbprint>
     <AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
+    <EntryPointProjectUniqueName>..\StencilPad.Desktop\StencilPad.Desktop.csproj</EntryPointProjectUniqueName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <AppxBundle>Never</AppxBundle>
@@ -112,8 +115,6 @@
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.7705" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\StencilPad\StencilPad.csproj">
-      <TrustLevel>Full</TrustLevel>
-    </ProjectReference>
+    <ProjectReference Include="..\StencilPad.Desktop\StencilPad.Desktop.csproj" />
   </ItemGroup>
 </Project>

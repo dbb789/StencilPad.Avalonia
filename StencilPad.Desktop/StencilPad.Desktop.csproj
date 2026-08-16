@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -9,6 +9,7 @@
     <AssemblyTitle>StencilPad.Desktop</AssemblyTitle>
     <ApplicationIcon>..\StencilPad\Resources\StencilPad.ico</ApplicationIcon>
     <PackageIcon>StencilPad.png</PackageIcon>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -33,7 +34,8 @@
 
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('windows'))">
     <OutputType>WinExe</OutputType>
-    <TargetFrameworks>net10.0-windows</TargetFrameworks>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <DefineConstants>$(DefineConstants);SP_WINDOWS</DefineConstants>
   </PropertyGroup>
 
@@ -43,7 +45,7 @@
   
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('linux'))">
     <OutputType>WinExe</OutputType>
-    <TargetFrameworks>net10.0</TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
     <DefineConstants>$(DefineConstants);SP_LINUX</DefineConstants>
   </PropertyGroup>
 
@@ -53,7 +55,7 @@
 
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('osx'))">
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net10.0-macos</TargetFrameworks>
+    <TargetFramework>net10.0-macos</TargetFramework>
     <DefineConstants>$(DefineConstants);SP_OSX</DefineConstants>
     <InfoPlist>Info.plist</InfoPlist>
   </PropertyGroup>

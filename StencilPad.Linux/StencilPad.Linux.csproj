@@ -6,6 +6,7 @@
     <RootNamespace>StencilPad.Linux</RootNamespace>
     <AssemblyName>StencilPad.Linux</AssemblyName>
     <AssemblyTitle>StencilPad.Linux</AssemblyTitle>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
