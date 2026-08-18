@@ -76,7 +76,8 @@ public class HandlePropertiesViewModel : ViewModelBase, IDisposable
     private readonly IHandleMap _handleMap;
     private readonly IOperationService _operationService;
     private readonly ISettings _settings;
-
+    private bool _handlesChanging;
+    
     public HandlePropertiesViewModel(Sheet sheet,
                                      IHandleMap handleMap,
                                      IOperationService operationService,
@@ -118,6 +119,11 @@ public class HandlePropertiesViewModel : ViewModelBase, IDisposable
 
     private void UpdatePosition()
     {
+        if (_handlesChanging)
+        {
+            return;
+        }
+        
         var selectedHandles = _handleMap.SelectedHandles;
 
         HasHandles = selectedHandles.Count > 0;
@@ -142,10 +148,21 @@ public class HandlePropertiesViewModel : ViewModelBase, IDisposable
 
         using var context = _operationService.TryCreateEditContext(_sheet, elements);
 
-        foreach (var entry in selectedHandles)
+        _handlesChanging = true;
+
+        try
         {
-            entry.SetPosition(newPosition(entry));
+            foreach (var entry in selectedHandles)
+            {
+                entry.SetPosition(newPosition(entry));
+            }
         }
+        finally
+        {
+            _handlesChanging = false;
+        }
+
+        UpdatePosition();
     }
 
     private static Unit? All(IEnumerable<IHandleMapEntry> entries, Func<IHandleMapEntry, Unit> selector)

@@ -259,23 +259,30 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
         ContextMenu.Items.Clear();
 
         var builder = new ContextMenuBuilder(_sheet, ActionInvoked);
+        int separatorIndex = -1;
         
         if (builder.AddContextMenuItemSet(
                 ContextMenu.Items,
                 (actionSet.CornerProperties, "Corner Properties…", "Ctrl+P"),
                 (actionSet.HandleProperties, "Point Properties…", "Ctrl+Shift+P")))
         {
-            ContextMenu.Items.Add(new Separator());
+            separatorIndex = ContextMenu.Items.Count;
         }
 
-        builder.AddContextMenuItemSet(
-            ContextMenu.Items,
-            (actionSet.InsertPoint, "Insert Point", "Ctrl+I"),
-            (actionSet.DeletePoints, "Delete Point", "Delete"),
-            (actionSet.OpenPath, "Open Path", "Ctrl+Shift+O"),
-            (actionSet.ClosePath, "Close Path", "Ctrl+Shift+C"),
-            (actionSet.SetAsStraight, "Set as Straight", "Ctrl+Shift+S"),
-            (actionSet.SetAsCurve, "Set as Curve", "Ctrl+Shift+U"));
+        if (builder.AddContextMenuItemSet(
+                ContextMenu.Items,
+                (actionSet.InsertPoint, "Insert Point", "Ctrl+I"),
+                (actionSet.DeletePoints, "Delete Point", "Delete"),
+                (actionSet.OpenPath, "Open Path", "Ctrl+Shift+O"),
+                (actionSet.ClosePath, "Close Path", "Ctrl+Shift+C"),
+                (actionSet.SetAsStraight, "Set as Straight", "Ctrl+Shift+S"),
+                (actionSet.SetAsCurve, "Set as Curve", "Ctrl+Shift+U")))
+        {
+            if (separatorIndex >= 0)
+            {
+                ContextMenu.Items.Insert(separatorIndex, new Separator());
+            }
+        }
 
         return true;
     }
