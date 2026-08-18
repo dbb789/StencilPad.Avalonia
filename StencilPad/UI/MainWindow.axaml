@@ -135,12 +135,16 @@
         </DockPanel>
 
         <!-- NOTE: WPF's drag-to-reorder tab gesture (TabItemDrag/TabItemDrop
-             EventSetters, and the DataTrigger hiding the tab strip when only
-             one sheet exists) is not ported - see MainWindow.axaml.cs. -->
+             EventSetters) is not ported - see MainWindow.axaml.cs. -->
         <TabControl x:Name="SheetTabs"
                     ItemsSource="{Binding Tabs}"
                     SelectedItem="{Binding SelectedTab}"
                     TabStripPlacement="Bottom">
+            <TabControl.Styles>
+                <Style Selector="TabControl:singleitem /template/ ItemsPresenter#PART_ItemsPresenter">
+                    <Setter Property="IsVisible" Value="False"/>
+                </Style>
+            </TabControl.Styles>
             <TabControl.ItemTemplate>
                 <DataTemplate>
                     <TextBlock Text="{Binding Header}"/>
