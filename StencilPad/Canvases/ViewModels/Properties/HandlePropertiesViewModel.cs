@@ -30,6 +30,11 @@ public class HandlePropertiesViewModel : ViewModelBase, IDisposable
         get => _x;
         set
         {
+            if (_x == value)
+            {
+                return;
+            }
+            
             _x = value;
 
             if (_x is not null)
@@ -49,13 +54,18 @@ public class HandlePropertiesViewModel : ViewModelBase, IDisposable
         get => _y;
         set
         {
+            if (_y == value)
+            {
+                return;
+            }
+
             _y = value;
 
             if (_y is not null)
             {
                 Unit yValue = _y.Value;
 
-                SetSelectedHandlePositions(entry => new Unit2D(entry.Position.X, _y.Value));
+                SetSelectedHandlePositions(entry => new Unit2D(entry.Position.X, yValue));
             }
 
             OnPropertyChanged();
