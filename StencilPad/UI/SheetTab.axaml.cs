@@ -105,8 +105,8 @@ public partial class SheetTab : UserControl
 
         SheetCanvas.Viewport.ViewportChanged += () =>
         {
-            Scroll.MaxWidth = SheetCanvas.Viewport.ToPixels(SheetCanvas.Viewport.Size.X) + 32;
-            Scroll.MaxHeight = SheetCanvas.Viewport.ToPixels(SheetCanvas.Viewport.Size.Y) + 32;
+            Scroll.MaxWidth = SheetCanvas.Viewport.ToPixels(SheetCanvas.Viewport.Size.X);
+            Scroll.MaxHeight = SheetCanvas.Viewport.ToPixels(SheetCanvas.Viewport.Size.Y);
         };
 
         Dispatcher.UIThread.Post(CentreScroll);
