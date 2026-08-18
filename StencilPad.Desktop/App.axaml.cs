@@ -4,6 +4,7 @@ using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using StencilPad.Canvases.Common;
+using StencilPad.Canvases.UI.Properties;
 using StencilPad.Common;
 using StencilPad.Controllers;
 using StencilPad.Export;
@@ -63,6 +64,7 @@ public partial class App : Application
         services.AddSingleton<IAvaloniaDialogParent>(x => x.GetService<MainWindow>()!);
         services.AddSingleton<IDialogService, AvaloniaDialogService>();
         services.AddSingleton<IModelPropertiesService, AvaloniaModelPropertiesService>();
+        services.AddSingleton<IHandlePropertiesService, AvaloniaHandlePropertiesService>();
         services.AddSingleton<IAppConfigService, AppConfigService>();
         services.AddSingleton<IClipboardService, ClipboardService>();
         services.AddSingleton<IFileService, FileService>();

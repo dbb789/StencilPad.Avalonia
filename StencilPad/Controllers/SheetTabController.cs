@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using StencilPad.ViewModels;
 using StencilPad.Canvases.Tools.Controllers;
 using StencilPad.Canvases.UI;
+using StencilPad.Canvases.UI.Properties;
 using StencilPad.Common;
 using StencilPad.Models;
 using StencilPad.Services;
@@ -17,6 +18,7 @@ public class SheetTabController : IDisposable
                          IResourceService ResourceService,
                          IClipboardService ClipboardService,
                          IModelPropertiesService ModelPropertiesService,
+                         IHandlePropertiesService HandlePropertiesService,
                          IOperationService OperationService)
     {
         public SheetTabController Create(SheetTabViewModel tabViewModel)
@@ -26,7 +28,8 @@ public class SheetTabController : IDisposable
                        ResourceService,
                        ClipboardService,
                        OperationService,
-                       ModelPropertiesService);
+                       ModelPropertiesService,
+                       HandlePropertiesService);
         }
     }
 
@@ -35,6 +38,7 @@ public class SheetTabController : IDisposable
     private readonly IResourceService _resourceService;
     private readonly IOperationService _operationService;
     private readonly IModelPropertiesService _modelPropertiesService;
+    private readonly IHandlePropertiesService _handlePropertiesService;
     private readonly IClipboardService _clipboardService;
     private readonly HintService _hintService;
 
@@ -47,13 +51,15 @@ public class SheetTabController : IDisposable
                                IResourceService resourceService,
                                IClipboardService clipboardService,
                                IOperationService operationService,
-                               IModelPropertiesService modelPropertiesService)
+                               IModelPropertiesService modelPropertiesService,
+                               IHandlePropertiesService handlePropertiesService)
     {
         _tabViewModel = tabViewModel;
         _settings = settings;
         _resourceService = resourceService;
         _operationService = operationService;
         _modelPropertiesService = modelPropertiesService;
+        _handlePropertiesService = handlePropertiesService;
         _clipboardService = clipboardService;
         _hintService = new HintService();
         
@@ -164,6 +170,7 @@ public class SheetTabController : IDisposable
         services.AddSingleton<IResourceService>(_resourceService);
         services.AddSingleton<IOperationService>(_operationService);
         services.AddSingleton<IModelPropertiesService>(_modelPropertiesService);
+        services.AddSingleton<IHandlePropertiesService>(_handlePropertiesService);
         services.AddSingleton<IHintService>(_hintService);
         services.AddSingleton<IClipboardService>(_clipboardService);
 

@@ -231,6 +231,7 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
         var builder = new InputBindingsBuilder(_sheet, InvokeAction, KeyBindings);
 
         builder.Add(Key.P, KeyModifiers.Control, actionSet.CornerProperties);
+        builder.Add(Key.P, KeyModifiers.Control | KeyModifiers.Shift, actionSet.HandleProperties);
         builder.Add(Key.I, KeyModifiers.Control, actionSet.InsertPoint);
         builder.Add(Key.O, KeyModifiers.Control | KeyModifiers.Shift, actionSet.OpenPath);
         builder.Add(Key.C, KeyModifiers.Control | KeyModifiers.Shift, actionSet.ClosePath);
@@ -261,7 +262,8 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
         
         if (builder.AddContextMenuItemSet(
                 ContextMenu.Items,
-                (actionSet.CornerProperties, "Corner Properties…", "Ctrl+P")))
+                (actionSet.CornerProperties, "Corner Properties…", "Ctrl+P"),
+                (actionSet.HandleProperties, "Point Properties…", "Ctrl+Shift+P")))
         {
             ContextMenu.Items.Add(new Separator());
         }

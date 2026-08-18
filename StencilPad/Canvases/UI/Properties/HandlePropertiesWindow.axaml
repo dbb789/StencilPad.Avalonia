@@ -1,0 +1,34 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="StencilPad.Canvases.UI.Properties.HandlePropertiesWindow"
+        xmlns:vm="clr-namespace:StencilPad.Canvases.ViewModels.Properties"
+        xmlns:widgets="using:StencilPad.UI.Widgets"
+        x:DataType="vm:HandlePropertiesViewModel"
+        Title="{Binding Title}"
+        SizeToContent="WidthAndHeight"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        MinWidth="260">
+    <Grid Margin="12" IsEnabled="{Binding HasHandles}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="8">
+            <TextBlock Text="Position:" VerticalAlignment="Center" Margin="2"/>
+            <widgets:Unit2DField MinWidth="160"
+                                 ValueX="{Binding X}"
+                                 ValueY="{Binding Y}"
+                                 UnitSettings="{Binding UnitSettings}"
+                                 Scaled="True"/>
+        </StackPanel>
+
+        <Button Grid.Row="2"
+                Content="Close"
+                MinWidth="75"
+                HorizontalAlignment="Right"
+                Click="Close_Click"/>
+    </Grid>
+</Window>

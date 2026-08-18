@@ -1,4 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
+using StencilPad.Canvases.Common;
+using StencilPad.Canvases.UI.Properties;
 using StencilPad.Models;
 using StencilPad.Services;
 using StencilPad.Spatial;
@@ -6,6 +8,8 @@ using StencilPad.Spatial;
 namespace StencilPad.Canvases.Tools.Actions;
 
 public class SheetElementEditActionSet(IModelPropertiesService modelPropertiesService,
+                                       IHandlePropertiesService handlePropertiesService,
+                                       IHandleMap handleMap,
                                        IOperationService operationService)
 {
     private static Func<IPolygonSheetElement, bool> OneOrMoreVerticesSelected = e =>
@@ -72,6 +76,36 @@ public class SheetElementEditActionSet(IModelPropertiesService modelPropertiesSe
     }
 
     public readonly ISheetElementAction CornerProperties = new CornerPropertiesAction(modelPropertiesService);
+
+    private class HandlePropertiesAction : ISheetElementAction
+    {
+        private readonly IHandlePropertiesService _handlePropertiesService;
+        private readonly IHandleMap _handleMap;
+
+        public HandlePropertiesAction(IHandlePropertiesService handlePropertiesService,
+                                      IHandleMap handleMap)
+        {
+            _handlePropertiesService = handlePropertiesService;
+            _handleMap = handleMap;
+        }
+
+        public bool IsVisible(Sheet sheet, IEnumerable<ISheetElement> elements)
+        {
+            return _handleMap.SelectedHandles.Count > 0;
+        }
+
+        public bool IsEnabled(Sheet sheet, IEnumerable<ISheetElement> elements)
+        {
+            return _handleMap.SelectedHandles.Count > 0;
+        }
+
+        public void Invoke(Sheet sheet, IEnumerable<ISheetElement> elements)
+        {
+            _handlePropertiesService.ShowHandleProperties(sheet, _handleMap);
+        }
+    }
+
+    public readonly ISheetElementAction HandleProperties = new HandlePropertiesAction(handlePropertiesService, handleMap);
 
     public readonly ISheetElementAction InsertPoint = new SheetElementAction<IPolygonSheetElement>(operationService)
     {
