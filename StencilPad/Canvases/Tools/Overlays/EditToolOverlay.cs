@@ -284,6 +284,26 @@ public class EditToolOverlay : Control, IUnitSnapContext, IDisposable
             }
         }
 
+        ContextMenu.Items.Add(new Separator());
+
+        var justifyGroup = new MenuItem { Header = "Justify" };
+
+        ContextMenu.Items.Add(justifyGroup);
+
+        builder.AddContextMenuItemSet(
+            justifyGroup.Items,
+            (actionSet.JustifyLeft, "Left", ""),
+            (actionSet.JustifyCenter, "Centre", ""),
+            (actionSet.JustifyRight, "Right", ""));
+
+        justifyGroup.Items.Add(new Separator());
+
+        builder.AddContextMenuItemSet(
+            justifyGroup.Items,
+            (actionSet.JustifyTop, "Top", ""),
+            (actionSet.JustifyMiddle, "Middle", ""),
+            (actionSet.JustifyBottom, "Bottom", ""));
+
         return true;
     }
     

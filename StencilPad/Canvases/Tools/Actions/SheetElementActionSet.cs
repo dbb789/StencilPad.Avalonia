@@ -223,7 +223,7 @@ public class SheetElementActionSet(IModelPropertiesService modelPropertiesServic
             using var editContext = operationService.CreateEditContext(sheet, elements);
 
             Justify(elements,
-                    (selection, element) => new Unit2D(Unit.Zero, selection.Min.Y - element.Min.Y));
+                    (selection, element) => new Unit2D(Unit.Zero, selection.Max.Y - element.Max.Y));
         }
     };
 
@@ -245,7 +245,7 @@ public class SheetElementActionSet(IModelPropertiesService modelPropertiesServic
             using var editContext = operationService.CreateEditContext(sheet, elements);
 
             Justify(elements,
-                    (selection, element) => new Unit2D(Unit.Zero, selection.Max.Y - element.Max.Y));
+                    (selection, element) => new Unit2D(Unit.Zero, selection.Min.Y - element.Min.Y));
         }
     };
 

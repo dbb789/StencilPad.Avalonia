@@ -107,6 +107,84 @@ public class SheetElementEditActionSet(IModelPropertiesService modelPropertiesSe
 
     public readonly ISheetElementAction HandleProperties = new HandlePropertiesAction(handlePropertiesService, handleMap);
 
+    private class JustifyHandlesAction : ISheetElementAction
+    {
+        private readonly IHandleMap _handleMap;
+        private readonly IOperationService _operationService;
+        private readonly Func<UnitBounds, Unit2D, Unit2D> _getDelta;
+
+        public JustifyHandlesAction(IHandleMap handleMap,
+                                    IOperationService operationService,
+                                    Func<UnitBounds, Unit2D, Unit2D> getDelta)
+        {
+            _handleMap = handleMap;
+            _operationService = operationService;
+            _getDelta = getDelta;
+        }
+
+        public bool IsVisible(Sheet sheet, IEnumerable<ISheetElement> elements)
+        {
+            return _handleMap.SelectedHandles.Count > 0;
+        }
+
+        public bool IsEnabled(Sheet sheet, IEnumerable<ISheetElement> elements)
+        {
+            return _handleMap.SelectedHandles.Count > 0;
+        }
+
+        public void Invoke(Sheet sheet, IEnumerable<ISheetElement> elements)
+        {
+            var selectedHandles = _handleMap.SelectedHandles;
+            var bounds = GetHandleBounds(selectedHandles);
+
+            if (bounds is null)
+            {
+                return;
+            }
+
+            var editElements = selectedHandles.Select(e => e.Element).Distinct();
+
+            using var editContext = _operationService.CreateEditContext(sheet, editElements);
+
+            foreach (var entry in selectedHandles)
+            {
+                entry.SetPosition(entry.Position + _getDelta(bounds.Value, entry.Position));
+            }
+        }
+
+        private static UnitBounds? GetHandleBounds(IEnumerable<IHandleMapEntry> entries)
+        {
+            UnitBounds? bounds = null;
+
+            foreach (var entry in entries)
+            {
+                bounds = bounds is null
+                    ? UnitBounds.FromMinMax(entry.Position, entry.Position)
+                    : bounds.Value.Extend(entry.Position);
+            }
+
+            return bounds;
+        }
+    }
+
+    public readonly ISheetElementAction JustifyTop = new JustifyHandlesAction(handleMap, operationService,
+        (selection, position) => new Unit2D(Unit.Zero, selection.Max.Y - position.Y));
+
+    public readonly ISheetElementAction JustifyMiddle = new JustifyHandlesAction(handleMap, operationService,
+        (selection, position) => new Unit2D(Unit.Zero, selection.Center.Y - position.Y));
+
+    public readonly ISheetElementAction JustifyBottom = new JustifyHandlesAction(handleMap, operationService,
+        (selection, position) => new Unit2D(Unit.Zero, selection.Min.Y - position.Y));
+
+    public readonly ISheetElementAction JustifyLeft = new JustifyHandlesAction(handleMap, operationService,
+        (selection, position) => new Unit2D(selection.Min.X - position.X, Unit.Zero));
+
+    public readonly ISheetElementAction JustifyCenter = new JustifyHandlesAction(handleMap, operationService,
+        (selection, position) => new Unit2D(selection.Center.X - position.X, Unit.Zero));
+
+    public readonly ISheetElementAction JustifyRight = new JustifyHandlesAction(handleMap, operationService,
+        (selection, position) => new Unit2D(selection.Max.X - position.X, Unit.Zero));
+
     public readonly ISheetElementAction InsertPoint = new SheetElementAction<IPolygonSheetElement>(operationService)
     {
         Enabled = OneOrMoreEdgesSelected,
