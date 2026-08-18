@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using StencilPad.Spatial;
 
 namespace StencilPad.UI.Widgets;
@@ -157,6 +158,11 @@ public partial class BaseUnitField : UserControl
         }
     }
 
+    private void ValueField_LostFocus(object? sender, RoutedEventArgs e)
+    {
+        ApplyValueField();
+    }
+    
     private Unit GetStep()
     {
         if (UnitType == UnitType.Millimeters)
