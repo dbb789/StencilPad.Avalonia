@@ -62,7 +62,7 @@
                 <Button Classes="toolButton"
                         Margin="2"
                         IsEnabled="{Binding IsEnabled}"
-                        Command="{Binding #Root.DataContext.SelectToolCommand}"
+                        Command="{Binding #Root.DataContext?.SelectToolCommand}"
                         CommandParameter="{Binding}"
                         ToolTip.Tip="{Binding Tooltip}">
                     <Image Source="{Binding Icon}"/>
