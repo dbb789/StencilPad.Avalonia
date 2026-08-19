@@ -20,7 +20,7 @@ public abstract class SheetElementSchema
     {
         return element switch
         {
-            ElementGroup g => ElementGroupSchema.Pack(g),
+            GroupElement g => ElementGroupSchema.Pack(g),
             Shape s => ShapeSchema.Pack(s),
             MarkerPath s => MarkerPathSchema.Pack(s),
             Ruler s => RulerSchema.Pack(s),

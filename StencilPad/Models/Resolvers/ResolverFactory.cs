@@ -34,7 +34,7 @@ public static class ResolverFactory
             return new ImageElementResolver(imageElement);
         }
 
-        if (element is ElementGroup elementGroup)
+        if (element is GroupElement elementGroup)
         {
             return new GroupResolver(elementGroup, settings, resourceSet);
         }

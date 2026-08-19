@@ -6,7 +6,7 @@ public class ElementGroupSchema : SheetElementSchema
 {
     public SheetElementSchema[] C { get; set; } = [];
 
-    public static ElementGroupSchema Pack(ElementGroup elementGroup)
+    public static ElementGroupSchema Pack(GroupElement elementGroup)
     {
         return new ElementGroupSchema
         {
@@ -21,7 +21,7 @@ public class ElementGroupSchema : SheetElementSchema
     {
         var children = C.Select(c => c.Unpack()).ToArray();
         
-        var group = new ElementGroup(children);
+        var group = new GroupElement(children);
         
         group.Transform = UnitTransformSchema.Unpack(Trns);
 

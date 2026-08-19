@@ -25,7 +25,7 @@ public class GroupToolOverlayRenderer : IToolOverlayRenderer
         }
     }
     
-    private readonly ElementGroup _group;
+    private readonly GroupElement _group;
     
     private readonly ConcurrentList<IToolOverlayRendererFactory> _factories;
     private readonly ConcurrentOrderedDictionary<ISheetElement, IToolOverlayRenderer> _renderers;
@@ -33,7 +33,7 @@ public class GroupToolOverlayRenderer : IToolOverlayRenderer
 
     public event Action? RendererDirty;
     
-    public GroupToolOverlayRenderer(ElementGroup group,
+    public GroupToolOverlayRenderer(GroupElement group,
                                     IEnumerable<IToolOverlayRendererFactory> factories)
     {
         _group = group;

@@ -2,7 +2,7 @@ using StencilPad.Spatial;
 
 namespace StencilPad.Models;
 
-public class ElementGroup : SheetElement<ElementGroup>
+public class GroupElement : SheetElement<GroupElement>
 {
     public IEnumerable<ISheetElement> Children => _children;
 
@@ -29,14 +29,14 @@ public class ElementGroup : SheetElement<ElementGroup>
         }
     }
 
-    public ElementGroup()
+    public GroupElement()
     {
         _children = new();
         _groupHandleSource = new();
         SetHandleSource(_groupHandleSource);
     }
     
-    public ElementGroup(IEnumerable<ISheetElement> children)
+    public GroupElement(IEnumerable<ISheetElement> children)
     {
         _children = new(children.Select(c => c.DeepClone()));
         _groupHandleSource = new(_children);
@@ -161,7 +161,7 @@ public class ElementGroup : SheetElement<ElementGroup>
             RemapWorldPoint(bounds.Max, oldBounds, newBounds));
     }
 
-    public override void AssignFrom(ElementGroup other)
+    public override void AssignFrom(GroupElement other)
     {
         base.AssignFrom(other);
         

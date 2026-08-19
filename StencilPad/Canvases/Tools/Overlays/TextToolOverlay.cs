@@ -103,7 +103,7 @@ public class TextToolOverlay : Canvas, IDisposable
                     return (textElement, parentTransform);
                 }
             }
-            else if (element is ElementGroup group)
+            else if (element is GroupElement group)
             {
                 var (childElement, childElementTransform) = GetTextElementAtPosition(group.Children,
                                                                                      position,

@@ -106,7 +106,7 @@ public class SheetElementActionSet(IModelPropertiesService modelPropertiesServic
 
             foreach (var element in orderedElements)
             {
-                if (element is ElementGroup existingGroup)
+                if (element is GroupElement existingGroup)
                 {
                     foreach (var child in existingGroup.Children)
                     {
@@ -123,7 +123,7 @@ public class SheetElementActionSet(IModelPropertiesService modelPropertiesServic
                 }
             }
 
-            var group = new ElementGroup(children);
+            var group = new GroupElement(children);
 
             // Watch the ordering here, we want to avoid any issues with
             // duplicate IDs.
@@ -141,10 +141,10 @@ public class SheetElementActionSet(IModelPropertiesService modelPropertiesServic
 
     public readonly ISheetElementAction Ungroup = new MultiSheetElementAction
     {
-        Enabled = elements => elements.Any(e => e is ElementGroup),
+        Enabled = elements => elements.Any(e => e is GroupElement),
         Action = (sheet, elements) =>
         {
-            var groups = elements.OfType<ElementGroup>();
+            var groups = elements.OfType<GroupElement>();
             var operation = new BulkCommandOperation();
             var added = new List<ISheetElement>();
 

@@ -97,7 +97,7 @@ public class ToolOverlayRenderer
     {
         IToolOverlayRenderer? renderer;
         
-        if (element is ElementGroup group)
+        if (element is GroupElement group)
         {
             // Special case for groups.
             renderer = new GroupToolOverlayRenderer(group, _factories);

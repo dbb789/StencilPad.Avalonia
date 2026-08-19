@@ -689,7 +689,7 @@ public class SelectionToolOverlay : Control, IUnitSnapContext, IDisposable
             var screenBounds = _viewport.ToRect(resolver.GetOutlineBounds());
             
             var element = resolver.Element;
-            var isGroup = element is ElementGroup;
+            var isGroup = element is GroupElement;
 
             var isFilled = _dragState.DraggedElement == element ||
                            _rotateDragState.DraggedElement == element ||

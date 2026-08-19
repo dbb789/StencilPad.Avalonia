@@ -4,14 +4,14 @@ namespace StencilPad.Models.Resolvers;
 
 public class GroupResolver : SheetElementResolver
 {
-    private readonly ElementGroup _group;
+    private readonly GroupElement _group;
     private readonly ISettings _settings;
     private readonly IResourceSet _resourceSet;
     private readonly List<(ISheetElementResolver, IModelWalker)> _children;
 
     private IModelWalker? _walker;
 
-    public GroupResolver(ElementGroup group,
+    public GroupResolver(GroupElement group,
                          ISettings settings,
                          IResourceSet resourceSet)
         : base(group)
