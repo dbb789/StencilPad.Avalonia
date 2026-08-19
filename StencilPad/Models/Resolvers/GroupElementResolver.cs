@@ -1,4 +1,5 @@
 using StencilPad.Common;
+using StencilPad.Spatial;
 
 namespace StencilPad.Models.Resolvers;
 
@@ -7,13 +8,13 @@ public class GroupElementResolver : SheetElementResolver
     private readonly GroupElement _group;
     private readonly ISettings _settings;
     private readonly IResourceSet _resourceSet;
-    private readonly List<(ISheetElementResolver, IModelWalker)> _children;
+    private readonly List<(ISheetElementResolver, IModelWalker, ISheetElement)> _children;
 
     private IModelWalker? _walker;
 
     public GroupElementResolver(GroupElement group,
-                         ISettings settings,
-                         IResourceSet resourceSet)
+                                ISettings settings,
+                                IResourceSet resourceSet)
         : base(group)
     {
         _group = group;
@@ -31,6 +32,21 @@ public class GroupElementResolver : SheetElementResolver
         
         _group.TransformChanged -= TransformChanged;
         _group.ChildrenChanged -= OnChildrenChanged;
+    }
+
+    public override UnitBounds GetOutlineBounds(UnitTransform transform)
+    {
+        var bounds = base.GetOutlineBounds(transform);
+
+        foreach (var (resolver, _, element) in _children)
+        {
+            var childTransform = transform * element.Transform;
+            var childBounds = resolver.GetOutlineBounds(childTransform);
+            
+            bounds = UnitBounds.Union(bounds, childBounds);
+        }
+
+        return bounds;
     }
 
     public override void Attach(IModelWalker walker)
@@ -77,7 +93,7 @@ public class GroupElementResolver : SheetElementResolver
 
     private void ClearChildren()
     {
-        foreach (var (childResolver, childWalker) in _children)
+        foreach (var (childResolver, childWalker, _) in _children)
         {
             childResolver.OutlineChanged -= InvokeOutlineChanged;
             childResolver.Dispose();
@@ -102,7 +118,7 @@ public class GroupElementResolver : SheetElementResolver
 
             childResolver.OutlineChanged += InvokeOutlineChanged;
             childResolver.Attach(childWalker);
-            _children.Add((childResolver, childWalker));
+            _children.Add((childResolver, childWalker, element));
         }
     }
 }
