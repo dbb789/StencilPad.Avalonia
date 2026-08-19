@@ -2,7 +2,7 @@ using StencilPad.Common;
 
 namespace StencilPad.Models.Resolvers;
 
-public class GroupResolver : SheetElementResolver
+public class GroupElementResolver : SheetElementResolver
 {
     private readonly GroupElement _group;
     private readonly ISettings _settings;
@@ -11,7 +11,7 @@ public class GroupResolver : SheetElementResolver
 
     private IModelWalker? _walker;
 
-    public GroupResolver(GroupElement group,
+    public GroupElementResolver(GroupElement group,
                          ISettings settings,
                          IResourceSet resourceSet)
         : base(group)

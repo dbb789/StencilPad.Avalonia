@@ -36,7 +36,7 @@ public static class ResolverFactory
 
         if (element is GroupElement elementGroup)
         {
-            return new GroupResolver(elementGroup, settings, resourceSet);
+            return new GroupElementResolver(elementGroup, settings, resourceSet);
         }
 
         return null;
