@@ -78,7 +78,7 @@ public readonly record struct Unit
 
     public static bool TryParse(string s, UnitType type, Fraction scale, out Unit result)
     {
-        if (decimal.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsedValue))
+        if (decimal.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedValue))
         {
             result = FromType(parsedValue, type) * scale;
             return true;

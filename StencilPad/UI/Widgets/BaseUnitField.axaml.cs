@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using StencilPad.Parsers;
 using StencilPad.Spatial;
 
 namespace StencilPad.UI.Widgets;
@@ -184,16 +185,14 @@ public partial class BaseUnitField : UserControl
 
         _textValue = currentText;
 
-        if (Scaled)
+        if (ArithmeticEvaluator.TryEvaluate(_textValue, UnitType) is Unit parsedValue)
         {
-            if (Unit.TryParse(_textValue, UnitType, UnitSettings.Ratio, out var parsed))
+            if (Scaled)
             {
-                Value = ClampValue(parsed);
+                parsedValue *= UnitSettings.Ratio;
             }
-        }
-        else if (Unit.TryParse(_textValue, UnitType, out var parsed))
-        {
-            Value = ClampValue(parsed);
+            
+            Value = ClampValue(parsedValue);
         }
     }
 
