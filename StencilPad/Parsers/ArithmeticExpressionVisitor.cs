@@ -62,6 +62,15 @@ public class ArithmeticExpressionVisitor : ArithmeticBaseVisitor<decimal>
         };
     }
     
+    public override decimal VisitFraction(ArithmeticParser.FractionContext context)
+    {
+        var value = ParseUint(context.UINT(0));
+        var numerator = ParseUint(context.UINT(1));
+        var denominator = ParseUint(context.UINT(2));
+
+        return value + (numerator / denominator);
+    }
+
     public override decimal VisitDecimal(ArithmeticParser.DecimalContext context)
     {
         var text = context.GetText();
@@ -73,14 +82,10 @@ public class ArithmeticExpressionVisitor : ArithmeticBaseVisitor<decimal>
 
         throw new ArithmeticParseException($"Invalid numeric format: '{text}'");
     }
-
-    public override decimal VisitFraction(ArithmeticParser.FractionContext context)
+    
+    public override decimal VisitPi(ArithmeticParser.PiContext context)
     {
-        var value = ParseUint(context.UINT(0));
-        var numerator = ParseUint(context.UINT(1));
-        var denominator = ParseUint(context.UINT(2));
-
-        return value + (numerator / denominator);
+        return 3.1415926535m;
     }
 
     private decimal ParseUint(ITerminalNode node)

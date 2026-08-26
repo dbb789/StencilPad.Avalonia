@@ -12,6 +12,7 @@ expression
     | expression op=('+' | '-') expression       # AddSub
     | UINT '_' UINT '/' UINT                     # Fraction
     | UINT ('.' UINT)?                           # Decimal
+    | 'PI'                                       # Pi
     ;
 
 UINT
