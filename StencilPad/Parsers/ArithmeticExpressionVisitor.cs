@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using Antlr4.Runtime.Tree;
 
 namespace StencilPad.Parsers;
 
@@ -60,12 +61,33 @@ public class ArithmeticExpressionVisitor : ArithmeticBaseVisitor<decimal>
             _ => throw new ArithmeticParseException($"Unsupported binary operator: {context.op.Text}")
         };
     }
-
-    public override decimal VisitNumber(ArithmeticParser.NumberContext context)
+    
+    public override decimal VisitDecimal(ArithmeticParser.DecimalContext context)
     {
-        var text = context.NUMBER().GetText();
+        var text = context.GetText();
         
         if (decimal.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var value))
+        {
+            return value;
+        }
+
+        throw new ArithmeticParseException($"Invalid numeric format: '{text}'");
+    }
+
+    public override decimal VisitFraction(ArithmeticParser.FractionContext context)
+    {
+        var value = ParseUint(context.UINT(0));
+        var numerator = ParseUint(context.UINT(1));
+        var denominator = ParseUint(context.UINT(2));
+
+        return value + (numerator / denominator);
+    }
+
+    private decimal ParseUint(ITerminalNode node)
+    {
+        var text = node.GetText();
+        
+        if (decimal.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value))
         {
             return value;
         }

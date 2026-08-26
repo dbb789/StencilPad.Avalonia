@@ -10,12 +10,12 @@ expression
     | <assoc=right> expression op='^' expression # Power
     | expression op=('*' | '/' | '%') expression # MulDivMod
     | expression op=('+' | '-') expression       # AddSub
-    | NUMBER                                     # Number
+    | UINT '_' UINT '/' UINT                     # Fraction
+    | UINT ('.' UINT)?                           # Decimal
     ;
 
-NUMBER
-    : [0-9]+ ('.' [0-9]+)?
-    | '.' [0-9]+
+UINT
+    : [0-9]+
     ;
 
 WS
