@@ -51,9 +51,6 @@ public class UnitTests
         {
             Assert.That(Unit.TryParse("10.5", out var result1), Is.True);
             Assert.That(result1.Millimeters, Is.EqualTo(10.5));
-
-            Assert.That(Unit.TryParse("1", UnitType.Inches, out var result2), Is.True);
-            Assert.That(result2.Millimeters, Is.EqualTo(25.4));
         });
     }
 

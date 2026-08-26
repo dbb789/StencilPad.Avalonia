@@ -63,24 +63,9 @@ public readonly record struct Unit
     
     public static bool TryParse(string s, out Unit result)
     {
-        return TryParse(s, UnitType.Millimeters, out result);
-    }
-
-    public static bool TryParse(string s, Fraction scale, out Unit result)
-    {
-        return TryParse(s, UnitType.Millimeters, scale, out result);
-    }
-    
-    public static bool TryParse(string s, UnitType type, out Unit result)
-    {
-        return TryParse(s, type, Fraction.One, out result);
-    }
-
-    public static bool TryParse(string s, UnitType type, Fraction scale, out Unit result)
-    {
         if (decimal.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedValue))
         {
-            result = FromType(parsedValue, type) * scale;
+            result = FromMillimeters(parsedValue);
             return true;
         }
 
