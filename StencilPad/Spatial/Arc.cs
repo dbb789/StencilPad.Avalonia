@@ -177,6 +177,17 @@ public readonly struct Arc
         return (t0, t1);
     }
 
+    public bool IntersectsRay(Unit2D start, Unit2D direction)
+    {
+        var endDistance = (_center - start).Magnitude + (_radius * 2.0);
+        var end = start + direction.NormalizedTo(endDistance);
+        var ray = new Line(start, end);
+
+        var (t0, t1) = Intersection(ray);
+
+        return (t0 is not null) ^ (t1 is not null);
+    }
+    
     public Unit DistanceTo(Unit2D point)
     {
         double theta = Math.Atan2((point.Y - _center.Y).Millimeters,

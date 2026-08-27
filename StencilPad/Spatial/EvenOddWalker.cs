@@ -78,20 +78,11 @@ public class EvenOddWalker : IGeometryWalker
             return false;
         }
 
-        var ray = new Line(_point, new Unit2D(_point.X + Unit.MaxValue, _point.Y));
-
-        var (t0, t1) = arc.Intersection(ray);
-
-        if (t0 is not null)
+        if (arc.IntersectsRay(_point, Unit2D.FromMillimeters(1, 0)))
         {
             ++_count;
         }
 
-        if (t1 is not null)
-        {
-            ++_count;
-        }
-        
         return true;
     }
 
