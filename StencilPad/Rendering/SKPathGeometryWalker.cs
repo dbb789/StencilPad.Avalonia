@@ -45,7 +45,7 @@ public class SKPathGeometryWalker() : IGeometryWalker
 
             var radius = arc.Radius.Millimeters;
             var angle = MathUtil.SignedAngleDifference(arc.EndAngle, arc.StartAngle);
-            var sweep = angle > 0 ? SKPathDirection.CounterClockwise : SKPathDirection.Clockwise;
+            var sweep = arc.Clockwise ? SKPathDirection.Clockwise : SKPathDirection.CounterClockwise;
 
             Path.ArcTo(new SKPoint((float)radius, (float)radius),
                        (float)angle,

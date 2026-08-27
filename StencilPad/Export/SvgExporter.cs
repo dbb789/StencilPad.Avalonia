@@ -572,7 +572,7 @@ public class SvgExporter
 
             var end = _mapper.Map(_transform.Apply(arc.End));
             var r = arc.Radius.Millimeters;
-            var sweep  = MathUtil.SignedAngleDifference(arc.EndAngle, arc.StartAngle) > 0 ? 1 : 0;
+            var sweep = arc.Clockwise ? 0 : 1;
 
             _sb.Append($" A {Num(r)},{Num(r)} 0 0 {sweep} {Coord(end)}");
         }

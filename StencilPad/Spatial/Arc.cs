@@ -8,6 +8,7 @@ public readonly struct Arc
     public Unit Radius => _radius;
     public double StartAngle => _startAngle;
     public double EndAngle => _endAngle;
+    public bool Clockwise => _clockwise;
 
     public Unit2D Start
     {
@@ -41,7 +42,8 @@ public readonly struct Arc
     private readonly Unit _radius;
     private readonly double _startAngle;
     private readonly double _endAngle;
-
+    private readonly bool _clockwise;
+    
     public Arc(Unit2D start, Unit2D mid, Unit2D end)
     {
         (_center, _radius) = MathUtil.CircleFromArc(start, mid, end);
@@ -52,6 +54,7 @@ public readonly struct Arc
         _endAngle = Math.Atan2((end.Y - _center.Y).Millimeters,
                                (end.X - _center.X).Millimeters);
 
+        _clockwise = MathUtil.SignedAngleDifference(_endAngle, _startAngle) < 0;
     }
 
     public Arc(Unit2D center, Unit radius, double startAngle, double endAngle)
@@ -123,9 +126,15 @@ public readonly struct Arc
     public Unit2D Deriv(double t)
     {
         var angle = MathUtil.LerpAngle(_startAngle, _endAngle, t);
-        
-        return new Unit2D(-Math.Sin(angle) * _radius,
-                          Math.Cos(angle) * _radius);
+
+        if (_clockwise)
+        {
+            return new Unit2D(-Math.Sin(angle) * _radius, Math.Cos(angle) * _radius);
+        }
+        else
+        {
+            return new Unit2D(Math.Sin(angle) * _radius, -Math.Cos(angle) * _radius);
+        }
     }
     
     public (double?, double?) Intersection(Line line)
