@@ -55,7 +55,6 @@ public class ObservableKeyedList<TKey, TValue> : IEnumerable<TValue>, IObservabl
  
     // NOTE: Strictly defined to be called before CollectionChanged.
     public event Action<TValue>? ElementRemoving;
-    
     public event Action<ObservableListChangedArgs<TValue>>? ListChanged;
 
     public ObservableKeyedList()

@@ -11,14 +11,8 @@ public class BoundsHandleSource : IHandleSource
     public event Action<IHandleSource, Handle, Unit2D>? HandleMoved;
     public event Action<IHandleSource, Handle, bool>? HandleSelectionChanged;
 
-    private HandleSourceId _id = HandleFactory.NewId();
-    private Handle _nw;
-    private Handle _ne;
-    private Handle _sw;
-    private Handle _se;
-    
-    private HandleSet _handles;
-    private HandleSet _selection;
+    private readonly HandleSet _handles;
+    private readonly HandleSet _selection;
 
     // We're not storing this as a UnitBounds because intermediate states can
     // sometimes become normalised which can introduce errors.
@@ -36,12 +30,13 @@ public class BoundsHandleSource : IHandleSource
 
     public BoundsHandleSource(UnitBounds bounds)
     {
-        _nw = Handle.Move(_id, new BoundsHandleKey(BoundsHandleKey.HandleType.NW));
-        _ne = Handle.Move(_id, new BoundsHandleKey(BoundsHandleKey.HandleType.NE));
-        _sw = Handle.Move(_id, new BoundsHandleKey(BoundsHandleKey.HandleType.SW));
-        _se = Handle.Move(_id, new BoundsHandleKey(BoundsHandleKey.HandleType.SE));
+        var id = HandleFactory.NewId();
+        var nw = Handle.Move(id, new BoundsHandleKey(BoundsHandleKey.HandleType.NW));
+        var ne = Handle.Move(id, new BoundsHandleKey(BoundsHandleKey.HandleType.NE));
+        var sw = Handle.Move(id, new BoundsHandleKey(BoundsHandleKey.HandleType.SW));
+        var se = Handle.Move(id, new BoundsHandleKey(BoundsHandleKey.HandleType.SE));
         
-        _handles = [_nw, _ne, _sw, _se];
+        _handles = [nw, ne, sw, se];
         _selection = new(4);
         
         _min = bounds.Min;
@@ -139,11 +134,11 @@ public class BoundsHandleSource : IHandleSource
 
     public void AssignFrom(BoundsHandleSource other)
     {
-        _id = other._id;
+        _handles.AssignFrom(other._handles);
+        _selection.AssignFrom(other._selection);
+
         _min = other._min;
         _max = other._max;
-        
-        _selection.AssignFrom(other._selection);
 
         UpdateAllHandles();
 
@@ -151,15 +146,6 @@ public class BoundsHandleSource : IHandleSource
         {
             HandleSelectionChanged?.Invoke(this, handle, _selection.Contains(handle));
         }
-    }
-
-    public BoundsHandleSource DeepClone()
-    {
-        var clone = new BoundsHandleSource(Bounds);
-
-        clone.AssignFrom(this);
-
-        return clone;
     }
 
     private void AssignBounds(UnitBounds bounds)

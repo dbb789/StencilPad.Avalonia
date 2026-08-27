@@ -9,11 +9,11 @@ public class MinMaxHandleSource : IHandleSource
     public event Action<IHandleSource, Handle, Unit2D>? HandleMoved;
     public event Action<IHandleSource, Handle, bool>? HandleSelectionChanged;
 
-    private HandleSet _handles;
+    private readonly HandleSet _handles;
+    private readonly HandleSet _selection;
+    
     private Unit2D _min;
     private Unit2D _max;
-    private HandleSet _selection;
-    private HandleSourceId _id = HandleFactory.NewId();
 
     public Unit2D Min
     {
@@ -37,9 +37,11 @@ public class MinMaxHandleSource : IHandleSource
 
     public MinMaxHandleSource(Unit2D start, Unit2D end)
     {
-        _handles = new(2);
-        _handles.Add(Handle.Move(_id, new MinMaxHandleKey(MinMaxHandleKey.HandleType.Min)));
-        _handles.Add(Handle.Move(_id, new MinMaxHandleKey(MinMaxHandleKey.HandleType.Max)));
+        var id = HandleFactory.NewId();
+        
+        _handles = new(2);        
+        _handles.Add(Handle.Move(id, new MinMaxHandleKey(MinMaxHandleKey.HandleType.Min)));
+        _handles.Add(Handle.Move(id, new MinMaxHandleKey(MinMaxHandleKey.HandleType.Max)));
 
         _selection = new(2);
 
@@ -96,22 +98,18 @@ public class MinMaxHandleSource : IHandleSource
 
     public void AssignFrom(MinMaxHandleSource other)
     {
-        _id = other._id;
-        _min = other._min;
-        _max = other._max;
+        _handles.AssignFrom(other._handles);
         _selection.AssignFrom(other._selection);
 
+        _min = other._min;
+        _max = other._max;
+        
         HandleMoved?.Invoke(this, _handles[0], GetPoint(_handles[0]));
         HandleMoved?.Invoke(this, _handles[1], GetPoint(_handles[1]));
-    }
 
-    public MinMaxHandleSource DeepClone()
-    {
-        var clone = new MinMaxHandleSource(_min, _max);
-
-        clone._id = _id;
-        clone._selection.AssignFrom(_selection);
-
-        return clone;
+        foreach (var handle in _handles)
+        {
+            HandleSelectionChanged?.Invoke(this, handle, _selection.Contains(handle));
+        }
     }
 }
