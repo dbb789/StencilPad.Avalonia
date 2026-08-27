@@ -130,12 +130,12 @@ public class RulerPropertiesViewModel : ElementPropertiesViewModel<Ruler>
 
             if (_length is not null)
             {
-                foreach (var element in Elements)
+                SetElementProperty(e =>
                 {
-                    var offset = element.Max - element.Min;
+                    var offset = e.Max - e.Min;
 
-                    element.Max = element.Min + offset.NormalizedTo(_length.Value);
-                }   
+                    e.Max = e.Min + offset.NormalizedTo(_length.Value);
+                });
             }
             
             OnPropertyChanged();
