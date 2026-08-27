@@ -121,16 +121,20 @@
         </Menu>
 
         <DockPanel DockPanel.Dock="Bottom" LastChildFill="False">
-            <TextBlock DockPanel.Dock="Left" Text="{Binding SelectedTab?.HintText}"/>
+            <TextBlock DockPanel.Dock="Left" Text="{Binding SelectedTab?.HintText}" VerticalAlignment="Center" Margin="4"/>
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                <Slider Name="RectangleHeight"
-                        Width="160" Orientation="Horizontal" HorizontalAlignment="Left"
+                <Slider Width="160"
+                        Orientation="Horizontal" HorizontalAlignment="Left"
                         Value="{Binding SelectedTab?.Zoom, TargetNullValue=1.0}" Minimum="0.1" Maximum="5"
                         SmallChange="0.1" LargeChange="1"
                         TickPlacement="None"
                         IsSnapToTickEnabled="True"
                         TickFrequency="0.1"/>
-                <TextBlock Text="{Binding SelectedTab?.Zoom, StringFormat={}{0:P0}}" VerticalAlignment="Center" Margin="4"/>
+                <TextBlock Width="40"
+                           Text="{Binding SelectedTab?.Zoom, StringFormat={}{0:P0}}"
+                           TextAlignment="Right"
+                           VerticalAlignment="Center"
+                           Margin="4"/>
             </StackPanel>
         </DockPanel>
 

@@ -96,7 +96,7 @@ public class RectToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEleme
         
         if (_initialPoint is null)
         {
-            _hintService.ClearHint();
+            _hintService.SetHint(UnitUtil.FormatSuffixScaled(_currentSnappedMousePosition, _settings.UnitSettings));
             return;
         }
 

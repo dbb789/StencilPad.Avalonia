@@ -2,6 +2,11 @@ namespace StencilPad.Spatial;
 
 public static class UnitUtil
 {
+    public static string FormatSuffixScaled(Unit2D unit, UnitSettings settings)
+    {
+        return $"{FormatSuffixScaled(unit.X, settings)}, {FormatSuffixScaled(unit.Y, settings)}";
+    }
+
     public static string Format(Unit unit, UnitSettings settings)
     {
         var type = GetDefaultUnitType(settings);

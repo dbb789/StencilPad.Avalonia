@@ -10,6 +10,21 @@
     <Application.Styles>
         <FluentTheme DensityStyle="Compact"/>
 
+        <!-- Slider style -->
+        
+        <Style Selector="Slider:horizontal">
+            <Setter Property="BorderThickness" Value="0" />
+
+            <Style Selector="^ Track">
+                <Setter Property="Height" Value="4"/>
+                <Style Selector="^ Thumb">
+                    <Setter Property="Height" Value="14"/>
+                    <Setter Property="Width" Value="14"/>
+                    <Setter Property="BorderThickness" Value="0" />
+                </Style>
+            </Style>
+        </Style>
+        
         <!-- TabControl style -->
         
         <Style Selector="TabControl">

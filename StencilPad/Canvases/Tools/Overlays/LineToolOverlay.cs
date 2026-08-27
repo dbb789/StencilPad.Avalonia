@@ -20,8 +20,8 @@ public class LineToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEleme
 
     private readonly ISettings _settings;
     private readonly IViewport _viewport;
-    private readonly IUnitSnap _unitSnap;
-    private readonly IUnitSnapContext _unitSnapContext;
+    private readonly IUnitSnapOverlay _unitSnapOverlay;
+    private readonly IHintService _hintService;
     private readonly TSheetElement _element;
     private readonly Polygon _polygon;
     private readonly ISheetElementResolver? _resolver;
@@ -35,13 +35,14 @@ public class LineToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEleme
 
     public LineToolOverlay(ISettings settings,
                            IViewport viewport,
-                           IUnitSnap unitSnap,
+                           IUnitSnapOverlay unitSnapOverlay,
+                           IHintService hintService,
                            IResourceService resourceService)
     {
         _settings = settings;
         _viewport = viewport;
-        _unitSnap = unitSnap;
-        _unitSnapContext = new DefaultUnitSnapContext(viewport);
+        _unitSnapOverlay = unitSnapOverlay;
+        _hintService = hintService;
         _element = new();
 
         _polygon = _element.PolygonSet.First();
@@ -64,6 +65,8 @@ public class LineToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEleme
 
     public override void Dispose()
     {
+        _hintService.ClearHint();
+
         _settings.Changed -= SettingsChanged;
         _renderer.RendererDirty -= RendererDirty;
         _renderer.Dispose();
@@ -162,14 +165,16 @@ public class LineToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEleme
             return;
         }
         
-        var vertex = _polygon.Vertices[^1];
-        
-        _polygon.Vertices[^1] = vertex with { Position = _currentSnappedMousePosition };
+        var vertex = _polygon.Vertices[^1] with { Position = _currentSnappedMousePosition };
+
+        _polygon.Vertices[^1] = vertex;
 
         if (IsCurved && _polygon.Edges.Count > 0)
         {
             _polygon.CalculateControlPoints(_polygon.Edges.Count - 1, false);
         }
+
+        _hintService.SetHint(UnitUtil.FormatSuffixScaled(vertex.Position, _settings.UnitSettings));
     }
 
     public override void Render(DrawingContext dc)
@@ -221,7 +226,7 @@ public class LineToolOverlay<TSheetElement> : PolygonToolOverlayBase<TSheetEleme
                                                    PointerEventArgs args)
     {
         var unitPosition = _viewport.FromPoint(mousePosition);
-        var snapPosition = _unitSnap.UnitSnap(unitPosition, _unitSnapContext);
+        var snapPosition = _unitSnapOverlay.UnitSnap(unitPosition);
         
         if (snapPosition.HasValue)
         {
