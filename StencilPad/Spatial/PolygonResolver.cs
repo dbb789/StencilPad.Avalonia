@@ -510,6 +510,9 @@ public class PolygonResolver : IGeometryResolver
             return Unit.Zero;
         }
 
+        // At PI / 2, Math.Tan() simply returns a very large number, so we can
+        // just return the radius in that case without a check for this edge
+        // case.
         return radius * Math.Tan(Math.Abs(CornerAngle(index)) / 2.0);
     }
 
