@@ -1,6 +1,8 @@
 ﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:StencilPad.ViewModels.Dialogs"
         x:Class="StencilPad.UI.Dialogs.GridSettingsDialog"
+        x:DataType="vm:GridSettingsDialogViewModel"
         xmlns:widgets="clr-namespace:StencilPad.UI.Widgets"
         Title="Grid Settings" SizeToContent="WidthAndHeight"
         CanResize="False" WindowStartupLocation="CenterOwner"

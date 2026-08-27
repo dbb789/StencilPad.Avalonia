@@ -13,9 +13,9 @@ public partial class ShapePropertiesWindow : Window
 {
     public ShapePropertiesViewModel ViewModel { get; }
 
-    private List<GeometryDropdown.Entry> _startCapItems;
-    private List<GeometryDropdown.Entry> _endCapItems;
-    private List<GeometryDropdown.Entry> _lineStyleItems;
+    private List<GeometryDropdownEntry> _startCapItems;
+    private List<GeometryDropdownEntry> _endCapItems;
+    private List<GeometryDropdownEntry> _lineStyleItems;
     
     public ShapePropertiesWindow(Sheet sheet,
                                  ISettings settings,
@@ -119,7 +119,7 @@ public partial class ShapePropertiesWindow : Window
         Close();
     }
 
-    private GeometryDropdown.Entry CreateCapPath(IResourceService resourceService,
+    private GeometryDropdownEntry CreateCapPath(IResourceService resourceService,
                                                  GeometryResourceId resourceId,
                                                  bool startCap)
     {
@@ -144,7 +144,7 @@ public partial class ShapePropertiesWindow : Window
         return new(path);
     }
     
-    private GeometryDropdown.Entry CreateLineStylePath(LineStyle lineStyle)
+    private GeometryDropdownEntry CreateLineStylePath(LineStyle lineStyle)
     {
         var paint = new SKPaint
         {

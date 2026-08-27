@@ -27,7 +27,7 @@ public partial class MarkerPathPropertiesWindow : Window
         DataContext = ViewModel;
 
         var markerTypeItems = ViewModel.MarkerTypeIds.Select(
-            id => new GeometryDropdown.Entry(GetMarkerPath(resourceService, id))).ToList();
+            id => new GeometryDropdownEntry(GetMarkerPath(resourceService, id))).ToList();
 
         MarkerTypeDropdown.Items = markerTypeItems;
 

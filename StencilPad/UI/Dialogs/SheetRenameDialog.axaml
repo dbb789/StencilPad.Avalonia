@@ -1,6 +1,8 @@
 ﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:StencilPad.ViewModels.Dialogs"
         x:Class="StencilPad.UI.Dialogs.SheetRenameDialog"
+        x:DataType="vm:SheetRenameDialogViewModel"
         Title="Rename Sheet" SizeToContent="WidthAndHeight"
         CanResize="False" WindowStartupLocation="CenterOwner"
         MinWidth="280">

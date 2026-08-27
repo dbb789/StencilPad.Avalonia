@@ -1,22 +1,19 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
-using SkiaSharp;
 
 namespace StencilPad.UI.Widgets;
 
 public partial class GeometryDropdown : UserControl
 {
-    public sealed record Entry(SKPath Path, SKPaint? Paint = null);
-
-    public static readonly StyledProperty<IList<Entry>?> ItemsProperty =
-        AvaloniaProperty.Register<GeometryDropdown, IList<Entry>?>(nameof(Items));
+    public static readonly StyledProperty<IList<GeometryDropdownEntry>?> ItemsProperty =
+        AvaloniaProperty.Register<GeometryDropdown, IList<GeometryDropdownEntry>?>(nameof(Items));
 
     public static readonly StyledProperty<int> SelectedIndexProperty =
         AvaloniaProperty.Register<GeometryDropdown, int>(nameof(SelectedIndex), 0,
             defaultBindingMode: BindingMode.TwoWay);
     
-    public IList<Entry>? Items
+    public IList<GeometryDropdownEntry>? Items
     {
         get => GetValue(ItemsProperty);
         set => SetValue(ItemsProperty, value);

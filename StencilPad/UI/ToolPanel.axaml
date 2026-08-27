@@ -1,6 +1,8 @@
 ﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:StencilPad.ViewModels"
              x:Class="StencilPad.UI.ToolPanel"
+             x:DataType="vm:ToolPanelViewModel"
              x:Name="Root">
     <UserControl.Styles>
         <Style Selector="Button.toolButton">
