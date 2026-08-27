@@ -107,6 +107,7 @@ public class ObservableKeyedList<TKey, TValue> : IEnumerable<TValue>, IObservabl
 
         _collection.RemoveAt(oldIndex);
         _collection.Insert(newIndex, kvp.Key, kvp.Value);
+        ++_version;
 
         ListChanged?.Invoke(ObservableListChangedArgs<TValue>.Move(kvp.Value, oldIndex, newIndex));
     }
