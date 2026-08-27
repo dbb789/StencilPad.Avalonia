@@ -199,8 +199,8 @@ public class ObservableKeyedListTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(list.IndexOf("Value2"), Is.EqualTo(1));
-            Assert.That(list.IndexOf("Value3"), Is.EqualTo(-1));
+            Assert.That(list.IndexOf("Key2"), Is.EqualTo(1));
+            Assert.That(list.IndexOf("Key3"), Is.EqualTo(-1));
         });
     }
 

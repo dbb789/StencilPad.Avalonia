@@ -99,8 +99,9 @@ public readonly struct Line
         }
 
         double t = ((bx - ax) * bdy - (by - ay) * bdx) / det;
+        double u = ((bx - ax) * ady - (by - ay) * adx) / det;
 
-        if (t < 0 || t > 1)
+        if (t < 0 || t > 1 || u < 0 || u > 1)
         {
             return null;
         }
