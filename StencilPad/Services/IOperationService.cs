@@ -15,7 +15,7 @@ public interface IOperationService : IFlushEditContext
     IDisposable CreateEditContext(Sheet sheet, ISheetElement element);
     
     IDisposable TryCreateEditContext(Sheet sheet,
-                                  IEnumerable<ISheetElement> elements);
+                                     IEnumerable<ISheetElement> elements);
 
     IDisposable TryCreateEditContext(Sheet sheet, ISheetElement element);
 

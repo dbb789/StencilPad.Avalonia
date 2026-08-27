@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using StencilPad.Models;
 using StencilPad.Models.Operations;
 
@@ -17,10 +17,17 @@ public class OperationService : IOperationService
     private static readonly IDisposable DummyContextInstance = new DummyContext();
     
     public bool HasEditContext => _currentEditContext is not null;
+
+    private readonly ILogger<OperationService> _logger;
+    private IEditContext? _currentEditContext;
     
     public event Action<IOperation, bool>? OperationPushed;
 
-    private IEditContext? _currentEditContext;
+    public OperationService(ILogger<OperationService> logger)
+    {
+        _logger = logger;
+        _currentEditContext = null;
+    }
     
     public IDisposable CreateEditContext(Sheet sheet,
                                          IEnumerable<ISheetElement> elements)
@@ -31,7 +38,7 @@ public class OperationService : IOperationService
             // is a bug and an annoyance that will lose undo steps, but throwing
             // an exception would be outright disruptive to the user, possibly
             // losing work.
-            Debug.WriteLine("Trying to create a new edit context while another one is active");
+            _logger.LogWarning("Trying to create a new edit context while another one is active");
         }
 
         return TryCreateEditContext(sheet, elements);
@@ -42,7 +49,7 @@ public class OperationService : IOperationService
     {
         if (_currentEditContext is not null)
         {
-            Debug.WriteLine("Trying to create a new edit context while another one is active");
+            _logger.LogWarning("Trying to create a new edit context while another one is active");
         }
 
         return TryCreateEditContext(sheet, element);
@@ -86,7 +93,7 @@ public class OperationService : IOperationService
 
         // Generally this is a failover so that a tool doesn't have any dangling
         // context when it gets switched out, so flag it.
-        Debug.WriteLine("Flushing edit context");
+        _logger.LogWarning("Flushing edit context");
         
         _currentEditContext.Dispose();
         _currentEditContext = null;
@@ -100,7 +107,7 @@ public class OperationService : IOperationService
         }
 
         // Also a failover.
-        Debug.WriteLine("Discarding edit context");
+        _logger.LogWarning("Discarding edit context");
 
         _currentEditContext.Discard();
         _currentEditContext = null;
@@ -120,7 +127,7 @@ public class OperationService : IOperationService
     {
         if (_currentEditContext != editContext)
         {
-            Debug.WriteLine("Flushed edit context does not match current context");
+            _logger.LogWarning("Flushed edit context does not match current context");
             return;
         }
 
