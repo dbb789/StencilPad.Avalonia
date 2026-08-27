@@ -28,7 +28,7 @@ public class RemoveSheetElementOperation : SheetOperation, ICommandOperation
         // executed immediately, so _index should be populated before any call
         // to Invert().
         
-        _index = sheet.Elements.IndexOf(_sheetElement);
+        _index = sheet.Elements.IndexOf(_sheetElement.Id);
         sheet.Elements.Remove(_sheetElement.Id);
     }
     

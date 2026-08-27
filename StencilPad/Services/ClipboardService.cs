@@ -101,7 +101,7 @@ public class ClipboardService : IClipboardService
         }
         
         // Pack in render order to preserve z-index when pasting.
-        var schemas = elements.OrderBy(e => sheet.Elements.IndexOf(e))
+        var schemas = elements.OrderBy(e => sheet.Elements.IndexOf(e.Id))
             .Select(SheetElementSchema.Pack)
             .Where(s => s is not null)
             .ToArray();

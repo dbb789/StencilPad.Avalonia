@@ -119,11 +119,11 @@ public class ObservableKeyedList<TKey, TValue> : IEnumerable<TValue>, IObservabl
         }
     }
 
-    public int IndexOf(TValue value)
+    public int IndexOf(TKey key)
     {
         for (int i = 0; i < _collection.Count; ++i)
         {
-            if (EqualityComparer<TValue>.Default.Equals(_collection.GetAt(i).Value, value))
+            if (EqualityComparer<TKey>.Default.Equals(_collection.GetAt(i).Key, key))
             {
                 return i;
             }

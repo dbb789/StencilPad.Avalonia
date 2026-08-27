@@ -102,7 +102,7 @@ public class SheetElementActionSet(IModelPropertiesService modelPropertiesServic
         {
             var operation = new BulkCommandOperation();
             var children = new List<ISheetElement>();
-            var orderedElements = elements.OrderBy(e => sheet.Elements.IndexOf(e));
+            var orderedElements = elements.OrderBy(e => sheet.Elements.IndexOf(e.Id));
 
             foreach (var element in orderedElements)
             {
@@ -287,12 +287,12 @@ public class SheetElementActionSet(IModelPropertiesService modelPropertiesServic
         Action = (sheet, elements) =>
         {
             var operation = new BulkCommandOperation();
-            var orderedElements = elements.OrderBy(e => sheet.Elements.IndexOf(e));
+            var orderedElements = elements.OrderBy(e => sheet.Elements.IndexOf(e.Id));
             int offset = 0;
             
             foreach (var element in orderedElements)
             {
-                int index = sheet.Elements.IndexOf(element);
+                int index = sheet.Elements.IndexOf(element.Id);
 
                 index -= offset;
                 operation.Add(new ReorderSheetElementOperation(sheet, index, sheet.Elements.Count - 1));
@@ -309,12 +309,12 @@ public class SheetElementActionSet(IModelPropertiesService modelPropertiesServic
         Action = (sheet, elements) =>
         {
             var operation = new BulkCommandOperation();
-            var orderedElements = elements.OrderBy(e => sheet.Elements.IndexOf(e)).Reverse();
+            var orderedElements = elements.OrderBy(e => sheet.Elements.IndexOf(e.Id)).Reverse();
             int offset = 0;
 
             foreach (var element in orderedElements)
             {
-                int index = sheet.Elements.IndexOf(element);
+                int index = sheet.Elements.IndexOf(element.Id);
 
                 index += offset;
                 operation.Add(new ReorderSheetElementOperation(sheet, index, 0));

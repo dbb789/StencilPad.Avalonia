@@ -20,7 +20,7 @@ public class RemoveSheetOperation : ICommandOperation
         // executed immediately, so _index should be populated before any call
         // to Invert().
         
-        _index = project.Sheets.IndexOf(_sheet);
+        _index = project.Sheets.IndexOf(_sheet.Id);
         project.Sheets.Remove(_sheet.Id);
     }
     
