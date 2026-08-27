@@ -89,6 +89,13 @@ public class TextTool : ToolBase
 
     private void TextUpdated(TextElement element, string text)
     {
+        if (element.Text == text)
+        {
+            return;
+        }
+        
+        using var context = _operationService.CreateEditContext(_sheet, element);
+        
         element.Text = text;
     }
 }
