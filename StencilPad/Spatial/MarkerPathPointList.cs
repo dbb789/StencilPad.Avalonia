@@ -106,7 +106,6 @@ public class MarkerPathPointList
             while (true)
             {
                 var segment = _segments[segmentIndex];
-                var t = FindIntersection(segmentIndex, segment, bisector);
 
                 if (FindIntersection(segmentIndex, segment, bisector))
                 {
