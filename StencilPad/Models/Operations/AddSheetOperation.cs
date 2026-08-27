@@ -25,7 +25,7 @@ public class AddSheetOperation : ICommandOperation
             project.Sheets.Insert(_index, clone.Id, clone);
         }
 
-        targetSheet = _sheet;
+        targetSheet = clone;
     }
     
     public IOperation Invert()

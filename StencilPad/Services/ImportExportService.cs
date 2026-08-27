@@ -2,6 +2,7 @@ using Avalonia.Platform.Storage;
 using SkiaSharp;
 using StencilPad.Export;
 using StencilPad.Models;
+using StencilPad.Models.Operations;
 using StencilPad.Spatial;
 using StencilPad.UI;
 
@@ -73,8 +74,8 @@ public class ImportExportService : IImportExportService
             var imageData = await File.ReadAllBytesAsync(path);
             var bounds = UnitBounds.FromCenterSize(Unit2D.Zero, MeasureImageSize(imageData));
             var imageElement = new ImageElement(bounds.Min, bounds.Max, imageData);
-            
-            sheet.Elements.Add(imageElement.Id, imageElement);
+
+            _operationService.Push(new AddSheetElementOperation(sheet, imageElement));
         }
         catch (Exception e)
         {
