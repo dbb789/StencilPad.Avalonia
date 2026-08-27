@@ -29,7 +29,12 @@ public class LinuxPrintService : IPrintService
 
     public async Task<bool> PrintAsync(string documentName, Sheet sheet)
     {
-        using var connection = new Connection(Address.Session!);
+        if (Address.Session is null)
+        {
+            throw new InvalidOperationException("DBus session bus is not available.");
+        }
+        
+        using var connection = new Connection(Address.Session);
         await connection.ConnectAsync();
 
         var portal = connection.CreateProxy<IPrintPortal>(

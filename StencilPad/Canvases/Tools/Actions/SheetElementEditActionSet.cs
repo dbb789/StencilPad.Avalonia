@@ -66,7 +66,7 @@ public class SheetElementEditActionSet(IModelPropertiesService modelPropertiesSe
                 }
             }
             
-            return true;
+            return false;
         }
 
         public void Invoke(Sheet sheet, IEnumerable<ISheetElement> elements)

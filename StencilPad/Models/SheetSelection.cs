@@ -78,7 +78,7 @@ public class SheetSelection : IEnumerable<ISheetElement>, IObservableList<ISheet
         _selectedIds = new();
         _version = 0;
 
-        _elements.ElementRemoving += (e) => Remove(e);
+        _elements.ElementRemoving += OnElementRemoving;
     }
 
     public bool Add(ISheetElement element)
@@ -105,6 +105,11 @@ public class SheetSelection : IEnumerable<ISheetElement>, IObservableList<ISheet
         return Remove(element.Id);
     }
 
+    private void OnElementRemoving(ISheetElement element)
+    {
+        Remove(element.Id);
+    }
+    
     private bool Remove(Guid id)
     {
         if (!_elements.TryGetValue(id, out var existingElement))

@@ -44,13 +44,13 @@ public class SelectionTool : ToolBase
         }
     }
 
-    public override IRelayCommand SelectAllCommand => new RelayCommand(SelectAll);
-    public override IRelayCommand ClearSelectionCommand => new RelayCommand(ClearSelection);
-    public override IRelayCommand CutCommand => new AsyncRelayCommand(CutToClipboard);
-    public override IRelayCommand CopyCommand => new AsyncRelayCommand(CopyToClipboard);
-    public override IRelayCommand PasteCommand => new AsyncRelayCommand(PasteFromClipboard);
-    public override IRelayCommand DeleteCommand => new RelayCommand(DeleteSelection);
-    
+    public override IRelayCommand SelectAllCommand { get; }
+    public override IRelayCommand ClearSelectionCommand { get; }
+    public override IRelayCommand CutCommand { get; }
+    public override IRelayCommand CopyCommand { get; }
+    public override IRelayCommand PasteCommand { get; }
+    public override IRelayCommand DeleteCommand { get; }
+
     private readonly ILogger<SelectionTool> _logger;
     private readonly Sheet _sheet;
     private readonly OverlayContainer _overlayContainer;
@@ -93,6 +93,16 @@ public class SelectionTool : ToolBase
         _modelPropertiesService = modelPropertiesService;
         _operationService = operationService;
         _overlayFactory = overlayFactory;
+
+        ////////////////////////////////////////
+
+        // Avoid repeated allocation of commands by creating them once in the constructor.
+        SelectAllCommand = new RelayCommand(SelectAll);
+        ClearSelectionCommand = new RelayCommand(ClearSelection);
+        CutCommand = new AsyncRelayCommand(CutToClipboard);
+        CopyCommand = new AsyncRelayCommand(CopyToClipboard);
+        PasteCommand = new AsyncRelayCommand(PasteFromClipboard);
+        DeleteCommand = new RelayCommand(DeleteSelection);
     }
 
     public override void ToolBegin()

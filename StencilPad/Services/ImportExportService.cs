@@ -139,7 +139,7 @@ public class ImportExportService : IImportExportService
 
     private static Unit2D MeasureImageSize(byte [] imageData)
     {
-        var bitmap = SKBitmap.Decode(imageData);
+        using var bitmap = SKBitmap.Decode(imageData);
 
         double widthMm = bitmap.Width * 25.4 / 240.0;
         double heightMm = bitmap.Height * 25.4 / 240.0;

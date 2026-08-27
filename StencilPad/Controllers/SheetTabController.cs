@@ -110,7 +110,7 @@ public class SheetTabController : IDisposable
 
     public void Dispose()
     {
-        _hintService.HintChanged += OnHintTextChanged;
+        _hintService.HintChanged -= OnHintTextChanged;
         _tabViewModel.CanvasAttached -= OnCanvasAttached;
         _tabViewModel.CanvasDetached -= OnCanvasDetached;
 

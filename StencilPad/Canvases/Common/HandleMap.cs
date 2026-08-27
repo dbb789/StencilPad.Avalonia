@@ -325,6 +325,14 @@ public class HandleMap : IHandleMap, IUnitSnap
 
     public void Clear()
     {
+        if (_sheet is not null)
+        {
+            foreach (var element in _sheet.Elements)
+            {
+                Remove(element);
+            }
+        }
+        
         _byHandle.Clear();
         _byPosition.Clear();
         _selectedHandles.Clear();

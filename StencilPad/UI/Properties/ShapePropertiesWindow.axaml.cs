@@ -86,6 +86,7 @@ public partial class ShapePropertiesWindow : Window
         foreach (var item in _startCapItems)
         {
             item.Path.Dispose();
+            item.Paint?.Dispose();
         }
 
         _startCapItems.Clear();
@@ -93,6 +94,7 @@ public partial class ShapePropertiesWindow : Window
         foreach (var item in _endCapItems)
         {
             item.Path.Dispose();
+            item.Paint?.Dispose();
         }
 
         _endCapItems.Clear();
@@ -100,6 +102,7 @@ public partial class ShapePropertiesWindow : Window
         foreach (var item in _lineStyleItems)
         {
             item.Path.Dispose();
+            item.Paint?.Dispose();
         }
 
         _lineStyleItems.Clear();

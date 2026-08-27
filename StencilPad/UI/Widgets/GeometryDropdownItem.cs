@@ -26,7 +26,7 @@ public class GeometryDropdownItem : Control
         {
             _path = new(path);
             _matrix = matrix;
-            _paint = paint ?? new SKPaint()
+            _paint = paint?.Clone() ?? new SKPaint()
             {
                 Style = SKPaintStyle.Stroke,
                 Color = SKColors.Black,
@@ -40,6 +40,7 @@ public class GeometryDropdownItem : Control
         public void Dispose()
         {
             _path.Dispose();
+            _paint.Dispose();
         }
 
         public void Render(ImmediateDrawingContext context)

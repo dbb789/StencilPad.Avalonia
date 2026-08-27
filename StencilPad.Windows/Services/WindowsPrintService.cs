@@ -21,7 +21,7 @@ public class WindowsPrintService : IPrintService
         _resourceSet = resourceSet;
         _sheetResolverFactory = sheetResolverFactory;
     }
-    
+
     public Task<bool> PrintAsync(string documentName, Sheet sheet)
     {
         var printDialog = new PrintDialog();
@@ -29,64 +29,78 @@ public class WindowsPrintService : IPrintService
         if (printDialog.ShowDialog() == true)
         {
             var tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.xps");
+
+            try
             {
-                const double MmPerInch = 25.4;
-                const double PointsPerInch = 72.0;
-                
-                using var document = SKDocument.CreateXps(tempPath);
-
-                var format = sheet.Format;
-
-                var sheetIsLandscape = format.Orientation == SheetOrientation.Landscape;
-                var pageIsLandscape = printDialog.PrintableAreaWidth > printDialog.PrintableAreaHeight;
-                var rotate = sheetIsLandscape != pageIsLandscape;
-                
-                float width = (float)(format.Size.X.Millimeters * PointsPerInch / MmPerInch);
-                float height = (float)(format.Size.Y.Millimeters * PointsPerInch / MmPerInch);
-
-                using var canvas = document.BeginPage(width, height);
                 {
-                    float scale = (float)(PointsPerInch / MmPerInch);
+                    const double MmPerInch = 25.4;
+                    const double PointsPerInch = 72.0;
 
-                    var matrix = SKMatrix.CreateTranslation(width / 2, height / 2);
+                    using var document = SKDocument.CreateXps(tempPath);
 
-                    matrix = SKMatrix.Concat(matrix, SKMatrix.CreateScale(scale, -scale));
+                    var format = sheet.Format;
 
-                    canvas.Save();
-                    canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, matrix));
-                    
-                    using var resolver = _sheetResolverFactory.Create(sheet);
+                    var sheetIsLandscape = format.Orientation == SheetOrientation.Landscape;
+                    var pageIsLandscape = printDialog.PrintableAreaWidth > printDialog.PrintableAreaHeight;
+                    var rotate = sheetIsLandscape != pageIsLandscape;
 
-                    foreach (var elementResolver in resolver.Elements)
+                    float width = (float)(format.Size.X.Millimeters * PointsPerInch / MmPerInch);
+                    float height = (float)(format.Size.Y.Millimeters * PointsPerInch / MmPerInch);
+
+                    using var canvas = document.BeginPage(width, height);
                     {
-                        using var renderer = new ModelRenderer(_resourceSet);
+                        float scale = (float)(PointsPerInch / MmPerInch);
 
-                        elementResolver.Attach(renderer);
-                        renderer.PreRender();
-                        renderer.Render(canvas, null);
+                        var matrix = SKMatrix.CreateTranslation(width / 2, height / 2);
+
+                        matrix = SKMatrix.Concat(matrix, SKMatrix.CreateScale(scale, -scale));
+
+                        canvas.Save();
+                        canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, matrix));
+
+                        using var resolver = _sheetResolverFactory.Create(sheet);
+
+                        foreach (var elementResolver in resolver.Elements)
+                        {
+                            using var renderer = new ModelRenderer(_resourceSet);
+
+                            elementResolver.Attach(renderer);
+                            renderer.PreRender();
+                            renderer.Render(canvas, null);
+                        }
+
+                        canvas.Restore();
                     }
 
-                    canvas.Restore();
+                    document.EndPage();
+                    document.Close();
                 }
-                
-                document.EndPage();
-                document.Close();
-            }
-                
-            using var xpsDoc = new XpsDocument(tempPath, FileAccess.Read);
-         
-            var fixedDocSeq = xpsDoc.GetFixedDocumentSequence();
 
-            if (fixedDocSeq is null)
+
+                using var xpsDoc = new XpsDocument(tempPath, FileAccess.Read);
+
+                var fixedDocSeq = xpsDoc.GetFixedDocumentSequence();
+
+                if (fixedDocSeq is null)
+                {
+                    return Task.FromResult(false);
+                }
+
+                var writer = PrintQueue.CreateXpsDocumentWriter(printDialog.PrintQueue);
+
+                writer.Write(fixedDocSeq, printDialog.PrintTicket);
+
+            }
+            finally
             {
-                return Task.FromResult(false);
+                if (File.Exists(tempPath))
+                {
+                    File.Delete(tempPath);
+                }
             }
 
-            var writer = PrintQueue.CreateXpsDocumentWriter(printDialog.PrintQueue);
-
-            writer.Write(fixedDocSeq, printDialog.PrintTicket);
         }
-    
+        
         return Task.FromResult(true);
     }
 }
