@@ -157,7 +157,7 @@ public partial class ShapePropertiesWindow : Window
         
         var path = new SKPath();
 
-        path.AddPoly([new(-4, 0), new(4, 0)], false);
+        path.AddPoly([new(-7, 0), new(7, 0)], false);
         
         return new(path, paint);
     }
