@@ -12,7 +12,7 @@ public class FlatSet<T> : ReadOnlyFlatSet<T>
 
 	public bool Add(T element)
 	{
-		var index = Array.BinarySearch(_data, 0, _dataLength, element);
+		var index = Array.BinarySearch(_data, 0, _dataLength, element, _comparer);
 
 		if (index >= 0)
 		{
@@ -49,7 +49,7 @@ public class FlatSet<T> : ReadOnlyFlatSet<T>
     
 	public bool Remove(T element)
 	{
-		var index = Array.BinarySearch(_data, 0, _dataLength, element);
+		var index = Array.BinarySearch(_data, 0, _dataLength, element, _comparer);
 		
 		if (index < 0)
 		{
