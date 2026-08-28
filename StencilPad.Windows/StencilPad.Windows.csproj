@@ -10,6 +10,7 @@
     <AssemblyName>StencilPad.Windows</AssemblyName>
     <AssemblyTitle>StencilPad.Windows</AssemblyTitle>
     <Platforms>AnyCPU;x64</Platforms>
+    <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
   
   <ItemGroup>

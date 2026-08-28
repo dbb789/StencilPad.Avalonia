@@ -10,6 +10,8 @@
     <ApplicationIcon>..\StencilPad\Resources\StencilPad.ico</ApplicationIcon>
     <PackageIcon>StencilPad.png</PackageIcon>
     <Platforms>AnyCPU;x64</Platforms>
+    <PublishAot>true</PublishAot>
+    <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
   <ItemGroup>

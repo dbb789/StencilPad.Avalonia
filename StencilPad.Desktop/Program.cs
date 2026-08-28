@@ -18,7 +18,15 @@ internal sealed class Program
         NSApplication.Init();
 #endif
 
-        BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+        try
+        {
+            BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Fatal error: {e.Message}");
+            Console.WriteLine(e.StackTrace);
+        }
     }
 
     // Avalonia configuration, don't remove; also used by visual designer.

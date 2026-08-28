@@ -14,6 +14,7 @@ public static class SchemaJsonOptions
             new FractionConverter(),
             new ColorConverter()
         },
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        TypeInfoResolver = SourceGenerationContext.Default
     };
 }

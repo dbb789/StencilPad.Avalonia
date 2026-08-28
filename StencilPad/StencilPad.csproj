@@ -10,6 +10,7 @@
     <AssemblyTitle>StencilPad</AssemblyTitle>
     <NoWarn>$(NoWarn);AVLN3001</NoWarn>
     <Platforms>AnyCPU;x64</Platforms>
+    <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
   <ItemGroup>
