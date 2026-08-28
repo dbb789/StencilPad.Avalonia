@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using Avalonia.Media;
 using SkiaSharp;
 using StencilPad.Models;
@@ -10,15 +10,24 @@ namespace StencilPad.Services;
 
 public class ResourceService : IResourceService
 {
-    private Dictionary<GeometryResourceId, GeometryResource> _geometryMap;
-    private Dictionary<GeometryResourceType, List<GeometryResourceId>> _byType;
+    private readonly ILogger<ResourceService> _logger;
+    private readonly Dictionary<GeometryResourceId, GeometryResource> _geometryMap;
+    private readonly Dictionary<GeometryResourceType, List<GeometryResourceId>> _byType;
 
-    public ResourceService()
+    public ResourceService(ILogger<ResourceService> logger)
     {
+        _logger = logger;
         _geometryMap = [];
         _byType = [];
-        
-        LoadGeometry();
+
+        try
+        {
+            LoadGeometry();
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Failed to load geometry resources.");
+        }
     }
 
     public IEnumerable<GeometryResourceId> GetGeometryResourceIds(GeometryResourceType type)
@@ -66,7 +75,7 @@ public class ResourceService : IResourceService
         }
         catch (Exception e)
         {
-            Debug.WriteLine($"Error loading geometry resource '{id}' from file '{filename}': {e.Message}");
+            _logger.LogError(e, $"Failed to load geometry resource '{id}' from file '{filename}'.");
             return;
         }
         
@@ -76,7 +85,7 @@ public class ResourceService : IResourceService
         }
         else
         {
-            Debug.WriteLine($"Failed to load geometry resource '{id}'.");
+            _logger.LogError("Failed to load geometry resource '{Id}'.", id);
         }
     }
     
