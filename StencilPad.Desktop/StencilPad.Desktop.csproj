@@ -39,6 +39,7 @@
     <TargetFramework>net10.0-windows</TargetFramework>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <DefineConstants>$(DefineConstants);SP_WINDOWS</DefineConstants>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
   </PropertyGroup>
 
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform('windows'))">
