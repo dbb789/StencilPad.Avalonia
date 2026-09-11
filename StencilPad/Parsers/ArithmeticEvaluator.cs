@@ -44,7 +44,18 @@ public static class ArithmeticEvaluator
         }
 
         var visitor = new ArithmeticExpressionVisitor();
-        
-        return Unit.FromType(visitor.Visit(compileUnit), unitType);
+
+        try
+        {
+            return Unit.FromType(visitor.Visit(compileUnit), unitType);
+        }
+        catch (OverflowException e)
+        {
+            throw new ArithmeticParseException("Result is out of range.", e);
+        }
+        catch (DivideByZeroException e)
+        {
+            throw new ArithmeticParseException("Division by zero.", e);
+        }
     }
 }

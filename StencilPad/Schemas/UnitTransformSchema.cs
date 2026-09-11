@@ -1,3 +1,4 @@
+using System.Globalization;
 using StencilPad.Spatial;
 
 namespace StencilPad.Schemas;
@@ -12,13 +13,13 @@ public class UnitTransformSchema
         return new UnitTransformSchema
         {
             Pos = transform.Position,
-            Ang = transform.Angle.ToString()
+            Ang = transform.Angle.ToString(CultureInfo.InvariantCulture)
         };
     }
 
     public static UnitTransform Unpack(UnitTransformSchema data)
     {
-        if (!decimal.TryParse(data.Ang, out var angle))
+        if (!decimal.TryParse(data.Ang, NumberStyles.Float, CultureInfo.InvariantCulture, out var angle))
         {
             angle = 0;
         }

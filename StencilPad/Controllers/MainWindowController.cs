@@ -366,12 +366,12 @@ public class MainWindowController
 
     private void PushOperation(IOperation operation, bool shouldExecute)
     {
-        _undoStack.Push(operation);
-
         if (shouldExecute)
         {
             operation.Execute(_project, out var targetSheet);
         }
+
+        _undoStack.Push(operation);
     }
 
     private void Undo()

@@ -31,8 +31,15 @@ public class ArithmeticExpressionVisitor : ArithmeticBaseVisitor<decimal>
     {
         var left = Visit(context.expression(0));
         var right = Visit(context.expression(1));
-        
-        return (decimal)Math.Pow((double)left, (double)right);
+
+        var result = Math.Pow((double)left, (double)right);
+
+        if (double.IsNaN(result) || double.IsInfinity(result))
+        {
+            throw new ArithmeticParseException($"Result of {left}^{right} is not a finite number.");
+        }
+
+        return (decimal)result;
     }
 
     public override decimal VisitMulDivMod(ArithmeticParser.MulDivModContext context)
@@ -67,6 +74,11 @@ public class ArithmeticExpressionVisitor : ArithmeticBaseVisitor<decimal>
         var value = ParseUint(context.UINT(0));
         var numerator = ParseUint(context.UINT(1));
         var denominator = ParseUint(context.UINT(2));
+
+        if (denominator == 0m)
+        {
+            throw new ArithmeticParseException("Division by zero.");
+        }
 
         return value + (numerator / denominator);
     }

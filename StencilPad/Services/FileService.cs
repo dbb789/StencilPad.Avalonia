@@ -75,12 +75,10 @@ public class FileService : IFileService
             
             await SchemaUtil.SaveProjectAsync(ProjectSchema.Pack(project, FileVersion), tempFilePath);
 
-            if (File.Exists(filePath))
-            {
-                File.Delete(filePath);
-            }
-
-            File.Move(tempFilePath, filePath);
+            // Move the temp file into place, overwriting any existing file in a
+            // single operation so the original is never destroyed before the
+            // replacement is safely in place.
+            File.Move(tempFilePath, filePath, overwrite: true);
         }
         catch (Exception e)
         {
