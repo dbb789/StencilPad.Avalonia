@@ -44,9 +44,10 @@ public class PngExporter
 
         double pixelsPerMm = Dpi / MmPerInch;
 
-        // A small margin so that geometry sitting exactly on the bounds edge
-        // (and any sub-pixel rounding of the content size) is never clipped.
-        const int paddingPx = 2;
+        // A margin so that geometry sitting exactly on the bounds edge, stroke
+        // half-widths and anti-aliased pixels (which become more visible when
+        // zoomed in) are never clipped. Kept deliberately generous.
+        const int paddingPx = 4;
 
         double contentWidthPx  = widthMm * pixelsPerMm;
         double contentHeightPx = heightMm * pixelsPerMm;
