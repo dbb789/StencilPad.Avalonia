@@ -1,7 +1,5 @@
 using System.IO;
-using Avalonia;
-using Avalonia.Media;
-using Avalonia.Media.Imaging;
+using SkiaSharp;
 using StencilPad.Models;
 using StencilPad.Models.Resolvers;
 using StencilPad.Rendering;
@@ -11,19 +9,19 @@ namespace StencilPad.Export;
 
 public class PngExporter
 {
-    private const double Dpi = 960.0;
-    private const double BaseDpi = 96.0;
+    private const double MmPerInch = 25.4;
+    private const double Dpi = 254.0;
 
+    private readonly IResourceSet _resourceSet;
     private readonly SheetResolver.Factory _sheetResolverFactory;
-    private readonly SheetRenderer.Factory _sheetRendererFactory;
-    
-    public PngExporter(SheetResolver.Factory sheetResolverFactory,
-                       SheetRenderer.Factory sheetRendererFactory)
+
+    public PngExporter(IResourceSet resourceSet,
+                       SheetResolver.Factory sheetResolverFactory)
     {
+        _resourceSet = resourceSet;
         _sheetResolverFactory = sheetResolverFactory;
-        _sheetRendererFactory = sheetRendererFactory;
     }
-    
+
     public void Export(Sheet sheet, string path)
     {
         UnitBounds? sheetBounds = null;
@@ -39,35 +37,62 @@ public class PngExporter
             UnitBounds.FromCenterSize(Unit2D.Zero,
                                       new Unit2D(Unit.FromMillimeters(100),
                                                  Unit.FromMillimeters(100)));
-        
+
         var size = bounds.Size;
-        double width  = size.X.Millimeters;
-        double height = size.Y.Millimeters;
+        double widthMm  = size.X.Millimeters;
+        double heightMm = size.Y.Millimeters;
 
-        using var renderer = _sheetRendererFactory.Create(resolver);
+        double pixelsPerMm = Dpi / MmPerInch;
 
-        var transform = new TransformGroup();
-        transform.Children.Add(new ScaleTransform(1, -1));
-        transform.Children.Add(new TranslateTransform(-bounds.Min.X.Millimeters,
-                                                      -bounds.Min.Y.Millimeters));
+        // A small margin so that geometry sitting exactly on the bounds edge
+        // (and any sub-pixel rounding of the content size) is never clipped.
+        const int paddingPx = 2;
 
-        double scale = Dpi / BaseDpi;
-        int widthPx  = (int)Math.Round(width * scale);
-        int heightPx = (int)Math.Round(height * scale);
+        double contentWidthPx  = widthMm * pixelsPerMm;
+        double contentHeightPx = heightMm * pixelsPerMm;
 
-        // NOTE: Avalonia has no DrawingVisual/PngBitmapEncoder/BitmapFrame - a RenderTargetBitmap
-        // provides its own DrawingContext to draw into directly, and Bitmap.Save writes PNG.
-        using var bitmap = new RenderTargetBitmap(new PixelSize(widthPx, heightPx),
-                                                  new Vector(BaseDpi * scale, BaseDpi * scale));
+        int widthPx  = Math.Max(1, (int)Math.Ceiling(contentWidthPx))  + paddingPx * 2;
+        int heightPx = Math.Max(1, (int)Math.Ceiling(contentHeightPx)) + paddingPx * 2;
 
-        /*using (var dc = bitmap.CreateDrawingContext())
+        var info = new SKImageInfo(widthPx, heightPx, SKColorType.Rgba8888, SKAlphaType.Premul);
+
+        using var surface = SKSurface.Create(info);
+        var canvas = surface.Canvas;
+
+        canvas.Clear(SKColors.Transparent);
+
+        float scale = (float)pixelsPerMm;
+
+        // Model space has Y pointing up with the origin at bounds.Min; image
+        // space has Y pointing down from the top-left. Scale mm -> px, flip Y
+        // and translate so that bounds.Max.Y maps to the top padding edge and
+        // bounds.Min.X maps to the left padding edge. Using the exact content
+        // height (rather than the rounded canvas height) keeps the top edge
+        // from being clipped.
+        var matrix = SKMatrix.CreateScale(scale, -scale);
+        matrix = SKMatrix.Concat(SKMatrix.CreateTranslation(paddingPx, paddingPx + (float)contentHeightPx), matrix);
+        matrix = SKMatrix.Concat(matrix, SKMatrix.CreateTranslation((float)-bounds.Min.X.Millimeters,
+                                                                    (float)-bounds.Min.Y.Millimeters));
+
+        canvas.Save();
+        canvas.SetMatrix(SKMatrix.Concat(canvas.TotalMatrix, matrix));
+
+        foreach (var elementResolver in resolver.Elements)
         {
-            using var state = dc.PushTransform(transform.Value);
-            renderer.Render(dc);
-        }*/
+            using var renderer = new ModelRenderer(_resourceSet);
 
+            elementResolver.Attach(renderer);
+            renderer.PreRender();
+            renderer.Render(canvas, null);
+        }
+
+        canvas.Restore();
+        canvas.Flush();
+
+        using var image = surface.Snapshot();
+        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
         using var stream = File.Create(path);
 
-        bitmap.Save(stream, PngBitmapEncoderOptions.Default);
+        data.SaveTo(stream);
     }
 }
