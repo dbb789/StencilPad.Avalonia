@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Text;
-using Avalonia.Media;
 using System.Xml.Linq;
 using StencilPad.Common;
 using StencilPad.Models;
@@ -333,7 +332,7 @@ public class SvgExporter
                     Justification.Right => b.Max.X,
                     _  => b.Min.X
                 };
-                origin = _worldTransform.Apply(new Unit2D(localX, b.Min.Y));
+                origin = _worldTransform.Apply(new Unit2D(localX, b.Max.Y));
             }
             else
             {
@@ -344,21 +343,15 @@ public class SvgExporter
 
             var fontSizeMm = Unit.FromFontSizePoints(_style.Size).Millimeters;
 
-            // Measure the WPF alphabetic baseline offset from the layout box top.
-            // Passing font size as mm with PixelsPerDip=1 gives all metrics directly in mm,
-            // matching how WPF's DrawText(formattedText, Point(0,0)) positions text.
-            var ft = new FormattedText(
-                _text,
-                CultureInfo.InvariantCulture,
-                FlowDirection.LeftToRight,
-                new Typeface(_style.Font),
-                fontSizeMm,
-                Brushes.Black);
-
             var x = Num(origin.X.Millimeters);
             var y = Num(origin.Y.Millimeters);
             var fontSize = Num(fontSizeMm);
-            var dy = Num(ft.Baseline);
+            // The on-screen renderer anchors text at the top of the bounds and
+            // advances the baseline by one full font size (em) per line, so the
+            // first baseline sits exactly one em below the top. Match that here
+            // rather than using the typographic ascent, so SVG output lines up
+            // with what the user sees in the editor.
+            var dy = Num(fontSizeMm);
 
             var anchor = _style.Justification switch
             {
