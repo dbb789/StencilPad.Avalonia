@@ -141,17 +141,29 @@ public class Project : INotifyPropertyChanged
         
         if (!_defaultElements.TryGetValue(type, out var stored))
         {
-            stored = Activator.CreateInstance(type) as ISheetElement;
-            
-            if (stored is null)
-            {
-                throw new InvalidOperationException($"Could not create an instance of type {type.FullName}");
-            }
+            stored = CreateDefault(source);
             
             _defaultElements[type] = stored;
         }
 
         stored.AssignStyleFromElement(source);
+    }
+
+    // Reflection-free factory (keeps the type AOT/trim safe) mirroring the
+    // concrete ISheetElement types handled by SheetElementSchema.Pack.
+    private static ISheetElement CreateDefault(ISheetElement source)
+    {
+        return source switch
+        {
+            GroupElement => new GroupElement(),
+            Shape => new Shape(),
+            MarkerPath => new MarkerPath(),
+            Ruler => new Ruler(),
+            TextElement => new TextElement(),
+            ImageElement => new ImageElement(),
+            _ => throw new InvalidOperationException(
+                $"Could not create an instance of type {source.GetType().FullName}")
+        };
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)

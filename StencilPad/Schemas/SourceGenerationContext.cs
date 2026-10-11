@@ -5,4 +5,4 @@ namespace StencilPad.Schemas;
 [JsonSerializable(typeof(ProjectSchema))]
 [JsonSerializable(typeof(SheetElementSchema[]))]
 [JsonSerializable(typeof(GeometryResourceLibrarySchema))]
-internal partial class SourceGenerationContext : JsonSerializerContext { }
+public partial class SourceGenerationContext : JsonSerializerContext { }

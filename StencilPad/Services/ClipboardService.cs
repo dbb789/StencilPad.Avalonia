@@ -104,12 +104,13 @@ public class ClipboardService : IClipboardService
         var schemas = elements.OrderBy(e => sheet.Elements.IndexOf(e.Id))
             .Select(SheetElementSchema.Pack)
             .Where(s => s is not null)
+            .Select(s => s!)
             .ToArray();
 
         var data = new DataTransfer();
         var item = new DataTransferItem();
         
-        item.Set(ClipboardDataFormat, JsonSerializer.Serialize(schemas, SchemaJsonOptions.Default));
+        item.Set(ClipboardDataFormat, JsonSerializer.Serialize(schemas, SchemaJsonOptions.Context.SheetElementSchemaArray));
 
         data.Add(item);
         
@@ -136,7 +137,7 @@ public class ClipboardService : IClipboardService
 
         try
         {
-            schemas = JsonSerializer.Deserialize<SheetElementSchema[]>(data, SchemaJsonOptions.Default);
+            schemas = JsonSerializer.Deserialize(data, SchemaJsonOptions.Context.SheetElementSchemaArray);
         }
         catch (JsonException je)
         {

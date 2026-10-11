@@ -31,8 +31,6 @@ public class FractionConverter : JsonConverter<Fraction>
 
     public override void Write(Utf8JsonWriter writer, Fraction value, JsonSerializerOptions options)
     {
-        var unitConverter = (JsonConverter<Unit>)options.GetConverter(typeof(Unit));
-
         writer.WriteStartArray();
         writer.WriteNumberValue(value.Numerator);
         writer.WriteNumberValue(value.Denominator);

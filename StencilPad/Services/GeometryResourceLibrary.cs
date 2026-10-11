@@ -55,7 +55,7 @@ public static class GeometryResourceLibrary
         try
         {
             string json = File.ReadAllText(LibraryIndex);
-            var library = JsonSerializer.Deserialize<GeometryResourceLibrarySchema>(json, SchemaJsonOptions.Default);
+            var library = JsonSerializer.Deserialize(json, SchemaJsonOptions.Context.GeometryResourceLibrarySchema);
             
             foreach (var entry in library?.Caps ?? [])
             {

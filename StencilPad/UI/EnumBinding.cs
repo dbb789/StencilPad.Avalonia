@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using Avalonia.Data;
 using Avalonia.Data.Converters;
@@ -38,6 +39,12 @@ public class EnumBindingExtension
         Path = path;
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Enum radio-button binding uses a runtime string path, which requires a reflection " +
+                        "binding. The bound enum properties live on preserved view models.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Enum radio-button binding uses a runtime string path, which requires a reflection " +
+                        "binding. The bound enum properties live on preserved view models.")]
     public object ProvideValue(IServiceProvider serviceProvider)
     {
         return new Binding(Path)

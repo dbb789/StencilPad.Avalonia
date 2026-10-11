@@ -11,7 +11,7 @@ public static class SchemaUtil
         using var file = File.OpenRead(filename);
         using var gz = new GZipStream(file, CompressionMode.Decompress);
 
-        var schema = JsonSerializer.Deserialize<ProjectSchema>(gz, SchemaJsonOptions.Default);
+        var schema = JsonSerializer.Deserialize(gz, SchemaJsonOptions.Context.ProjectSchema);
 
         if (schema is null)
         {
@@ -26,7 +26,7 @@ public static class SchemaUtil
         await using var file = File.OpenRead(filename);
         await using var gz = new GZipStream(file, CompressionMode.Decompress);
 
-        var schema = await JsonSerializer.DeserializeAsync<ProjectSchema>(gz, SchemaJsonOptions.Default);
+        var schema = await JsonSerializer.DeserializeAsync(gz, SchemaJsonOptions.Context.ProjectSchema);
 
         if (schema is null)
         {
@@ -41,6 +41,6 @@ public static class SchemaUtil
         await using var file = File.Create(filename);
         await using var gz = new GZipStream(file, CompressionLevel.Optimal);
 
-        await JsonSerializer.SerializeAsync(gz, schema, SchemaJsonOptions.Default);
+        await JsonSerializer.SerializeAsync(gz, schema, SchemaJsonOptions.Context.ProjectSchema);
     }
 }
