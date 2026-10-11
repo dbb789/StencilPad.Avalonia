@@ -14,7 +14,7 @@
 
     <Window.KeyBindings>
         <KeyBinding Command="{Binding SelectedTab?.SelectAllCommand}" Gesture="Ctrl+A"/>
-        <KeyBinding Command="{Binding SelectedTab?.ClearSelectionCommand}" Gesture="Ctrl+A"/>
+        <KeyBinding Command="{Binding SelectedTab?.ClearSelectionCommand}" Gesture="Ctrl+Shift+A"/>
         <KeyBinding Command="{Binding SelectedTab?.CutCommand}" Gesture="Ctrl+X"/>
         <KeyBinding Command="{Binding SelectedTab?.CopyCommand}" Gesture="Ctrl+C"/>
         <KeyBinding Command="{Binding SelectedTab?.PasteCommand}" Gesture="Ctrl+V"/>
@@ -59,7 +59,7 @@
                 <MenuItem Header="_Delete (Del)" Command="{Binding SelectedTab?.DeleteCommand}"/>
                 <Separator/>
                 <MenuItem Header="Select _All (Ctrl+A)" Command="{Binding SelectedTab?.SelectAllCommand}"/>
-                <MenuItem Header="Clear Selection" Command="{Binding SelectedTab?.ClearSelectionCommand}"/>
+                <MenuItem Header="Clear Selection (Ctrl+Shift+A)" Command="{Binding SelectedTab?.ClearSelectionCommand}"/>
             </MenuItem>
             
             <MenuItem Header="_Settings">

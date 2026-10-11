@@ -129,8 +129,14 @@ public class SheetTabViewModel : ViewModelBase, IDisposable
 
         if (e.PropertyName == nameof(Sheet.Format))
         {
-            SizeType = Sheet.Format.SizeType;
-            Orientation = Sheet.Format.Orientation;
+            // Sync both values from the sheet without routing through the
+            // SizeType/Orientation setters: those call UpdateSheetSize, which would
+            // re-enter after only the first field was synced (clobbering the other)
+            // and would also discard a Custom format's size by rebuilding it.
+            var format = Sheet.Format;
+
+            SetProperty(ref _sizeType, format.SizeType, nameof(SizeType));
+            SetProperty(ref _orientation, format.Orientation, nameof(Orientation));
         }
     }
 

@@ -45,7 +45,7 @@ public class Project : INotifyPropertyChanged
 
     public UnitSettings UnitSettings => new(UnitSystem, UnitRatio);
     
-    public Unit _gridSpacingMetric = Unit.FromMillimeters(10);
+    private Unit _gridSpacingMetric = Unit.FromMillimeters(10);
     public Unit GridSpacingMetric
     {
         get => _gridSpacingMetric;
@@ -59,7 +59,7 @@ public class Project : INotifyPropertyChanged
         }
     }
 
-    public int _gridSubdivisionsMetric = 5;
+    private int _gridSubdivisionsMetric = 5;
     public int GridSubdivisionsMetric
     {
         get => _gridSubdivisionsMetric;
@@ -73,7 +73,7 @@ public class Project : INotifyPropertyChanged
         }
     }
 
-    public Unit _gridSpacingImperial = Unit.FromInches(1);
+    private Unit _gridSpacingImperial = Unit.FromInches(1);
     public Unit GridSpacingImperial
     {
         get => _gridSpacingImperial;
@@ -87,7 +87,7 @@ public class Project : INotifyPropertyChanged
         }
     }
 
-    public int _gridSubdivisionsImperial = 8;
+    private int _gridSubdivisionsImperial = 8;
     public int GridSubdivisionsImperial
     {
         get => _gridSubdivisionsImperial;
