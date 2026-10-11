@@ -65,11 +65,13 @@
             <MenuItem Header="_Settings">
                 <MenuItem Header="Unit System">
                     <MenuItem Header="Metric" ToggleType="CheckBox"
-                              IsChecked="{local:EnumBinding Project.UnitSystem,
-                                         TargetValue={x:Static spatial:UnitSystem.Metric}}"/>
+                              IsChecked="{Binding Project.UnitSystem, Mode=TwoWay,
+                                         Converter={x:Static local:EnumToBoolConverter.Instance},
+                                         ConverterParameter={x:Static spatial:UnitSystem.Metric}}"/>
                     <MenuItem Header="Imperial" ToggleType="CheckBox"
-                              IsChecked="{local:EnumBinding Project.UnitSystem,
-                                         TargetValue={x:Static spatial:UnitSystem.Imperial}}"/>
+                              IsChecked="{Binding Project.UnitSystem, Mode=TwoWay,
+                                         Converter={x:Static local:EnumToBoolConverter.Instance},
+                                         ConverterParameter={x:Static spatial:UnitSystem.Imperial}}"/>
                 </MenuItem>
                 <MenuItem Header="_Grid…" Command="{Binding GridSettingsCommand}"/>
                 <MenuItem Header="_Unit Scale…" Command="{Binding UnitScaleCommand}"/>
@@ -84,37 +86,47 @@
             <MenuItem Header="_Layout">
                 <MenuItem Header="Page Size">
                     <MenuItem Header="A5" ToggleType="CheckBox"
-                              IsChecked="{local:EnumBinding SelectedTab?.SizeType,
-                                         TargetValue={x:Static models:SheetSizeType.A5}}"/>
+                              IsChecked="{Binding SelectedTab.SizeType, Mode=TwoWay,
+                                         Converter={x:Static local:EnumToBoolConverter.Instance},
+                                         ConverterParameter={x:Static models:SheetSizeType.A5}}"/>
                     <MenuItem Header="A4" ToggleType="CheckBox"
-                              IsChecked="{local:EnumBinding SelectedTab?.SizeType,
-                                         TargetValue={x:Static models:SheetSizeType.A4}}"/>
+                              IsChecked="{Binding SelectedTab.SizeType, Mode=TwoWay,
+                                         Converter={x:Static local:EnumToBoolConverter.Instance},
+                                         ConverterParameter={x:Static models:SheetSizeType.A4}}"/>
                     <MenuItem Header="A3" ToggleType="CheckBox"
-                              IsChecked="{local:EnumBinding SelectedTab?.SizeType,
-                                         TargetValue={x:Static models:SheetSizeType.A3}}"/>
+                              IsChecked="{Binding SelectedTab.SizeType, Mode=TwoWay,
+                                         Converter={x:Static local:EnumToBoolConverter.Instance},
+                                         ConverterParameter={x:Static models:SheetSizeType.A3}}"/>
                     <MenuItem Header="A2" ToggleType="CheckBox"
-                              IsChecked="{local:EnumBinding SelectedTab?.SizeType,
-                                         TargetValue={x:Static models:SheetSizeType.A2}}"/>
+                              IsChecked="{Binding SelectedTab.SizeType, Mode=TwoWay,
+                                         Converter={x:Static local:EnumToBoolConverter.Instance},
+                                         ConverterParameter={x:Static models:SheetSizeType.A2}}"/>
                     <MenuItem Header="A1" ToggleType="CheckBox"
-                              IsChecked="{local:EnumBinding SelectedTab?.SizeType,
-                                         TargetValue={x:Static models:SheetSizeType.A1}}"/>
+                              IsChecked="{Binding SelectedTab.SizeType, Mode=TwoWay,
+                                         Converter={x:Static local:EnumToBoolConverter.Instance},
+                                         ConverterParameter={x:Static models:SheetSizeType.A1}}"/>
                     <MenuItem Header="A0" ToggleType="CheckBox"
-                              IsChecked="{local:EnumBinding SelectedTab?.SizeType,
-                                         TargetValue={x:Static models:SheetSizeType.A0}}"/>
+                              IsChecked="{Binding SelectedTab.SizeType, Mode=TwoWay,
+                                         Converter={x:Static local:EnumToBoolConverter.Instance},
+                                         ConverterParameter={x:Static models:SheetSizeType.A0}}"/>
                     <MenuItem Header="Legal" ToggleType="CheckBox"
-                              IsChecked="{local:EnumBinding SelectedTab?.SizeType,
-                                         TargetValue={x:Static models:SheetSizeType.Legal}}"/>
+                              IsChecked="{Binding SelectedTab.SizeType, Mode=TwoWay,
+                                         Converter={x:Static local:EnumToBoolConverter.Instance},
+                                         ConverterParameter={x:Static models:SheetSizeType.Legal}}"/>
                     <MenuItem Header="Letter" ToggleType="CheckBox"
-                              IsChecked="{local:EnumBinding SelectedTab?.SizeType,
-                                         TargetValue={x:Static models:SheetSizeType.Letter}}"/>
+                              IsChecked="{Binding SelectedTab.SizeType, Mode=TwoWay,
+                                         Converter={x:Static local:EnumToBoolConverter.Instance},
+                                         ConverterParameter={x:Static models:SheetSizeType.Letter}}"/>
                 </MenuItem>
                 <MenuItem Header="Orientation">
                     <MenuItem Header="Portrait" ToggleType="CheckBox"
-                              IsChecked="{local:EnumBinding SelectedTab?.Orientation,
-                                         TargetValue={x:Static models:SheetOrientation.Portrait}}"/>
+                              IsChecked="{Binding SelectedTab.Orientation, Mode=TwoWay,
+                                         Converter={x:Static local:EnumToBoolConverter.Instance},
+                                         ConverterParameter={x:Static models:SheetOrientation.Portrait}}"/>
                     <MenuItem Header="Landscape" ToggleType="CheckBox"
-                              IsChecked="{local:EnumBinding SelectedTab?.Orientation,
-                                         TargetValue={x:Static models:SheetOrientation.Landscape}}"/>
+                              IsChecked="{Binding SelectedTab.Orientation, Mode=TwoWay,
+                                         Converter={x:Static local:EnumToBoolConverter.Instance},
+                                         ConverterParameter={x:Static models:SheetOrientation.Landscape}}"/>
                 </MenuItem>
             </MenuItem>
 
