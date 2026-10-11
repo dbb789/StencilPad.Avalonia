@@ -1,0 +1,12 @@
+{
+  "solution": {
+    "path": "StencilPad.Avalonia.sln",
+    "projects": [
+      "StencilPad\\StencilPad.csproj",
+      "StencilPad.Tests\\StencilPad.Tests.csproj",
+      "StencilPad.Benchmarks\\StencilPad.Benchmarks.csproj",
+      "StencilPad.Desktop\\StencilPad.Desktop.csproj",
+      "StencilPad.Linux\\StencilPad.Linux.csproj"
+    ]
+  }
+}
